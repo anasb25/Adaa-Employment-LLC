@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
+import { toast } from "sonner";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Button from "../ui/button/Button";
-import { authApi, AuthApiError } from "../../services/authApi";
+import { useAuth } from "../../hooks/useAuth";
 import { LoginRequest } from "../../types/auth";
 
 export default function SignInForm() {
@@ -13,9 +14,7 @@ export default function SignInForm() {
     email: "",
     password: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>("");
-  const navigate = useNavigate();
+  const { login, isLoggingIn } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -23,26 +22,24 @@ export default function SignInForm() {
       ...prev,
       [name]: value,
     }));
-    // Clear error when user starts typing
-    if (error) setError("");
   };
 
   const validateForm = (): boolean => {
     if (!formData.email) {
-      setError("Email is required");
+      toast.error("Email is required");
       return false;
     }
     if (!formData.password) {
-      setError("Password is required");
+      toast.error("Password is required");
       return false;
     }
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+      toast.error("Password must be at least 6 characters");
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError("Please enter a valid email address");
+      toast.error("Please enter a valid email address");
       return false;
     }
     return true;
@@ -53,36 +50,7 @@ export default function SignInForm() {
 
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const response = await authApi.login(formData);
-
-      // Store tokens in localStorage
-      localStorage.setItem("accessToken", response.accessToken);
-      localStorage.setItem("refreshToken", response.refreshToken);
-      localStorage.setItem("user", JSON.stringify(response.user));
-
-      // Navigate to dashboard
-      navigate("/");
-    } catch (err) {
-      if (err instanceof AuthApiError) {
-        if (err.status === 401) {
-          setError("Invalid email or password");
-        } else if (err.status === 400 && err.errors) {
-          // Handle validation errors
-          const firstError = Object.values(err.errors)[0]?.[0];
-          setError(firstError || "Please check your input");
-        } else {
-          setError(err.message || "An error occurred during login");
-        }
-      } else {
-        setError("An unexpected error occurred");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    login(formData);
   };
 
   return (
@@ -98,11 +66,6 @@ export default function SignInForm() {
             </p>
           </div>
           <div>
-            {error && (
-              <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
-                {error}
-              </div>
-            )}
             <form onSubmit={handleSubmit}>
               <div className="space-y-6">
                 <div>
@@ -115,6 +78,7 @@ export default function SignInForm() {
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="info@gmail.com"
+                    disabled={isLoggingIn}
                   />
                 </div>
                 <div>
@@ -128,6 +92,7 @@ export default function SignInForm() {
                       value={formData.password}
                       onChange={handleInputChange}
                       placeholder="Enter your password"
+                      disabled={isLoggingIn}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -154,9 +119,9 @@ export default function SignInForm() {
                     className="w-full"
                     size="sm"
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoggingIn}
                   >
-                    {isLoading ? "Signing in..." : "Sign in"}
+                    {isLoggingIn ? "Signing in..." : "Sign in"}
                   </Button>
                 </div>
               </div>

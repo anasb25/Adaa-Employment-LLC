@@ -18,15 +18,23 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AppProviders from "./providers/AppProviders";
 
 export default function App() {
   return (
-    <>
+    <AppProviders>
       <Router>
         <ScrollToTop />
         <Routes>
-          {/* Dashboard Layout */}
-          <Route element={<AppLayout />}>
+          {/* Protected Dashboard Layout */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index path="/" element={<Home />} />
 
             {/* Others Page */}
@@ -53,7 +61,7 @@ export default function App() {
             <Route path="/bar-chart" element={<BarChart />} />
           </Route>
 
-          {/* Auth Layout */}
+          {/* Public Auth Routes */}
           <Route path="/signin" element={<SignIn />} />
           <Route path="/reset-password" element={<PasswordReset />} />
 
@@ -61,6 +69,6 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
-    </>
+    </AppProviders>
   );
 }
