@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
+import ForgotPassword from "./pages/AuthPages/ForgotPassword";
 import PasswordReset from "./pages/AuthPages/PasswordReset";
 import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
@@ -19,6 +20,7 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AuthGuard from "./components/auth/AuthGuard";
 import AppProviders from "./providers/AppProviders";
 
 export default function App() {
@@ -61,9 +63,31 @@ export default function App() {
             <Route path="/bar-chart" element={<BarChart />} />
           </Route>
 
-          {/* Public Auth Routes */}
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/reset-password" element={<PasswordReset />} />
+          {/* Public Auth Routes - Only accessible when NOT authenticated */}
+          <Route
+            path="/signin"
+            element={
+              <AuthGuard>
+                <SignIn />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <AuthGuard>
+                <ForgotPassword />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={
+              <AuthGuard>
+                <PasswordReset />
+              </AuthGuard>
+            }
+          />
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />

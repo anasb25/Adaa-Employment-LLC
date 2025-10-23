@@ -2,8 +2,10 @@ import axiosInstance from "../../lib/axios";
 import {
   LoginRequest,
   LoginResponse,
-  PasswordResetRequest,
-  PasswordResetResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
 } from "../../types/auth";
 
 export const authApi = {
@@ -15,11 +17,21 @@ export const authApi = {
     return response.data;
   },
 
-  resetPassword: async (
-    data: PasswordResetRequest
-  ): Promise<PasswordResetResponse> => {
-    const response = await axiosInstance.post<PasswordResetResponse>(
+  forgotPassword: async (
+    data: ForgotPasswordRequest
+  ): Promise<ForgotPasswordResponse> => {
+    const response = await axiosInstance.post<ForgotPasswordResponse>(
       "/auth/forgot-password",
+      data
+    );
+    return response.data;
+  },
+
+  resetPassword: async (
+    data: ResetPasswordRequest
+  ): Promise<ResetPasswordResponse> => {
+    const response = await axiosInstance.post<ResetPasswordResponse>(
+      "/auth/reset-password",
       data
     );
     return response.data;
@@ -33,10 +45,6 @@ export const authApi = {
       { refreshToken }
     );
     return response.data;
-  },
-
-  logout: async (): Promise<void> => {
-    await axiosInstance.post("/auth/logout");
   },
 
   getCurrentUser: async () => {

@@ -23,15 +23,21 @@ export interface User {
   updatedAt: string;
 }
 
-export interface PasswordResetRequest {
+export interface ForgotPasswordRequest {
   email: string;
-  oldPassword: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
   newPassword: string;
 }
 
-export interface PasswordResetResponse {
+export interface ResetPasswordResponse {
   message: string;
-  success: boolean;
 }
 
 export interface ApiError {
