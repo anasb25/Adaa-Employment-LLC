@@ -26,7 +26,8 @@ export default function AuthLayout({
                 />
               </Link>
               <p className="text-center text-gray-400 dark:text-white/60">
-                Free and Open-Source Tailwind CSS Admin Dashboard Template
+                ADAA Employment LLC - Professional Employment Management
+                Platform
               </p>
             </div>
           </div>
