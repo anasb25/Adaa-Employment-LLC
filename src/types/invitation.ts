@@ -57,6 +57,12 @@ export interface AcceptInvitationRequest {
   password: string;
 }
 
+export interface ValidateInvitationResponse {
+  invitation: Invitation | null;
+  isValid: boolean;
+  message?: string;
+}
+
 export interface AcceptInvitationResponse {
   user: {
     id: number;

@@ -16,33 +16,22 @@ const InvitationsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            User Invitations
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Manage user invitations and role assignments
-          </p>
-        </div>
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
+      <div className="mb-5 flex items-center justify-start lg:mb-7">
+        {!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            + Send New Invitation
+          </button>
+        )}
+      </div>
 
-        {/* Action Buttons */}
-        <div className="mb-6">
-          {!showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              + Send New Invitation
-            </button>
-          )}
-        </div>
-
+      <div className="space-y-6">
         {/* Invitation Form - Inline */}
         {showForm && (
-          <div className="mb-8 flex justify-center">
+          <div className="flex justify-center">
             <div className="w-full max-w-md">
               <InvitationForm
                 onSuccess={handleFormSuccess}

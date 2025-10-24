@@ -5,6 +5,7 @@ import {
   Invitation,
   AcceptInvitationRequest,
   AcceptInvitationResponse,
+  ValidateInvitationResponse,
 } from "../../types/invitation";
 
 export const invitationApi = {
@@ -39,9 +40,22 @@ export const invitationApi = {
   },
 
   // Validate an invitation token
-  validateInvitation: async (token: string): Promise<Invitation> => {
-    const response = await axiosInstance.get<Invitation>(
+  validateInvitation: async (
+    token: string
+  ): Promise<ValidateInvitationResponse> => {
+    const response = await axiosInstance.get<ValidateInvitationResponse>(
       `/invitations/validate/${token}`
+    );
+    return response.data;
+  },
+
+  // Complete signup after invitation validation
+  completeSignup: async (
+    data: AcceptInvitationRequest
+  ): Promise<AcceptInvitationResponse> => {
+    const response = await axiosInstance.post<AcceptInvitationResponse>(
+      "/invitations/complete-signup",
+      data
     );
     return response.data;
   },

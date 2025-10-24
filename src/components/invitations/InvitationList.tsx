@@ -1,9 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invitationApi } from "../../services/api/invitationApi";
 import { Invitation, InvitationStatus } from "../../types/invitation";
 import Button from "../ui/button/Button";
-import Badge from "../ui/badge/Badge";
 import { QUERY_KEYS } from "../../lib/constants";
 import { toast } from "sonner";
 
@@ -13,6 +12,8 @@ interface InvitationListProps {
 
 const InvitationList: React.FC<InvitationListProps> = ({ refreshTrigger }) => {
   const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
 
   const {
     data: invitations = [],
@@ -56,6 +57,24 @@ const InvitationList: React.FC<InvitationListProps> = ({ refreshTrigger }) => {
     },
   });
 
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      setRefreshSuccess(false);
+
+      await refetch();
+
+      // Show success feedback
+      setRefreshSuccess(true);
+      setTimeout(() => setRefreshSuccess(false), 2000); // Hide success state after 2 seconds
+    } catch (error) {
+      console.error("Failed to refresh invitations:", error);
+      toast.error("Failed to refresh invitations");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleCancelInvitation = (invitationId: number) => {
     if (!window.confirm("Are you sure you want to cancel this invitation?")) {
       return;
@@ -69,14 +88,39 @@ const InvitationList: React.FC<InvitationListProps> = ({ refreshTrigger }) => {
 
   const getStatusBadge = (status: InvitationStatus) => {
     const statusConfig = {
-      [InvitationStatus.PENDING]: { color: "yellow", text: "Pending" },
-      [InvitationStatus.ACCEPTED]: { color: "green", text: "Accepted" },
-      [InvitationStatus.EXPIRED]: { color: "red", text: "Expired" },
-      [InvitationStatus.CANCELLED]: { color: "gray", text: "Cancelled" },
+      [InvitationStatus.PENDING]: {
+        color: "blue" as const,
+        text: "Pending",
+        className:
+          "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+      },
+      [InvitationStatus.ACCEPTED]: {
+        color: "green" as const,
+        text: "Accepted",
+        className:
+          "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+      },
+      [InvitationStatus.EXPIRED]: {
+        color: "red" as const,
+        text: "Expired",
+        className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+      },
+      [InvitationStatus.CANCELLED]: {
+        color: "gray" as const,
+        text: "Cancelled",
+        className:
+          "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+      },
     };
 
     const config = statusConfig[status];
-    return <Badge color={config.color as any}>{config.text}</Badge>;
+    return (
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.className}`}
+      >
+        {config.text}
+      </span>
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -113,27 +157,75 @@ const InvitationList: React.FC<InvitationListProps> = ({ refreshTrigger }) => {
 
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <div className="text-center">
-          <p className="text-red-600 dark:text-red-400 mb-4">
-            Failed to load invitations
-          </p>
-          <Button onClick={() => refetch()} variant="outline">
-            Try Again
-          </Button>
-        </div>
+      <div className="text-center py-8">
+        <p className="text-red-600 dark:text-red-400 mb-4">
+          Failed to load invitations
+        </p>
+        <Button
+          onClick={handleRefresh}
+          variant="outline"
+          disabled={isRefreshing}
+        >
+          {isRefreshing ? "Retrying..." : "Try Again"}
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Sent Invitations
-        </h2>
-        <Button onClick={() => refetch()} variant="outline" size="sm">
-          Refresh
+    <div>
+      <div className="flex justify-end items-center mb-6">
+        <Button
+          onClick={handleRefresh}
+          variant="outline"
+          size="sm"
+          disabled={isRefreshing}
+          className={refreshSuccess ? "animate-pulse" : ""}
+        >
+          {isRefreshing ? (
+            <>
+              <svg
+                className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Refreshing...
+            </>
+          ) : refreshSuccess ? (
+            <>
+              <svg
+                className="w-4 h-4 mr-2 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              Refreshed!
+            </>
+          ) : (
+            "Refresh"
+          )}
         </Button>
       </div>
 
@@ -155,8 +247,8 @@ const InvitationList: React.FC<InvitationListProps> = ({ refreshTrigger }) => {
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
                       {invitation.email}
                     </h3>
                     {getStatusBadge(invitation.status)}
@@ -165,19 +257,22 @@ const InvitationList: React.FC<InvitationListProps> = ({ refreshTrigger }) => {
                   <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                     <p>
                       <span className="font-medium">Role:</span>{" "}
-                      {invitation.role.name}
+                      <span className="capitalize">{invitation.role.name}</span>
                     </p>
                     <p>
                       <span className="font-medium">Sent:</span>{" "}
                       {formatDate(invitation.createdAt)}
                     </p>
-                    <p>
-                      <span className="font-medium">Expires:</span>{" "}
-                      {formatDate(invitation.expiresAt)}
-                      {isExpired(invitation.expiresAt) && (
-                        <span className="text-red-500 ml-1">(Expired)</span>
-                      )}
-                    </p>
+                    {/* Only show expiry date for non-accepted invitations */}
+                    {invitation.status !== InvitationStatus.ACCEPTED && (
+                      <p>
+                        <span className="font-medium">Expires:</span>{" "}
+                        {formatDate(invitation.expiresAt)}
+                        {isExpired(invitation.expiresAt) && (
+                          <span className="text-red-500 ml-1">(Expired)</span>
+                        )}
+                      </p>
+                    )}
                     {invitation.acceptedAt && (
                       <p>
                         <span className="font-medium">Accepted:</span>{" "}

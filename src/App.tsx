@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
 import ForgotPassword from "./pages/AuthPages/ForgotPassword";
 import PasswordReset from "./pages/AuthPages/PasswordReset";
+import AcceptInvitation from "./pages/AuthPages/AcceptInvitation";
 import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
 import Videos from "./pages/UiElements/Videos";
@@ -95,6 +96,9 @@ export default function App() {
               </AuthGuard>
             }
           />
+
+          {/* Public Invitation Route - Accessible without authentication */}
+          <Route path="/accept-invitation" element={<AcceptInvitation />} />
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
