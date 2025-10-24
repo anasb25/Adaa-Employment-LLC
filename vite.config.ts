@@ -15,4 +15,12 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        if (warning.message?.includes("Use of eval")) return;
+        warn(warning);
+      },
+    },
+  },
 });
