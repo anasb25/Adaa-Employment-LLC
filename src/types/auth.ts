@@ -35,6 +35,7 @@ export interface User {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  lastLogin?: string;
 }
 
 export interface ForgotPasswordRequest {

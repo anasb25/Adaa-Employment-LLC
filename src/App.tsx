@@ -21,6 +21,7 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import RoleManagement from "./pages/RoleManagement";
+import UserManagement from "./pages/UserManagement";
 import AdminInvitationsDemo from "./pages/AdminInvitationsDemo";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AuthGuard from "./components/auth/AuthGuard";
@@ -48,6 +49,7 @@ export default function App() {
               element={<AdminInvitationsDemo />}
             />
             <Route path="/admin/roles" element={<RoleManagement />} />
+            <Route path="/admin/users" element={<UserManagement />} />
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />

@@ -52,6 +52,12 @@ const navItems: NavItem[] = [
           operator: "all",
         }, // Role management requires BOTH role read AND create permissions
       },
+      {
+        name: "User Management",
+        path: "/admin/users",
+        pro: false,
+        permission: "user:read", // User management requires user read permission
+      },
     ],
   },
 ];

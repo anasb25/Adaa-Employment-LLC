@@ -17,6 +17,15 @@ export const QUERY_KEYS = {
     my: ["invitations", "my"] as const,
     detail: (id: number) => ["invitations", id] as const,
   },
+  permissions: {
+    all: ["permissions"] as const,
+    detail: (id: number) => ["permissions", id] as const,
+  },
+  users: {
+    all: ["users"] as const,
+    detail: (id: number) => ["users", id] as const,
+    search: ["users", "search"] as const,
+  },
 } as const;
 
 // Local Storage Keys
