@@ -2,10 +2,13 @@ import axiosInstance from "../../lib/axios";
 import { User } from "../../types/auth";
 
 export interface UserListResponse {
-  users: User[];
+  data: User[];
   total: number;
   page: number;
   limit: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 
 export interface UpdateUserStatusRequest {
@@ -54,9 +57,10 @@ export const usersApi = {
     limit: number = 10
   ): Promise<UserListResponse> => {
     const response = await axiosInstance.get<UserListResponse>(
-      `/users/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`
+      `/users/actions/search?q=${encodeURIComponent(
+        query
+      )}&page=${page}&limit=${limit}`
     );
     return response.data;
   },
 };
-

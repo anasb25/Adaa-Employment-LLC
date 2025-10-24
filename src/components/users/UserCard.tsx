@@ -1,4 +1,3 @@
-import React from "react";
 import { User } from "../../types/auth";
 import Badge from "../ui/badge/Badge";
 import Button from "../ui/button/Button";

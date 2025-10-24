@@ -1,4 +1,3 @@
-import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { usersApi } from "../services/api/usersApi.ts";
 import { QUERY_KEYS } from "../lib/constants";
@@ -6,7 +5,6 @@ import UserList from "../components/users/UserList";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import PermissionGuard from "../components/auth/PermissionGuard";
-import Button from "../components/ui/button/Button";
 
 export default function UserManagementPage() {
   const { data: usersData } = useQuery({
@@ -52,9 +50,6 @@ export default function UserManagementPage() {
               <div className="text-sm text-gray-500 dark:text-gray-400">
                 Total Users: {usersData?.total || 0}
               </div>
-              <PermissionGuard permission="user:create">
-                <Button className="px-4 py-2">+ Invite User</Button>
-              </PermissionGuard>
             </div>
           </div>
 
