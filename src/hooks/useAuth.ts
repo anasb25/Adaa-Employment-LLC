@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { authApi } from "../services/api/authApi";
 import { useAuthStore } from "../store/authStore";
@@ -14,7 +15,14 @@ export const useAuth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { setAuth, clearAuth, user, isAuthenticated } = useAuthStore();
+  const {
+    setAuth,
+    clearAuth,
+    user,
+    accessToken,
+    refreshToken,
+    isAuthenticated,
+  } = useAuthStore();
 
   // Login mutation
   const loginMutation = useMutation({
@@ -63,13 +71,29 @@ export const useAuth = () => {
   });
 
   // Get current user query
-  const { data: currentUser, isLoading: isLoadingUser } = useQuery({
+  const {
+    data: currentUser,
+    isLoading: isLoadingUser,
+    refetch: refetchCurrentUser,
+  } = useQuery({
     queryKey: QUERY_KEYS.auth.currentUser,
     queryFn: () => authApi.getCurrentUser(),
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
   });
+
+  // Update user data in store when currentUser changes
+  useEffect(() => {
+    if (currentUser && accessToken && refreshToken) {
+      setAuth(currentUser, accessToken, refreshToken);
+    }
+  }, [currentUser, accessToken, refreshToken, setAuth]);
+
+  // Function to manually refresh user data
+  const refreshUserData = () => {
+    refetchCurrentUser();
+  };
 
   return {
     // State
@@ -83,6 +107,7 @@ export const useAuth = () => {
     logout,
     forgotPassword: forgotPasswordMutation.mutate,
     resetPassword: resetPasswordMutation.mutate,
+    refreshUserData,
 
     // Loading states
     isLoggingIn: loginMutation.isPending,

@@ -19,10 +19,10 @@ export default function DemographicCard() {
       <div className="flex justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Customers Demographic
+            Employee Demographics
           </h3>
           <p className="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-            Number of customer based on country
+            Number of employees based on nationality
           </p>
         </div>
         <div className="relative inline-block">
@@ -62,24 +62,24 @@ export default function DemographicCard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="items-center w-full rounded-full max-w-8">
-              <img src="./images/country/country-01.svg" alt="usa" />
+              <img src="./images/country/country-01.svg" alt="india" />
             </div>
             <div>
               <p className="font-semibold text-gray-800 text-theme-sm dark:text-white/90">
-                USA
+                India
               </p>
               <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
-                2,379 Customers
+                1,247 Employees
               </span>
             </div>
           </div>
 
           <div className="flex w-full max-w-[140px] items-center gap-3">
             <div className="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 dark:bg-gray-800">
-              <div className="absolute left-0 top-0 flex h-full w-[79%] items-center justify-center rounded-sm bg-brand-500 text-xs font-medium text-white"></div>
+              <div className="absolute left-0 top-0 flex h-full w-[45%] items-center justify-center rounded-sm bg-brand-500 text-xs font-medium text-white"></div>
             </div>
             <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
-              79%
+              45%
             </p>
           </div>
         </div>
@@ -87,24 +87,99 @@ export default function DemographicCard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="items-center w-full rounded-full max-w-8">
-              <img src="./images/country/country-02.svg" alt="france" />
+              <img src="./images/country/country-02.svg" alt="pakistan" />
             </div>
             <div>
               <p className="font-semibold text-gray-800 text-theme-sm dark:text-white/90">
-                France
+                Pakistan
               </p>
               <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
-                589 Customers
+                589 Employees
               </span>
             </div>
           </div>
 
           <div className="flex w-full max-w-[140px] items-center gap-3">
             <div className="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 dark:bg-gray-800">
-              <div className="absolute left-0 top-0 flex h-full w-[23%] items-center justify-center rounded-sm bg-brand-500 text-xs font-medium text-white"></div>
+              <div className="absolute left-0 top-0 flex h-full w-[21%] items-center justify-center rounded-sm bg-brand-500 text-xs font-medium text-white"></div>
             </div>
             <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
-              23%
+              21%
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="items-center w-full rounded-full max-w-8">
+              <img src="./images/country/country-03.svg" alt="philippines" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-800 text-theme-sm dark:text-white/90">
+                Philippines
+              </p>
+              <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
+                423 Employees
+              </span>
+            </div>
+          </div>
+
+          <div className="flex w-full max-w-[140px] items-center gap-3">
+            <div className="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 dark:bg-gray-800">
+              <div className="absolute left-0 top-0 flex h-full w-[15%] items-center justify-center rounded-sm bg-brand-500 text-xs font-medium text-white"></div>
+            </div>
+            <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+              15%
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="items-center w-full rounded-full max-w-8">
+              <img src="./images/country/country-04.svg" alt="bangladesh" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-800 text-theme-sm dark:text-white/90">
+                Bangladesh
+              </p>
+              <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
+                312 Employees
+              </span>
+            </div>
+          </div>
+
+          <div className="flex w-full max-w-[140px] items-center gap-3">
+            <div className="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 dark:bg-gray-800">
+              <div className="absolute left-0 top-0 flex h-full w-[11%] items-center justify-center rounded-sm bg-brand-500 text-xs font-medium text-white"></div>
+            </div>
+            <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+              11%
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="items-center w-full rounded-full max-w-8">
+              <img src="./images/country/country-05.svg" alt="nepal" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-800 text-theme-sm dark:text-white/90">
+                Nepal
+              </p>
+              <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
+                276 Employees
+              </span>
+            </div>
+          </div>
+
+          <div className="flex w-full max-w-[140px] items-center gap-3">
+            <div className="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 dark:bg-gray-800">
+              <div className="absolute left-0 top-0 flex h-full w-[8%] items-center justify-center rounded-sm bg-brand-500 text-xs font-medium text-white"></div>
+            </div>
+            <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+              8%
             </p>
           </div>
         </div>

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
 import { authApi } from "../../services/api/authApi";
-import { Modal } from "../ui/modal";
+import { Modal } from "../ui/ReusableModal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
@@ -157,79 +157,73 @@ export default function UserProfileCard() {
       <Modal
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
-        className="max-w-[500px] m-4"
+        title="Change Password"
+        size="md"
       >
-        <div className="no-scrollbar relative w-full max-w-[500px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
-          <div className="px-2 pr-14">
-            <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Change Password
-            </h4>
-            <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-              Enter your current password and choose a new password.
-            </p>
-          </div>
-          <form className="flex flex-col">
-            <div className="px-2 pb-3">
-              <div className="space-y-5">
-                <div>
-                  <Label>Current Password</Label>
-                  <Input
-                    type="password"
-                    value={passwordData.currentPassword}
-                    onChange={(e) =>
-                      setPasswordData({
-                        ...passwordData,
-                        currentPassword: e.target.value,
-                      })
-                    }
-                    placeholder="Enter your current password"
-                  />
-                </div>
+        <div className="p-6">
+          <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
+            Enter your current password and choose a new password.
+          </p>
 
-                <div>
-                  <Label>New Password</Label>
-                  <Input
-                    type="password"
-                    value={passwordData.newPassword}
-                    onChange={(e) =>
-                      setPasswordData({
-                        ...passwordData,
-                        newPassword: e.target.value,
-                      })
-                    }
-                    placeholder="Enter your new password"
-                  />
-                </div>
-
-                <div>
-                  <Label>Confirm New Password</Label>
-                  <Input
-                    type="password"
-                    value={passwordData.confirmPassword}
-                    onChange={(e) =>
-                      setPasswordData({
-                        ...passwordData,
-                        confirmPassword: e.target.value,
-                      })
-                    }
-                    placeholder="Confirm your new password"
-                  />
-                </div>
-              </div>
+          <form className="flex flex-col space-y-5">
+            <div>
+              <Label>Current Password</Label>
+              <Input
+                type="password"
+                value={passwordData.currentPassword}
+                onChange={(e) =>
+                  setPasswordData({
+                    ...passwordData,
+                    currentPassword: e.target.value,
+                  })
+                }
+                placeholder="Enter your current password"
+              />
             </div>
-            <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
+
+            <div>
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={passwordData.newPassword}
+                onChange={(e) =>
+                  setPasswordData({
+                    ...passwordData,
+                    newPassword: e.target.value,
+                  })
+                }
+                placeholder="Enter your new password"
+              />
+            </div>
+
+            <div>
+              <Label>Confirm New Password</Label>
+              <Input
+                type="password"
+                value={passwordData.confirmPassword}
+                onChange={(e) =>
+                  setPasswordData({
+                    ...passwordData,
+                    confirmPassword: e.target.value,
+                  })
+                }
+                placeholder="Confirm your new password"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 pt-4">
               <Button
-                size="sm"
                 variant="outline"
                 onClick={() => setIsPasswordModalOpen(false)}
                 disabled={changePasswordMutation.isPending}
+                className="flex-1"
               >
                 Cancel
               </Button>
               <Button
-                size="sm"
                 onClick={handlePasswordChange}
                 disabled={changePasswordMutation.isPending}
+                className="flex-1"
               >
                 {changePasswordMutation.isPending
                   ? "Changing..."
