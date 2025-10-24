@@ -1,4 +1,5 @@
 import { User } from "../../types/auth";
+import { formatRelativeTime } from "../../utils/timeUtils";
 import Badge from "../ui/badge/Badge";
 import Button from "../ui/button/Button";
 // import { formatDistanceToNow } from "date-fns";
@@ -18,11 +19,10 @@ export default function UserCard({
     onToggleStatus(user.id, !user.isActive);
   };
 
-  const formatLastLogin = (lastLogin?: string) => {
-    if (!lastLogin) return "Never";
+  const formatLastActivity = (lastActivity?: string) => {
+    if (!lastActivity) return "Never";
     try {
-      // return formatDistanceToNow(new Date(lastLogin), { addSuffix: true });
-      return new Date(lastLogin).toISOString();
+      return formatRelativeTime(lastActivity);
     } catch {
       return "Unknown";
     }
@@ -77,10 +77,10 @@ export default function UserCard({
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            Last Login
+            Last Activity
           </p>
           <p className="text-sm text-gray-900 dark:text-white">
-            {formatLastLogin(user.lastLogin)}
+            {formatLastActivity(user.lastActivity)}
           </p>
         </div>
         <div>
