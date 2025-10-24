@@ -51,4 +51,12 @@ export const authApi = {
     const response = await axiosInstance.get("/auth/me");
     return response.data;
   },
+
+  changePassword: async (data: {
+    currentPassword: string;
+    newPassword: string;
+  }) => {
+    const response = await axiosInstance.post("/auth/change-password", data);
+    return response.data;
+  },
 };

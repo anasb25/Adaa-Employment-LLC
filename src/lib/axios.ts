@@ -40,7 +40,18 @@ axiosInstance.interceptors.response.use(
     };
 
     // Handle 401 Unauthorized - token expired
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Skip automatic redirect for authentication endpoints (login, signup, etc.)
+    const isAuthEndpoint =
+      originalRequest.url?.includes("/auth/login") ||
+      originalRequest.url?.includes("/auth/signup") ||
+      originalRequest.url?.includes("/auth/forgot-password") ||
+      originalRequest.url?.includes("/auth/reset-password");
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthEndpoint
+    ) {
       originalRequest._retry = true;
 
       try {
@@ -78,8 +89,8 @@ axiosInstance.interceptors.response.use(
     // Handle other errors
     const errorMessage = error.response?.data?.message || "An error occurred";
 
-    // Show toast for errors (except 401 which we handle above)
-    if (error.response?.status !== 401) {
+    // Show toast for errors (except 401 which we handle above, but include auth endpoints)
+    if (error.response?.status !== 401 || isAuthEndpoint) {
       // Check for validation errors
       if (error.response?.data?.errors) {
         const validationErrors = error.response.data.errors;
