@@ -11,13 +11,27 @@ export interface LoginResponse {
   user: User;
 }
 
+export interface Role {
+  id: number;
+  name: string;
+  description: string;
+  isActive: boolean;
+  permissions: Permission[];
+}
+
+export interface Permission {
+  id: number;
+  name: string;
+  description: string;
+  isActive: boolean;
+}
+
 export interface User {
   id: number;
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
-  permissions: string[];
+  role: Role;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

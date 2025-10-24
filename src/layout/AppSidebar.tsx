@@ -42,6 +42,18 @@ const navItems: NavItem[] = [
     path: "/profile",
   },
   {
+    name: "Admin",
+    icon: <UserCircleIcon />,
+    subItems: [
+      {
+        name: "User Invitations",
+        path: "/admin/invitations",
+        pro: false,
+        new: true,
+      },
+    ],
+  },
+  {
     name: "Forms",
     icon: <ListIcon />,
     subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],

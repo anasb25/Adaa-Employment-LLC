@@ -8,7 +8,15 @@ export const QUERY_KEYS = {
   auth: {
     currentUser: ["currentUser"] as const,
   },
-  // Add more query keys as needed
+  roles: {
+    all: ["roles"] as const,
+    detail: (id: number) => ["roles", id] as const,
+  },
+  invitations: {
+    all: ["invitations"] as const,
+    my: ["invitations", "my"] as const,
+    detail: (id: number) => ["invitations", id] as const,
+  },
 } as const;
 
 // Local Storage Keys
