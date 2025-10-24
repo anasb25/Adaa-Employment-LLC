@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { usersApi } from "../../services/api/usersApi";
+import { rolesApi } from "../../services/api/rolesApi";
 import { QUERY_KEYS } from "../../lib/constants";
 import UserCard from "./UserCard";
 import Button from "../ui/button/Button";
@@ -32,6 +33,12 @@ export default function UserList({ onCreateUser }: UserListProps) {
     setPage(1);
   });
 
+  // Fetch roles for dropdown
+  const { data: roles = [] } = useQuery({
+    queryKey: QUERY_KEYS.roles.all,
+    queryFn: () => rolesApi.getRoles(),
+  });
+
   // Fetch users with pagination
   const {
     data: usersData,
@@ -39,14 +46,14 @@ export default function UserList({ onCreateUser }: UserListProps) {
     error,
     refetch,
   } = useQuery({
-    queryKey: [QUERY_KEYS.users.all, page, limit],
+    queryKey: [...QUERY_KEYS.users.all, page, limit],
     queryFn: () => usersApi.getUsers(page, limit),
     enabled: !isSearching,
   });
 
   // Search users
   const { data: searchData, isLoading: isSearchLoading } = useQuery({
-    queryKey: [QUERY_KEYS.users.search, debouncedSearchValue, page, limit],
+    queryKey: [...QUERY_KEYS.users.search, debouncedSearchValue, page, limit],
     queryFn: () => usersApi.searchUsers(debouncedSearchValue, page, limit),
     enabled: isSearching,
   });
@@ -57,8 +64,12 @@ export default function UserList({ onCreateUser }: UserListProps) {
       usersApi.updateUserStatus(userId, { isActive }),
     onSuccess: (data) => {
       toast.success(data.message || "User status updated successfully!");
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.search });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.users.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.users.search,
+      });
     },
     onError: (error: any) => {
       toast.error(
@@ -67,14 +78,47 @@ export default function UserList({ onCreateUser }: UserListProps) {
     },
   });
 
-  const handleToggleStatus = (userId: number, isActive: boolean) => {
-    updateStatusMutation.mutate({ userId, isActive });
-  };
+  // Update user role mutation
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ userId, roleId }: { userId: number; roleId: number }) =>
+      usersApi.updateUserRole(userId, { roleId }),
+    onSuccess: (data) => {
+      toast.success(data.message || "User role updated successfully!");
+      // Only invalidate specific user queries to avoid full re-render
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.users.all,
+        exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.users.search,
+        exact: false,
+      });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error.response?.data?.message || "Failed to update user role"
+      );
+    },
+  });
 
-  const handleClearSearch = () => {
+  const handleToggleStatus = useCallback(
+    (userId: number, isActive: boolean) => {
+      updateStatusMutation.mutate({ userId, isActive });
+    },
+    [updateStatusMutation]
+  );
+
+  const handleRoleChange = useCallback(
+    (userId: number, roleId: number) => {
+      updateRoleMutation.mutate({ userId, roleId });
+    },
+    [updateRoleMutation]
+  );
+
+  const handleClearSearch = useCallback(() => {
     clearSearch();
     setPage(1);
-  };
+  }, [clearSearch]);
 
   const currentData = isSearching ? searchData : usersData;
   const isLoadingData = isLoading || isSearchLoading;
@@ -161,8 +205,17 @@ export default function UserList({ onCreateUser }: UserListProps) {
                 <UserCard
                   key={user.id}
                   user={user}
+                  availableRoles={roles}
                   onToggleStatus={handleToggleStatus}
-                  isUpdating={updateStatusMutation.isPending}
+                  onRoleChange={handleRoleChange}
+                  isUpdating={
+                    updateStatusMutation.isPending &&
+                    updateStatusMutation.variables?.userId === user.id
+                  }
+                  isRoleUpdating={
+                    updateRoleMutation.isPending &&
+                    updateRoleMutation.variables?.userId === user.id
+                  }
                 />
               ))}
             </div>

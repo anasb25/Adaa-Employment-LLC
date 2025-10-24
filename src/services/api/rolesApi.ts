@@ -15,14 +15,14 @@ export const rolesApi = {
   },
 
   // Create a new role
-  createRole: async (data: Partial<Role>): Promise<Role> => {
-    const response = await axiosInstance.post<Role>("/roles", data);
+  createRole: async (roleData: Partial<Role>): Promise<Role> => {
+    const response = await axiosInstance.post<Role>("/roles", roleData);
     return response.data;
   },
 
   // Update a role
-  updateRole: async (id: number, data: Partial<Role>): Promise<Role> => {
-    const response = await axiosInstance.put<Role>(`/roles/${id}`, data);
+  updateRole: async (id: number, roleData: Partial<Role>): Promise<Role> => {
+    const response = await axiosInstance.put<Role>(`/roles/${id}`, roleData);
     return response.data;
   },
 
@@ -33,12 +33,14 @@ export const rolesApi = {
 
   // Assign permissions to a role
   assignPermissions: async (
-    roleId: number,
+    id: number,
     permissionIds: number[]
   ): Promise<Role> => {
     const response = await axiosInstance.post<Role>(
-      `/roles/${roleId}/permissions`,
-      { permissionIds }
+      `/roles/${id}/permissions`,
+      {
+        permissionIds,
+      }
     );
     return response.data;
   },

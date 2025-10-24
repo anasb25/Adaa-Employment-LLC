@@ -1,31 +1,33 @@
-import { User } from "../../types/auth";
-import { formatRelativeTime } from "../../utils/timeUtils";
+import { memo, useMemo } from "react";
+import { User, Role } from "../../types/auth";
+import { formatActivityTime } from "../../utils/timeUtils";
 import Badge from "../ui/badge/Badge";
 import Button from "../ui/button/Button";
-// import { formatDistanceToNow } from "date-fns";
+import RoleDropdown from "./RoleDropdown";
 
 interface UserCardProps {
   user: User;
+  availableRoles: Role[];
   onToggleStatus: (userId: number, isActive: boolean) => void;
+  onRoleChange: (userId: number, roleId: number) => void;
   isUpdating?: boolean;
+  isRoleUpdating?: boolean;
 }
 
-export default function UserCard({
+export default memo(function UserCard({
   user,
+  availableRoles,
   onToggleStatus,
+  onRoleChange,
   isUpdating,
+  isRoleUpdating,
 }: UserCardProps) {
   const handleToggleStatus = () => {
     onToggleStatus(user.id, !user.isActive);
   };
 
-  const formatLastActivity = (lastActivity?: string) => {
-    if (!lastActivity) return "Never";
-    try {
-      return formatRelativeTime(lastActivity);
-    } catch {
-      return "Unknown";
-    }
+  const handleRoleChange = (roleId: number) => {
+    onRoleChange(user.id, roleId);
   };
 
   const formatCreatedDate = (dateString: string) => {
@@ -35,6 +37,16 @@ export default function UserCard({
       return "Unknown";
     }
   };
+
+  // Memoize expensive calculations
+  const formattedCreatedDate = useMemo(
+    () => formatCreatedDate(user.createdAt),
+    [user.createdAt]
+  );
+  const formattedLastActivity = useMemo(
+    () => formatActivityTime(user.lastActivity),
+    [user.lastActivity]
+  );
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-md transition-shadow">
@@ -55,9 +67,11 @@ export default function UserCard({
             </p>
           </div>
         </div>
-        <Badge color={user.isActive ? "success" : "error"} size="sm">
-          {user.isActive ? "Active" : "Inactive"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge color={user.isActive ? "success" : "error"} size="sm">
+            {user.isActive ? "Active" : "Inactive"}
+          </Badge>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -65,9 +79,12 @@ export default function UserCard({
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
             Role
           </p>
-          <p className="text-sm text-gray-900 dark:text-white">
-            {user.role.name.charAt(0).toUpperCase() + user.role.name.slice(1)}
-          </p>
+          <RoleDropdown
+            currentRole={user.role}
+            availableRoles={availableRoles}
+            onRoleChange={handleRoleChange}
+            isUpdating={isRoleUpdating}
+          />
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -80,7 +97,7 @@ export default function UserCard({
             Last Activity
           </p>
           <p className="text-sm text-gray-900 dark:text-white">
-            {formatLastActivity(user.lastActivity)}
+            {formattedLastActivity}
           </p>
         </div>
         <div>
@@ -88,7 +105,7 @@ export default function UserCard({
             Joined
           </p>
           <p className="text-sm text-gray-900 dark:text-white">
-            {formatCreatedDate(user.createdAt)}
+            {formattedCreatedDate}
           </p>
         </div>
       </div>
@@ -117,4 +134,4 @@ export default function UserCard({
       </div>
     </div>
   );
-}
+});

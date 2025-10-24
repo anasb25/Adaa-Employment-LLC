@@ -20,6 +20,15 @@ export interface UserStatusResponse {
   user: User;
 }
 
+export interface UpdateUserRoleRequest {
+  roleId: number;
+}
+
+export interface UserRoleResponse {
+  message: string;
+  user: User;
+}
+
 export const usersApi = {
   // Get all users with pagination
   getUsers: async (
@@ -43,7 +52,7 @@ export const usersApi = {
     id: number,
     data: UpdateUserStatusRequest
   ): Promise<UserStatusResponse> => {
-    const response = await axiosInstance.patch<UserStatusResponse>(
+    const response = await axiosInstance.put<UserStatusResponse>(
       `/users/${id}/status`,
       data
     );
@@ -60,6 +69,18 @@ export const usersApi = {
       `/users/actions/search?q=${encodeURIComponent(
         query
       )}&page=${page}&limit=${limit}`
+    );
+    return response.data;
+  },
+
+  // Update user role
+  updateUserRole: async (
+    id: number,
+    data: UpdateUserRoleRequest
+  ): Promise<UserRoleResponse> => {
+    const response = await axiosInstance.post<UserRoleResponse>(
+      `/users/${id}/role`,
+      data
     );
     return response.data;
   },
