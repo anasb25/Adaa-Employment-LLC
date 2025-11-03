@@ -35,7 +35,10 @@ const navItems: NavItem[] = [
   {
     name: "Admin",
     icon: <UserCircleIcon />,
-    permission: { permissions: ["user:read", "role:read"], operator: "any" }, // Admin section requires either user or role read permission
+    permission: {
+      permissions: ["user:read", "role:read", "employee:read"],
+      operator: "any",
+    }, // Admin section requires either user, role, or employee read permission
     subItems: [
       {
         name: "User Invitations",
@@ -57,6 +60,12 @@ const navItems: NavItem[] = [
         path: "/admin/users",
         pro: false,
         permission: "user:read", // User management requires user read permission
+      },
+      {
+        name: "Employee Management",
+        path: "/admin/employees",
+        pro: false,
+        permission: "employee:read", // Employee management requires employee read permission
       },
     ],
   },

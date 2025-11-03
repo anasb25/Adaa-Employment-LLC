@@ -23,6 +23,7 @@ import Home from "./pages/Dashboard/Home";
 import RoleManagement from "./pages/RoleManagement";
 import UserManagement from "./pages/UserManagement";
 import AdminInvitationsDemo from "./pages/AdminInvitationsDemo";
+import EmployeeManagement from "./pages/EmployeeManagement";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AuthGuard from "./components/auth/AuthGuard";
 import AppProviders from "./providers/AppProviders";
@@ -50,6 +51,7 @@ export default function App() {
             />
             <Route path="/admin/roles" element={<RoleManagement />} />
             <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/employees" element={<EmployeeManagement />} />
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
