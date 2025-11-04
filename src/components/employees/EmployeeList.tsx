@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "../ui/table";
 import Badge from "../ui/badge/Badge";
+import StarRating from "../ui/StarRating";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Pagination from "../ui/pagination/Pagination";
@@ -227,6 +228,39 @@ export default function EmployeeList({
               ? "Active"
               : "On Vacation"}
           </Badge>
+        ),
+      },
+      {
+        key: "skills",
+        label: "Skills",
+        defaultVisible: true,
+        render: (employee: Employee) => (
+          <div className="flex flex-col gap-2">
+            {employee.employeeSkills && employee.employeeSkills.length > 0 ? (
+              <>
+                {employee.employeeSkills.slice(0, 3).map((es) => (
+                  <div
+                    key={es.id}
+                    className="flex items-center gap-1.5 text-sm"
+                  >
+                    <span className="text-gray-800 dark:text-white/90">
+                      {es.skill.skill}
+                    </span>
+                    <StarRating rating={es.rating} maxRating={5} size="sm" />
+                  </div>
+                ))}
+                {employee.employeeSkills.length > 3 && (
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    +{employee.employeeSkills.length - 3} more
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-gray-400 dark:text-gray-500 text-xs">
+                No skills
+              </span>
+            )}
+          </div>
         ),
       },
       {

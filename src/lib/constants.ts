@@ -30,6 +30,12 @@ export const QUERY_KEYS = {
     all: ["employees"] as const,
     detail: (id: number) => ["employees", id] as const,
     search: ["employees", "search"] as const,
+    skills: (id: number) => ["employees", id, "skills"] as const,
+  },
+  skills: {
+    all: ["skills"] as const,
+    detail: (id: number) => ["skills", id] as const,
+    search: ["skills", "search"] as const,
   },
 } as const;
 

@@ -6,7 +6,9 @@ import { usePermissions } from "../hooks/usePermissions";
 import {
   ChevronDownIcon,
   GridIcon,
+  GroupIcon,
   HorizontaLDots,
+  TaskIcon,
   UserCircleIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
@@ -33,12 +35,24 @@ const navItems: NavItem[] = [
     subItems: [{ name: "Employment Overview", path: "/", pro: false }],
   },
   {
+    name: "Employees",
+    icon: <GroupIcon />,
+    path: "/employees",
+    permission: "employee:read",
+  },
+  {
+    name: "Skills",
+    icon: <TaskIcon />,
+    path: "/skills",
+    permission: "skill:read",
+  },
+  {
     name: "Admin",
     icon: <UserCircleIcon />,
     permission: {
-      permissions: ["user:read", "role:read", "employee:read"],
+      permissions: ["user:read", "role:read"],
       operator: "any",
-    }, // Admin section requires either user, role, or employee read permission
+    }, // Admin section requires either user or role read permission
     subItems: [
       {
         name: "User Invitations",
@@ -60,12 +74,6 @@ const navItems: NavItem[] = [
         path: "/admin/users",
         pro: false,
         permission: "user:read", // User management requires user read permission
-      },
-      {
-        name: "Employee Management",
-        path: "/admin/employees",
-        pro: false,
-        permission: "employee:read", // Employee management requires employee read permission
       },
     ],
   },

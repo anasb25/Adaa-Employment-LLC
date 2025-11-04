@@ -1,3 +1,5 @@
+import { EmployeeSkill } from "./skill";
+
 export enum EmployeeStatus {
   ACTIVE = "active",
   ON_VACATION = "on_vacation",
@@ -25,6 +27,7 @@ export interface Employee {
   updatedAt: string;
   createdBy?: number;
   updatedBy?: number;
+  employeeSkills?: EmployeeSkill[];
 }
 
 export interface CreateEmployeeRequest {
