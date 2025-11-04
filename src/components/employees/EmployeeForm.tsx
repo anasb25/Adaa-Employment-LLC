@@ -526,23 +526,6 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
         {/* Employment Dates */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <DatePicker
-            id="date_of_joining"
-            label="Date of Joining"
-            placeholder="Select date of joining"
-            defaultDate={
-              formData.date_of_joining
-                ? new Date(formData.date_of_joining)
-                : undefined
-            }
-            onChange={(_dates, currentDateString) => {
-              setFormData((prev) => ({
-                ...prev,
-                date_of_joining: currentDateString,
-              }));
-            }}
-          />
-
-          <DatePicker
             id="date_of_arrival"
             label="Date of Arrival"
             placeholder="Select date of arrival"
@@ -555,6 +538,23 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
               setFormData((prev) => ({
                 ...prev,
                 date_of_arrival: currentDateString,
+              }));
+            }}
+          />
+
+          <DatePicker
+            id="date_of_joining"
+            label="Date of Joining"
+            placeholder="Select date of joining"
+            defaultDate={
+              formData.date_of_joining
+                ? new Date(formData.date_of_joining)
+                : undefined
+            }
+            onChange={(_dates, currentDateString) => {
+              setFormData((prev) => ({
+                ...prev,
+                date_of_joining: currentDateString,
               }));
             }}
           />

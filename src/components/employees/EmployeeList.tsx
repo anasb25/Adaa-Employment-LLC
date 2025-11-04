@@ -1,29 +1,16 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { employeesApi } from "../../services/api/employeesApi";
 import { QUERY_KEYS } from "../../lib/constants";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
 import Badge from "../ui/badge/Badge";
 import StarRating from "../ui/StarRating";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Pagination from "../ui/pagination/Pagination";
-import {
-  AlertIcon as SearchIcon,
-  PencilIcon,
-  TrashBinIcon,
-  ChevronDownIcon,
-} from "../../icons";
+import { AlertIcon as SearchIcon, PencilIcon, TrashBinIcon } from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
 import { Employee, EmployeeStatus } from "../../types/employee";
-import Checkbox from "../form/input/Checkbox";
 
 interface EmployeeListProps {
   onCreateEmployee?: () => void;
@@ -39,21 +26,12 @@ const formatDate = (dateString?: string) => {
   }
 };
 
-// Define all available columns
-interface ColumnDefinition {
-  key: string;
-  label: string;
-  defaultVisible: boolean;
-  render: (employee: Employee) => React.ReactNode;
-}
-
 export default function EmployeeList({
   onCreateEmployee,
   onEditEmployee,
 }: EmployeeListProps) {
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
-  const [showColumnSelector, setShowColumnSelector] = useState(false);
 
   const limit = 10;
 
@@ -90,256 +68,6 @@ export default function EmployeeList({
       }
     },
     [deleteMutation]
-  );
-
-  // Define all columns
-  const allColumns: ColumnDefinition[] = useMemo(
-    () => [
-      {
-        key: "employee",
-        label: "Employee",
-        defaultVisible: true,
-        render: (employee: Employee) => (
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-brand-100 dark:bg-brand-900/20 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-semibold text-brand-600 dark:text-brand-400">
-                {employee.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div>
-              <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                {employee.name}
-              </span>
-              <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
-                {employee.adaa_emp_code}
-              </span>
-            </div>
-          </div>
-        ),
-      },
-      {
-        key: "dob",
-        label: "Date of Birth",
-        defaultVisible: false,
-        render: (employee: Employee) => formatDate(employee.dob),
-      },
-      {
-        key: "contact",
-        label: "Contact Number",
-        defaultVisible: true,
-        render: (employee: Employee) =>
-          employee.contact_no || (
-            <span className="text-gray-400 dark:text-gray-500">N/A</span>
-          ),
-      },
-      {
-        key: "nationality",
-        label: "Nationality",
-        defaultVisible: true,
-        render: (employee: Employee) =>
-          employee.nationality || (
-            <span className="text-gray-400 dark:text-gray-500">N/A</span>
-          ),
-      },
-      {
-        key: "personal_code",
-        label: "Personal Code",
-        defaultVisible: false,
-        render: (employee: Employee) =>
-          employee.personal_code || (
-            <span className="text-gray-400 dark:text-gray-500">N/A</span>
-          ),
-      },
-      {
-        key: "pp_no",
-        label: "Passport Number",
-        defaultVisible: false,
-        render: (employee: Employee) =>
-          employee.pp_no || (
-            <span className="text-gray-400 dark:text-gray-500">N/A</span>
-          ),
-      },
-      {
-        key: "pp_expiry",
-        label: "Passport Expiry",
-        defaultVisible: false,
-        render: (employee: Employee) => formatDate(employee.pp_expiry),
-      },
-      {
-        key: "emirates_id",
-        label: "Emirates ID",
-        defaultVisible: true,
-        render: (employee: Employee) =>
-          employee.emirates_id || (
-            <span className="text-gray-400 dark:text-gray-500">N/A</span>
-          ),
-      },
-      {
-        key: "emirates_id_expiry",
-        label: "Emirates ID Expiry",
-        defaultVisible: false,
-        render: (employee: Employee) => formatDate(employee.emirates_id_expiry),
-      },
-      {
-        key: "visa_expiry",
-        label: "Visa Expiry",
-        defaultVisible: false,
-        render: (employee: Employee) => formatDate(employee.visa_expiry),
-      },
-      {
-        key: "work_permit_no",
-        label: "Work Permit Number",
-        defaultVisible: false,
-        render: (employee: Employee) =>
-          employee.work_permit_no || (
-            <span className="text-gray-400 dark:text-gray-500">N/A</span>
-          ),
-      },
-      {
-        key: "work_permit_expiry",
-        label: "Work Permit Expiry",
-        defaultVisible: false,
-        render: (employee: Employee) => formatDate(employee.work_permit_expiry),
-      },
-      {
-        key: "date_of_joining",
-        label: "Date of Joining",
-        defaultVisible: true,
-        render: (employee: Employee) => formatDate(employee.date_of_joining),
-      },
-      {
-        key: "date_of_arrival",
-        label: "Date of Arrival",
-        defaultVisible: false,
-        render: (employee: Employee) => formatDate(employee.date_of_arrival),
-      },
-      {
-        key: "status",
-        label: "Status",
-        defaultVisible: true,
-        render: (employee: Employee) => (
-          <Badge
-            size="sm"
-            color={
-              employee.status === EmployeeStatus.ACTIVE ? "success" : "warning"
-            }
-          >
-            {employee.status === EmployeeStatus.ACTIVE
-              ? "Active"
-              : "On Vacation"}
-          </Badge>
-        ),
-      },
-      {
-        key: "skills",
-        label: "Skills",
-        defaultVisible: true,
-        render: (employee: Employee) => (
-          <div className="flex flex-col gap-2">
-            {employee.employeeSkills && employee.employeeSkills.length > 0 ? (
-              <>
-                {employee.employeeSkills.slice(0, 3).map((es) => (
-                  <div
-                    key={es.id}
-                    className="flex items-center gap-1.5 text-sm"
-                  >
-                    <span className="text-gray-800 dark:text-white/90">
-                      {es.skill.skill}
-                    </span>
-                    <StarRating rating={es.rating} maxRating={5} size="sm" />
-                  </div>
-                ))}
-                {employee.employeeSkills.length > 3 && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    +{employee.employeeSkills.length - 3} more
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="text-gray-400 dark:text-gray-500 text-xs">
-                No skills
-              </span>
-            )}
-          </div>
-        ),
-      },
-      {
-        key: "actions",
-        label: "Actions",
-        defaultVisible: true,
-        render: (employee: Employee) => (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleEdit(employee)}
-              className="px-3 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
-            >
-              <PencilIcon className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDelete(employee.id)}
-              disabled={
-                deleteMutation.isPending &&
-                deleteMutation.variables === employee.id
-              }
-              className="px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
-            >
-              <TrashBinIcon className="w-4 h-4" />
-            </Button>
-          </div>
-        ),
-      },
-    ],
-    [
-      handleEdit,
-      handleDelete,
-      deleteMutation.isPending,
-      deleteMutation.variables,
-    ]
-  );
-
-  // Load column visibility from localStorage or use defaults
-  const getInitialVisibility = () => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("employee-columns-visibility");
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          // Fallback to defaults if parsing fails
-        }
-      }
-    }
-    // Return default visibility
-    const visibility: Record<string, boolean> = {};
-    allColumns.forEach((col) => {
-      visibility[col.key] = col.defaultVisible;
-    });
-    return visibility;
-  };
-
-  const [columnVisibility, setColumnVisibility] =
-    useState<Record<string, boolean>>(getInitialVisibility);
-
-  // Save visibility to localStorage whenever it changes
-  const updateColumnVisibility = (key: string, visible: boolean) => {
-    const newVisibility = { ...columnVisibility, [key]: visible };
-    setColumnVisibility(newVisibility);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(
-        "employee-columns-visibility",
-        JSON.stringify(newVisibility)
-      );
-    }
-  };
-
-  // Get visible columns
-  const visibleColumns = useMemo(
-    () => allColumns.filter((col) => columnVisibility[col.key] !== false),
-    [allColumns, columnVisibility]
   );
 
   // Use the custom search hook with debouncing
@@ -389,8 +117,8 @@ export default function EmployeeList({
 
   return (
     <div className="space-y-6">
-      {/* Search Bar and Column Selector */}
-      <div className="flex items-center gap-4 flex-wrap">
+      {/* Search Bar */}
+      <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
@@ -406,82 +134,7 @@ export default function EmployeeList({
             Clear
           </Button>
         )}
-        {/* Column Visibility Toggle */}
-        <div className="relative">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowColumnSelector(!showColumnSelector)}
-            className="flex items-center gap-2"
-          >
-            Columns
-            <ChevronDownIcon
-              className={`w-4 h-4 transition-transform ${
-                showColumnSelector ? "rotate-180" : ""
-              }`}
-            />
-          </Button>
-
-          {/* Column Selector Dropdown */}
-          {showColumnSelector && (
-            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg z-50 max-h-96 overflow-y-auto">
-              <div className="p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                    Show Columns
-                  </h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const allVisible: Record<string, boolean> = {};
-                      allColumns.forEach((col) => {
-                        allVisible[col.key] = true;
-                      });
-                      setColumnVisibility(allVisible);
-                      if (typeof window !== "undefined") {
-                        localStorage.setItem(
-                          "employee-columns-visibility",
-                          JSON.stringify(allVisible)
-                        );
-                      }
-                    }}
-                    className="text-xs px-2 py-1"
-                  >
-                    Show All
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {allColumns.map((column) => (
-                    <label
-                      key={column.key}
-                      className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <Checkbox
-                        checked={columnVisibility[column.key] !== false}
-                        onChange={(checked) =>
-                          updateColumnVisibility(column.key, checked)
-                        }
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {column.label}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
-
-      {/* Click outside to close column selector */}
-      {showColumnSelector && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowColumnSelector(false)}
-        />
-      )}
 
       {/* Error State */}
       {error && (
@@ -534,57 +187,239 @@ export default function EmployeeList({
           </div>
         )}
 
-      {/* Employees Table */}
+      {/* Employees Card Grid */}
       {!isLoadingData &&
         !error &&
         currentData?.data &&
         currentData.data.length > 0 && (
           <>
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-              <div className="max-w-full overflow-x-auto">
-                <Table>
-                  {/* Table Header */}
-                  <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
-                    <TableRow>
-                      {visibleColumns.map((column) => (
-                        <TableCell
-                          key={column.key}
-                          isHeader
-                          className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                        >
-                          {column.label}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
+            <div className="space-y-4">
+              {currentData.data.map((employee) => (
+                <div
+                  key={employee.id}
+                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6"
+                >
+                  {/* Employee Header */}
+                  <div className="flex items-start justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-lg font-semibold text-brand-600 dark:text-brand-400">
+                          {employee.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {employee.name}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          ADAA Code: {employee.adaa_emp_code}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        size="sm"
+                        color={
+                          employee.status === EmployeeStatus.ACTIVE
+                            ? "success"
+                            : "warning"
+                        }
+                      >
+                        {employee.status === EmployeeStatus.ACTIVE
+                          ? "Active"
+                          : "On Vacation"}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(employee)}
+                        className="px-3 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(employee.id)}
+                        disabled={
+                          deleteMutation.isPending &&
+                          deleteMutation.variables === employee.id
+                        }
+                        className="px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                      >
+                        <TrashBinIcon className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
 
-                  {/* Table Body */}
-                  <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                    {currentData.data.map((employee) => (
-                      <TableRow key={employee.id}>
-                        {visibleColumns.map((column) => (
-                          <TableCell
-                            key={column.key}
-                            className={`px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 ${
-                              column.key === "employee" ||
-                              column.key === "status"
-                                ? "px-5 py-4 sm:px-6"
-                                : ""
-                            } ${
-                              column.key === "status" ||
-                              column.key === "actions"
-                                ? ""
-                                : ""
-                            }`}
-                          >
-                            {column.render(employee)}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  {/* Cards Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+                    {/* Basic Information Card */}
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                        Basic Information
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Date of Birth:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {formatDate(employee.dob)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Nationality:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {employee.nationality || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Personal Code:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {employee.personal_code || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Contact:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {employee.contact_no || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Date of Arrival:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {formatDate(employee.date_of_arrival)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Date of Joining:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {formatDate(employee.date_of_joining)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Emirates ID Card */}
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                        Emirates ID
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            ID Number:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {employee.emirates_id || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Expiry Date:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {formatDate(employee.emirates_id_expiry)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Passport & Visa Card */}
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                        Passport & Visa
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Passport No:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {employee.pp_no || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Passport Expiry:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {formatDate(employee.pp_expiry)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Visa Expiry:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {formatDate(employee.visa_expiry)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Work Permit No:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {employee.work_permit_no || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Work Permit Expiry:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {formatDate(employee.work_permit_expiry)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Skills Card */}
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                        Skills
+                      </h4>
+                      <div className="space-y-2">
+                        {employee.employeeSkills &&
+                        employee.employeeSkills.length > 0 ? (
+                          <>
+                            {employee.employeeSkills.map((es) => (
+                              <div
+                                key={es.id}
+                                className="flex items-center justify-between text-sm"
+                              >
+                                <span className="text-gray-900 dark:text-white">
+                                  {es.skill.skill}
+                                </span>
+                                <StarRating
+                                  rating={es.rating}
+                                  maxRating={5}
+                                  size="sm"
+                                />
+                              </div>
+                            ))}
+                          </>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500 text-sm">
+                            No skills assigned
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Pagination */}
