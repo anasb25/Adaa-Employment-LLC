@@ -1,11 +1,12 @@
 export interface Skill {
   id: number;
-  type: string;
   skill: string;
   createdAt: string;
   updatedAt: string;
   createdBy?: number;
   updatedBy?: number;
+  skillType?: SkillType;
+  skillTypeId?: number;
   employeeSkills?: EmployeeSkill[];
 }
 
@@ -20,7 +21,7 @@ export interface EmployeeSkill {
 }
 
 export interface CreateSkillRequest {
-  type: string;
+  skillTypeId: number;
   skill: string;
 }
 
@@ -35,3 +36,9 @@ export interface UpdateSkillRatingRequest {
   rating: number;
 }
 
+export interface SkillType {
+  id: number;
+  type: string;
+  createdAt: string;
+  updatedAt: string;
+}

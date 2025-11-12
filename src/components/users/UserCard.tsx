@@ -12,6 +12,7 @@ interface UserCardProps {
   onRoleChange: (userId: number, roleId: number) => void;
   isUpdating?: boolean;
   isRoleUpdating?: boolean;
+  currentUserId?: number;
 }
 
 export default memo(function UserCard({
@@ -21,7 +22,12 @@ export default memo(function UserCard({
   onRoleChange,
   isUpdating,
   isRoleUpdating,
+  currentUserId,
 }: UserCardProps) {
+  const isCurrentUser =
+    currentUserId !== undefined && user.id === currentUserId;
+  const shouldHideDeactivateButton = isCurrentUser && user.isActive;
+
   const handleToggleStatus = () => {
     onToggleStatus(user.id, !user.isActive);
   };
@@ -114,23 +120,25 @@ export default memo(function UserCard({
         <div className="text-xs text-gray-500 dark:text-gray-400">
           {user.role.permissions?.length || 0} permissions
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleToggleStatus}
-          disabled={isUpdating}
-          className={`${
-            user.isActive
-              ? "text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
-              : "text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
-          }`}
-        >
-          {isUpdating
-            ? "Updating..."
-            : user.isActive
-            ? "Deactivate"
-            : "Activate"}
-        </Button>
+        {!shouldHideDeactivateButton && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleToggleStatus}
+            disabled={isUpdating}
+            className={
+              user.isActive
+                ? "text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                : "text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
+            }
+          >
+            {isUpdating
+              ? "Updating..."
+              : user.isActive
+              ? "Deactivate"
+              : "Activate"}
+          </Button>
+        )}
       </div>
     </div>
   );

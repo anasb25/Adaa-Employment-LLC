@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { skillsApi } from "../../services/api/skillsApi";
 import { Skill, CreateSkillRequest } from "../../types/skill";
@@ -8,6 +8,7 @@ import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import Select from "../form/Select";
 import Button from "../ui/button/Button";
+import { skillTypesApi } from "../../services/api/skillTypesApi";
 
 interface SkillFormProps {
   skill?: Skill;
@@ -19,8 +20,15 @@ export default function SkillForm({ skill, onClose }: SkillFormProps) {
   const isEditing = !!skill;
 
   const [formData, setFormData] = useState<CreateSkillRequest>({
-    type: skill?.type || "",
+    skillTypeId: skill?.skillType?.id || (undefined as unknown as number),
     skill: skill?.skill || "",
+  });
+
+  // Fetch available skill types
+  const { data: skillTypes = [] } = useQuery({
+    queryKey: QUERY_KEYS.skillTypes.all,
+    queryFn: () => skillTypesApi.getAll(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -62,11 +70,8 @@ export default function SkillForm({ skill, onClose }: SkillFormProps) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const skillTypeOptions = [
-    { value: "White Collar", label: "White Collar" },
-    { value: "Blue Collar", label: "Blue Collar" },
-    { value: "Gray Collar", label: "Gray Collar" },
-  ];
+  const skillTypeOptions =
+    skillTypes?.map((t) => ({ value: String(t.id), label: t.type })) || [];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,9 +108,16 @@ export default function SkillForm({ skill, onClose }: SkillFormProps) {
           </Label>
           <Select
             options={skillTypeOptions}
-            value={formData.type}
+            value={
+              formData.skillTypeId !== undefined
+                ? String(formData.skillTypeId)
+                : ""
+            }
             onChange={(value) =>
-              setFormData((prev) => ({ ...prev, type: value }))
+              setFormData((prev) => ({
+                ...prev,
+                skillTypeId: Number(value),
+              }))
             }
             placeholder="Select skill type"
           />

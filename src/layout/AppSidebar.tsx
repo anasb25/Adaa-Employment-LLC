@@ -75,6 +75,12 @@ const navItems: NavItem[] = [
         pro: false,
         permission: "user:read", // User management requires user read permission
       },
+      {
+        name: "Skill Types",
+        path: "/admin/skill-types",
+        pro: false,
+        permission: "skill:read",
+      },
     ],
   },
 ];

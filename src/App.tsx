@@ -25,6 +25,7 @@ import UserManagement from "./pages/UserManagement";
 import AdminInvitationsDemo from "./pages/AdminInvitationsDemo";
 import EmployeeManagement from "./pages/EmployeeManagement";
 import SkillManagement from "./pages/SkillManagement";
+import SkillTypesManagement from "./pages/SkillTypesManagement";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AuthGuard from "./components/auth/AuthGuard";
 import AppProviders from "./providers/AppProviders";
@@ -56,6 +57,10 @@ export default function App() {
             />
             <Route path="/admin/roles" element={<RoleManagement />} />
             <Route path="/admin/users" element={<UserManagement />} />
+            <Route
+              path="/admin/skill-types"
+              element={<SkillTypesManagement />}
+            />
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />

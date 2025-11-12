@@ -10,6 +10,7 @@ import Input from "../form/input/InputField";
 import Pagination from "../ui/pagination/Pagination";
 import { AlertIcon as SearchIcon } from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
+import { useAuth } from "../../hooks/useAuth";
 
 interface UserListProps {
   onCreateUser?: () => void;
@@ -18,6 +19,7 @@ interface UserListProps {
 export default function UserList({ onCreateUser }: UserListProps) {
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
 
   const limit = 10;
 
@@ -216,6 +218,7 @@ export default function UserList({ onCreateUser }: UserListProps) {
                     updateRoleMutation.isPending &&
                     updateRoleMutation.variables?.userId === user.id
                   }
+                  currentUserId={currentUser?.id}
                 />
               ))}
             </div>

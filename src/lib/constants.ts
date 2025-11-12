@@ -37,6 +37,9 @@ export const QUERY_KEYS = {
     detail: (id: number) => ["skills", id] as const,
     search: ["skills", "search"] as const,
   },
+  skillTypes: {
+    all: ["skillTypes"] as const,
+  },
 } as const;
 
 // Local Storage Keys

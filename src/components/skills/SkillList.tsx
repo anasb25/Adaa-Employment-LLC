@@ -223,7 +223,7 @@ export default function SkillList({
                           </span>
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {skill.type}
+                          {skill.skillType?.type || "—"}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                           {skill.employeeSkills?.length || 0}
