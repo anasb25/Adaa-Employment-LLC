@@ -47,6 +47,18 @@ const navItems: NavItem[] = [
     permission: "skill:read",
   },
   {
+    name: "Clients",
+    icon: <GroupIcon />,
+    path: "/clients",
+    // Optional: add permission gating later if needed
+  },
+  {
+    name: "Projects",
+    icon: <TaskIcon />,
+    path: "/projects",
+    // Optional: add permission gating later if needed
+  },
+  {
     name: "Admin",
     icon: <UserCircleIcon />,
     permission: {
