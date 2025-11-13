@@ -28,6 +28,8 @@ import SkillManagement from "./pages/SkillManagement";
 import SkillTypesManagement from "./pages/SkillTypesManagement";
 import ClientManagement from "./pages/ClientManagement";
 import ProjectManagement from "./pages/ProjectManagement";
+import AllocationManagement from "./pages/AllocationManagement";
+import CreateAllocation from "./pages/CreateAllocation";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AuthGuard from "./components/auth/AuthGuard";
 import AppProviders from "./providers/AppProviders";
@@ -53,6 +55,8 @@ export default function App() {
             <Route path="/skills" element={<SkillManagement />} />
             <Route path="/clients" element={<ClientManagement />} />
             <Route path="/projects" element={<ProjectManagement />} />
+            <Route path="/allocations" element={<AllocationManagement />} />
+            <Route path="/allocations/create" element={<CreateAllocation />} />
 
             {/* Admin Pages */}
             <Route

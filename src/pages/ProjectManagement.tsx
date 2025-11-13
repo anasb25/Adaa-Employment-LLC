@@ -20,10 +20,13 @@ import {
 } from "../components/ui/table";
 import { toast } from "sonner";
 import { Project, CreateProjectRequest, ProjectStatus } from "../types/project";
+import ProjectSkillsModal from "../components/projects/ProjectSkillsModal";
 
 export default function ProjectManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [form, setForm] = useState<CreateProjectRequest>({
     name: "",
     location: "",
@@ -186,6 +189,12 @@ export default function ProjectManagement() {
                     isHeader
                     className="px-5 py-3 text-theme-xs text-gray-500 text-start"
                   >
+                    Skills
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 text-theme-xs text-gray-500 text-start"
+                  >
                     Notes
                   </TableCell>
                   <TableCell
@@ -226,12 +235,41 @@ export default function ProjectManagement() {
                       </Badge>
                     </TableCell>
                     <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                      {p.projectSkills && p.projectSkills.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {p.projectSkills.map((ps: any) => (
+                            <Badge key={ps.id} size="sm" color="light">
+                              {ps.skill?.skill}
+                              {ps.sale_price && (
+                                <span className="ml-1">
+                                  (${Number(ps.sale_price).toFixed(2)})
+                                </span>
+                              )}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-500">
+                          —
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
                       {p.notes || "-"}
                     </TableCell>
                     <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
                       <div className="flex gap-2">
                         <Button variant="outline" onClick={() => openEdit(p)}>
                           Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedProject(p);
+                            setIsSkillsModalOpen(true);
+                          }}
+                        >
+                          Manage Skills
                         </Button>
                         <Button
                           variant="outline"
@@ -320,6 +358,18 @@ export default function ProjectManagement() {
           </Button>
         </div>
       </Modal>
+
+      {/* Project Skills Modal */}
+      {selectedProject && (
+        <ProjectSkillsModal
+          project={selectedProject}
+          isOpen={isSkillsModalOpen}
+          onClose={() => {
+            setIsSkillsModalOpen(false);
+            setSelectedProject(null);
+          }}
+        />
+      )}
     </>
   );
 }

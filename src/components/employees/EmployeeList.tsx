@@ -193,25 +193,25 @@ export default function EmployeeList({
         currentData?.data &&
         currentData.data.length > 0 && (
           <>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {currentData.data.map((employee) => (
                 <div
                   key={employee.id}
-                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6"
+                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
                 >
                   {/* Employee Header */}
-                  <div className="flex items-start justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900/20 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg font-semibold text-brand-600 dark:text-brand-400">
+                  <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-brand-100 dark:bg-brand-900/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-base font-semibold text-brand-600 dark:text-brand-400">
                           {employee.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                           {employee.name}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           ADAA Code: {employee.adaa_emp_code}
                         </p>
                       </div>
@@ -253,13 +253,13 @@ export default function EmployeeList({
                   </div>
 
                   {/* Cards Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                     {/* Basic Information Card */}
-                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">
                         Basic Information
                       </h4>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1.5 text-xs">
                         <div>
                           <span className="text-gray-500 dark:text-gray-400">
                             Date of Birth:
@@ -311,37 +311,25 @@ export default function EmployeeList({
                       </div>
                     </div>
 
-                    {/* Emirates ID Card */}
-                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                        Emirates ID
+                    {/* Identity Card */}
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">
+                        Identity
                       </h4>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1.5 text-xs">
                         <div>
                           <span className="text-gray-500 dark:text-gray-400">
-                            ID Number:
+                            Emirates ID:
                           </span>
                           <span className="ml-2 text-gray-900 dark:text-white">
                             {employee.emirates_id || "N/A"}
                           </span>
+                          {employee.emirates_id_expiry && (
+                            <span className="ml-2 text-gray-500 dark:text-gray-400">
+                              (Exp: {formatDate(employee.emirates_id_expiry)})
+                            </span>
+                          )}
                         </div>
-                        <div>
-                          <span className="text-gray-500 dark:text-gray-400">
-                            Expiry Date:
-                          </span>
-                          <span className="ml-2 text-gray-900 dark:text-white">
-                            {formatDate(employee.emirates_id_expiry)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Passport & Visa Card */}
-                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                        Passport & Visa
-                      </h4>
-                      <div className="space-y-2 text-sm">
                         <div>
                           <span className="text-gray-500 dark:text-gray-400">
                             Passport No:
@@ -349,14 +337,11 @@ export default function EmployeeList({
                           <span className="ml-2 text-gray-900 dark:text-white">
                             {employee.pp_no || "N/A"}
                           </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500 dark:text-gray-400">
-                            Passport Expiry:
-                          </span>
-                          <span className="ml-2 text-gray-900 dark:text-white">
-                            {formatDate(employee.pp_expiry)}
-                          </span>
+                          {employee.pp_expiry && (
+                            <span className="ml-2 text-gray-500 dark:text-gray-400">
+                              (Exp: {formatDate(employee.pp_expiry)})
+                            </span>
+                          )}
                         </div>
                         <div>
                           <span className="text-gray-500 dark:text-gray-400">
@@ -368,36 +353,33 @@ export default function EmployeeList({
                         </div>
                         <div>
                           <span className="text-gray-500 dark:text-gray-400">
-                            Work Permit No:
+                            Work Permit:
                           </span>
                           <span className="ml-2 text-gray-900 dark:text-white">
                             {employee.work_permit_no || "N/A"}
                           </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500 dark:text-gray-400">
-                            Work Permit Expiry:
-                          </span>
-                          <span className="ml-2 text-gray-900 dark:text-white">
-                            {formatDate(employee.work_permit_expiry)}
-                          </span>
+                          {employee.work_permit_expiry && (
+                            <span className="ml-2 text-gray-500 dark:text-gray-400">
+                              (Exp: {formatDate(employee.work_permit_expiry)})
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
 
                     {/* Skills Card */}
-                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">
                         Skills
                       </h4>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {employee.employeeSkills &&
                         employee.employeeSkills.length > 0 ? (
                           <>
                             {employee.employeeSkills.map((es) => (
                               <div
                                 key={es.id}
-                                className="flex items-center justify-between text-sm"
+                                className="flex items-center justify-between text-xs"
                               >
                                 <span className="text-gray-900 dark:text-white">
                                   {es.skill.skill}
@@ -411,7 +393,7 @@ export default function EmployeeList({
                             ))}
                           </>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500 text-sm">
+                          <span className="text-gray-400 dark:text-gray-500 text-xs">
                             No skills assigned
                           </span>
                         )}

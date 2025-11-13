@@ -202,6 +202,18 @@ export default function SkillList({
                         isHeader
                         className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                       >
+                        Cost Price
+                      </TableCell>
+                      <TableCell
+                        isHeader
+                        className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      >
+                        Sale Price
+                      </TableCell>
+                      <TableCell
+                        isHeader
+                        className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      >
                         Employees Count
                       </TableCell>
                       <TableCell
@@ -224,6 +236,18 @@ export default function SkillList({
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                           {skill.skillType?.type || "—"}
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                          {skill.cost_price !== undefined &&
+                          skill.cost_price !== null
+                            ? `$${Number(skill.cost_price).toFixed(2)}`
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                          {skill.sale_price !== undefined &&
+                          skill.sale_price !== null
+                            ? `$${Number(skill.sale_price).toFixed(2)}`
+                            : "—"}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                           {skill.employeeSkills?.length || 0}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { employeesApi } from "../../services/api/employeesApi";
@@ -27,6 +27,7 @@ interface EmployeeFormProps {
 interface PendingSkill {
   skillId: number;
   rating: number;
+  cost_price?: number;
   skill: Skill;
 }
 
@@ -35,7 +36,11 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
   const isEditing = !!employee;
   const [selectedSkillId, setSelectedSkillId] = useState<string>("");
   const [rating, setRating] = useState<string>("0");
+  const [costPrice, setCostPrice] = useState<string>("");
   const [pendingSkills, setPendingSkills] = useState<PendingSkill[]>([]);
+  const [editingSkillId, setEditingSkillId] = useState<number | null>(null);
+  const [editingRating, setEditingRating] = useState<string>("0");
+  const [editingCostPrice, setEditingCostPrice] = useState<string>("");
 
   const [formData, setFormData] = useState<CreateEmployeeRequest>({
     adaa_emp_code: employee?.adaa_emp_code || "",
@@ -68,6 +73,7 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
               employeeSkillsApi.assignSkill(createdEmployee.id, {
                 skillId: pendingSkill.skillId,
                 rating: pendingSkill.rating,
+                cost_price: pendingSkill.cost_price,
               })
             )
           );
@@ -129,6 +135,18 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
 
   const allSkills = allSkillsData?.data || [];
 
+  // Auto-fill cost price from selected skill
+  useEffect(() => {
+    if (selectedSkillId) {
+      const selectedSkill = allSkills.find(
+        (s: Skill) => s.id === parseInt(selectedSkillId)
+      );
+      if (selectedSkill && selectedSkill.cost_price !== undefined) {
+        setCostPrice(selectedSkill.cost_price?.toString());
+      }
+    }
+  }, [selectedSkillId, allSkills]);
+
   // Fetch employee skills (only when editing)
   const { data: employeeSkills = [] } = useQuery({
     queryKey: employee ? QUERY_KEYS.employees.skills(employee.id) : ["empty"],
@@ -140,9 +158,21 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
 
   // Assign skill mutation
   const assignSkillMutation = useMutation({
-    mutationFn: ({ skillId, rating }: { skillId: number; rating: number }) =>
+    mutationFn: ({
+      skillId,
+      rating,
+      cost_price,
+    }: {
+      skillId: number;
+      rating: number;
+      cost_price?: number;
+    }) =>
       employee
-        ? employeeSkillsApi.assignSkill(employee.id, { skillId, rating })
+        ? employeeSkillsApi.assignSkill(employee.id, {
+            skillId,
+            rating,
+            cost_price,
+          })
         : Promise.reject("Employee not created yet"),
     onSuccess: () => {
       toast.success("Skill assigned successfully!");
@@ -162,14 +192,26 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     },
   });
 
-  // Update rating mutation
-  const updateRatingMutation = useMutation({
-    mutationFn: ({ skillId, rating }: { skillId: number; rating: number }) =>
+  // Update skill mutation (rating and cost_price)
+  const updateSkillMutation = useMutation({
+    mutationFn: ({
+      skillId,
+      rating,
+      cost_price,
+    }: {
+      skillId: number;
+      rating: number;
+      cost_price?: number;
+    }) =>
       employee
-        ? employeeSkillsApi.updateSkillRating(employee.id, skillId, { rating })
+        ? employeeSkillsApi.assignSkill(employee.id, {
+            skillId,
+            rating,
+            cost_price,
+          })
         : Promise.reject("Employee not found"),
     onSuccess: () => {
-      toast.success("Skill rating updated successfully!");
+      toast.success("Skill updated successfully!");
       if (employee) {
         queryClient.invalidateQueries({
           queryKey: QUERY_KEYS.employees.skills(employee.id),
@@ -178,9 +220,12 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
           queryKey: QUERY_KEYS.employees.detail(employee.id),
         });
       }
+      setEditingSkillId(null);
+      setEditingRating("0");
+      setEditingCostPrice("");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to update rating");
+      toast.error(error.response?.data?.message || "Failed to update skill");
     },
   });
 
@@ -224,7 +269,7 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
 
   const skillOptions = availableSkills.map((skill: Skill) => ({
     value: skill.id.toString(),
-    label: `${skill.type} - ${skill.skill}`,
+    label: `${skill.skillType?.type || "Unknown"} - ${skill.skill}`,
   }));
 
   const handleAssignSkill = () => {
@@ -233,12 +278,14 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
       return;
     }
     const ratingNum = parseInt(rating) || 0;
+    const costPriceNum = costPrice ? parseFloat(costPrice) : undefined;
 
     if (isEditing && employee) {
       // Existing employee - assign immediately
       assignSkillMutation.mutate({
         skillId: parseInt(selectedSkillId),
         rating: ratingNum,
+        cost_price: costPriceNum,
       });
     } else {
       // New employee - add to pending list
@@ -251,28 +298,55 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
           {
             skillId: selectedSkill.id,
             rating: ratingNum,
+            cost_price: costPriceNum,
             skill: selectedSkill,
           },
         ]);
         setSelectedSkillId("");
         setRating("0");
+        setCostPrice("");
       }
     }
   };
 
-  const handleUpdateRating = (skillId: number, currentRating: number) => {
-    const newRating = prompt(
-      `Enter new rating (0-5):`,
-      currentRating.toString()
+  const handleStartEdit = (
+    skillId: number,
+    currentRating: number,
+    currentCostPrice?: number
+  ) => {
+    setEditingSkillId(skillId);
+    setEditingRating(currentRating.toString());
+    setEditingCostPrice(
+      currentCostPrice !== undefined && currentCostPrice !== null
+        ? currentCostPrice.toString()
+        : ""
     );
-    if (newRating !== null) {
-      const ratingNum = parseInt(newRating);
-      if (isNaN(ratingNum) || ratingNum < 0 || ratingNum > 5) {
-        toast.error("Rating must be between 0 and 5");
-        return;
-      }
-      updateRatingMutation.mutate({ skillId, rating: ratingNum });
+  };
+
+  const handleSaveEdit = () => {
+    if (editingSkillId === null) return;
+
+    const ratingNum = parseInt(editingRating) || 0;
+    if (ratingNum < 0 || ratingNum > 5) {
+      toast.error("Rating must be between 0 and 5");
+      return;
     }
+
+    const costPriceNum = editingCostPrice
+      ? parseFloat(editingCostPrice)
+      : undefined;
+
+    updateSkillMutation.mutate({
+      skillId: editingSkillId,
+      rating: ratingNum,
+      cost_price: costPriceNum,
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSkillId(null);
+    setEditingRating("0");
+    setEditingCostPrice("");
   };
 
   const handleRemoveSkill = (skillId: number, skillName: string) => {
@@ -582,27 +656,39 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
           </h3>
 
           {/* Assign New Skill */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-            <div>
-              <Label htmlFor="skill-select">Select Skill</Label>
-              <Select
-                options={skillOptions}
-                placeholder="Choose a skill to assign"
-                value={selectedSkillId}
-                onChange={setSelectedSkillId}
-              />
-            </div>
-            <div>
-              <Label htmlFor="rating">Rating (0-5)</Label>
-              <Input
-                type="number"
-                id="rating"
-                min="0"
-                max="5"
-                value={rating}
-                onChange={(e) => setRating(e.target.value)}
-                placeholder="0"
-              />
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="skill-select">Select Skill</Label>
+                <Select
+                  options={skillOptions}
+                  placeholder="Choose a skill to assign"
+                  value={selectedSkillId}
+                  onChange={setSelectedSkillId}
+                />
+              </div>
+              <div>
+                <Label htmlFor="rating">Rating (0-5)</Label>
+                <Input
+                  type="number"
+                  id="rating"
+                  min="0"
+                  max="5"
+                  value={rating}
+                  onChange={(e) => setRating(e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <Label htmlFor="cost_price">Cost Price (Optional)</Label>
+                <Input
+                  type="number"
+                  id="cost_price"
+                  value={costPrice || ""}
+                  onChange={(e) => setCostPrice(e.target.value)}
+                  placeholder="Auto-filled from skill"
+                />
+              </div>
             </div>
             <div className="flex items-end">
               <Button
@@ -628,101 +714,200 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                 No skills assigned yet. Assign skills using the form above.
               </p>
             ) : (
-              displaySkills.map((displaySkill: any) => (
-                <div
-                  key={displaySkill.id}
-                  className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <Badge size="sm" color="info">
-                      {displaySkill.skill.type}
-                    </Badge>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {displaySkill.skill.skill}
-                    </span>
-                    <Badge size="sm" color="primary">
-                      Rating: {displaySkill.rating}/5
-                    </Badge>
-                    {displaySkill.isPending && (
-                      <Badge size="sm" color="light">
-                        Pending
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isEditing && !displaySkill.isPending ? (
-                      <>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleUpdateRating(
-                              displaySkill.skillId,
-                              displaySkill.rating
-                            )
-                          }
-                          disabled={updateRatingMutation.isPending}
-                          className="px-3 py-1 text-xs"
-                        >
-                          Update Rating
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleRemoveSkill(
-                              displaySkill.skillId,
-                              `${displaySkill.skill.type} - ${displaySkill.skill.skill}`
-                            )
-                          }
-                          disabled={
-                            removeSkillMutation.isPending &&
-                            removeSkillMutation.variables ===
-                              displaySkill.skillId
-                          }
-                          className="px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
-                        >
-                          <TrashBinIcon className="w-4 h-4" />
-                        </Button>
-                      </>
+              displaySkills.map((displaySkill: any) => {
+                const isCurrentlyEditing =
+                  editingSkillId === displaySkill.skillId;
+
+                return (
+                  <div
+                    key={displaySkill.id}
+                    className={`p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg ${
+                      isCurrentlyEditing
+                        ? "border-blue-300 dark:border-blue-700"
+                        : ""
+                    }`}
+                  >
+                    {isCurrentlyEditing &&
+                    isEditing &&
+                    !displaySkill.isPending ? (
+                      // Inline editing form
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Badge size="sm" color="info">
+                            {displaySkill.skill.skillType?.type || "N/A"}
+                          </Badge>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {displaySkill.skill.skill}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <Label
+                              htmlFor={`edit-rating-${displaySkill.skillId}`}
+                            >
+                              Rating (0-5)
+                            </Label>
+                            <Input
+                              type="number"
+                              id={`edit-rating-${displaySkill.skillId}`}
+                              value={editingRating}
+                              onChange={(e) => setEditingRating(e.target.value)}
+                              placeholder="0"
+                            />
+                          </div>
+                          <div>
+                            <Label
+                              htmlFor={`edit-cost-${displaySkill.skillId}`}
+                            >
+                              Cost Price (Optional)
+                            </Label>
+                            <Input
+                              type="number"
+                              id={`edit-cost-${displaySkill.skillId}`}
+                              value={editingCostPrice || ""}
+                              onChange={(e) =>
+                                setEditingCostPrice(e.target.value)
+                              }
+                              placeholder="Enter cost price"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            onClick={handleSaveEdit}
+                            disabled={updateSkillMutation.isPending}
+                            size="sm"
+                            className="flex-1"
+                          >
+                            {updateSkillMutation.isPending
+                              ? "Saving..."
+                              : "Save"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleCancelEdit}
+                            disabled={updateSkillMutation.isPending}
+                            size="sm"
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
                     ) : (
-                      <>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="5"
-                          value={displaySkill.rating}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 0;
-                            const clampedVal = Math.min(5, Math.max(0, val));
-                            handleUpdatePendingRating(
-                              displaySkill.skillId,
-                              clampedVal
-                            );
-                          }}
-                          className="w-20 px-2 py-1"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleRemoveSkill(
-                              displaySkill.skillId,
-                              `${displaySkill.skill.type} - ${displaySkill.skill.skill}`
-                            )
-                          }
-                          className="px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
-                        >
-                          <TrashBinIcon className="w-4 h-4" />
-                        </Button>
-                      </>
+                      // Normal view
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Badge size="sm" color="info">
+                            {displaySkill.skill.skillType?.type || "N/A"}
+                          </Badge>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {displaySkill.skill.skill}
+                          </span>
+                          <Badge size="sm" color="primary">
+                            Rating: {displaySkill.rating}/5
+                          </Badge>
+                          {displaySkill.cost_price !== undefined &&
+                            displaySkill.cost_price !== null && (
+                              <Badge size="sm" color="success">
+                                ${Number(displaySkill.cost_price).toFixed(2)}
+                              </Badge>
+                            )}
+                          {displaySkill.isPending && (
+                            <Badge size="sm" color="light">
+                              Pending
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isEditing && !displaySkill.isPending ? (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleStartEdit(
+                                    displaySkill.skillId,
+                                    displaySkill.rating,
+                                    displaySkill.cost_price
+                                  )
+                                }
+                                disabled={updateSkillMutation.isPending}
+                                className="px-3 py-1 text-xs"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleRemoveSkill(
+                                    displaySkill.skillId,
+                                    `${
+                                      displaySkill.skill.skillType?.type ||
+                                      "N/A"
+                                    } - ${displaySkill.skill.skill}`
+                                  )
+                                }
+                                disabled={
+                                  removeSkillMutation.isPending &&
+                                  removeSkillMutation.variables ===
+                                    displaySkill.skillId
+                                }
+                                className="px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                              >
+                                <TrashBinIcon className="w-4 h-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="5"
+                                value={displaySkill.rating}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 0;
+                                  const clampedVal = Math.min(
+                                    5,
+                                    Math.max(0, val)
+                                  );
+                                  handleUpdatePendingRating(
+                                    displaySkill.skillId,
+                                    clampedVal
+                                  );
+                                }}
+                                className="w-20 px-2 py-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleRemoveSkill(
+                                    displaySkill.skillId,
+                                    `${
+                                      displaySkill.skill.skillType?.type ||
+                                      "N/A"
+                                    } - ${displaySkill.skill.skill}`
+                                  )
+                                }
+                                className="px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                              >
+                                <TrashBinIcon className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

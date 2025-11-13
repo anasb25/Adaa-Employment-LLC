@@ -10,8 +10,10 @@ import {
   HorizontaLDots,
   TaskIcon,
   UserCircleIcon,
+  BuildingIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
+import UserDropdown from "../components/header/UserDropdown";
 // import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
@@ -37,26 +39,49 @@ const navItems: NavItem[] = [
   {
     name: "Employees",
     icon: <GroupIcon />,
-    path: "/employees",
     permission: "employee:read",
-  },
-  {
-    name: "Skills",
-    icon: <TaskIcon />,
-    path: "/skills",
-    permission: "skill:read",
-  },
-  {
-    name: "Clients",
-    icon: <GroupIcon />,
-    path: "/clients",
-    // Optional: add permission gating later if needed
+    subItems: [
+      {
+        name: "Employees",
+        path: "/employees",
+        pro: false,
+        permission: "employee:read",
+      },
+      {
+        name: "Skills",
+        path: "/skills",
+        pro: false,
+        permission: "skill:read",
+      },
+      {
+        name: "Skill Types",
+        path: "/admin/skill-types",
+        pro: false,
+        permission: "skill:read",
+      },
+    ],
   },
   {
     name: "Projects",
+    icon: <BuildingIcon />,
+    subItems: [
+      {
+        name: "Clients",
+        path: "/clients",
+        pro: false,
+      },
+      {
+        name: "Projects",
+        path: "/projects",
+        pro: false,
+      },
+    ],
+  },
+  {
+    name: "Allocations",
     icon: <TaskIcon />,
-    path: "/projects",
-    // Optional: add permission gating later if needed
+    path: "/allocations",
+    permission: "employee:read",
   },
   {
     name: "Admin",
@@ -86,12 +111,6 @@ const navItems: NavItem[] = [
         path: "/admin/users",
         pro: false,
         permission: "user:read", // User management requires user read permission
-      },
-      {
-        name: "Skill Types",
-        path: "/admin/skill-types",
-        pro: false,
-        permission: "skill:read",
       },
     ],
   },
@@ -444,7 +463,7 @@ const AppSidebar: React.FC = () => {
           )}
         </Link>
       </div>
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar flex-1">
         <nav className="mb-6">
           <div className="flex flex-col gap-4">
             <div>
@@ -484,6 +503,18 @@ const AppSidebar: React.FC = () => {
         </nav>
         {/* Commented out - SidebarWidget with Employment Management promotional content */}
         {/* {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null} */}
+      </div>
+      {/* User Menu at Bottom */}
+      <div className="mt-auto pt-4 pb-5 border-t border-gray-200 dark:border-gray-800">
+        <div
+          className={`flex ${
+            !isExpanded && !isHovered && !isMobileOpen
+              ? "lg:justify-center"
+              : "justify-start"
+          }`}
+        >
+          <UserDropdown />
+        </div>
       </div>
     </aside>
   );

@@ -5,6 +5,9 @@ export type ProjectStatus =
   | "completed"
   | "cancelled";
 
+import { Client } from "./client";
+import { ProjectSkill } from "./skill";
+
 export interface Project {
   id: number;
   name: string;
@@ -12,6 +15,8 @@ export interface Project {
   status: ProjectStatus;
   notes?: string;
   clientId: number;
+  client?: Client;
+  projectSkills?: ProjectSkill[];
   createdAt: string;
   updatedAt: string;
 }
