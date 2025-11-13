@@ -36,26 +36,7 @@ export default function UserManagementPage() {
         <PageBreadcrumb pageTitle="User Management" />
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-          <div className="mb-5 flex items-center justify-between lg:mb-7">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Users Management
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                View and manage user accounts and their status
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Total Users: {usersData?.total || 0}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <UserList />
-          </div>
+          <UserList totalUsers={usersData?.total || 0} />
         </div>
       </PermissionGuard>
     </>

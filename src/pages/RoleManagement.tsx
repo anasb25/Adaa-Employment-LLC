@@ -1,9 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { rolesApi } from "../services/api/rolesApi";
 import { Role } from "../types/auth";
-import { QUERY_KEYS } from "../lib/constants";
-import Button from "../components/ui/button/Button";
 import RoleForm from "../components/roles/RoleForm";
 import RoleList from "../components/roles/RoleList";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
@@ -13,11 +9,6 @@ import PermissionGuard from "../components/auth/PermissionGuard";
 export default function RoleManagementPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
-
-  const { data: roles = [] } = useQuery({
-    queryKey: QUERY_KEYS.roles.all,
-    queryFn: rolesApi.getRoles,
-  });
 
   const handleCreateRole = () => {
     setEditingRole(null);
@@ -63,25 +54,6 @@ export default function RoleManagementPage() {
         <PageBreadcrumb pageTitle="Role Management" />
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-          <div className="mb-5 flex items-center justify-between lg:mb-7">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Roles & Permissions
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Manage user roles and their associated permissions
-              </p>
-            </div>
-
-            {!showCreateForm && (
-              <PermissionGuard permission="role:create">
-                <Button onClick={handleCreateRole} className="px-4 py-2">
-                  + Create New Role
-                </Button>
-              </PermissionGuard>
-            )}
-          </div>
-
           <div className="space-y-6">
             {/* Create/Edit Role Form */}
             {showCreateForm && (
@@ -107,18 +79,10 @@ export default function RoleManagementPage() {
 
             {/* Roles List */}
             {!showCreateForm && (
-              <div>
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Existing Roles ({roles.length})
-                  </h3>
-                </div>
-
-                <RoleList
-                  onCreateRole={handleCreateRole}
-                  onEditRole={handleEditRole}
-                />
-              </div>
+              <RoleList
+                onCreateRole={handleCreateRole}
+                onEditRole={handleEditRole}
+              />
             )}
           </div>
         </div>

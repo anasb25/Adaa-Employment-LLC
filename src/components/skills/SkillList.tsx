@@ -13,18 +13,26 @@ import {
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Pagination from "../ui/pagination/Pagination";
-import { AlertIcon as SearchIcon, PencilIcon, TrashBinIcon } from "../../icons";
+import {
+  AlertIcon as SearchIcon,
+  PencilIcon,
+  TrashBinIcon,
+  PlusIcon,
+} from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
 import { Skill } from "../../types/skill";
+import PermissionGuard from "../auth/PermissionGuard";
 
 interface SkillListProps {
   onCreateSkill?: () => void;
   onEditSkill?: (skill: Skill) => void;
+  totalSkills?: number;
 }
 
 export default function SkillList({
   onCreateSkill,
   onEditSkill,
+  totalSkills = 0,
 }: SkillListProps) {
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
@@ -106,23 +114,36 @@ export default function SkillList({
 
   return (
     <div className="space-y-6">
-      {/* Search Bar */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            type="text"
-            placeholder="Search skills by type or name..."
-            value={searchValue}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10"
-          />
+      {/* Header with Search Bar and Actions */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4 flex-1 w-full sm:w-auto">
+          <div className="relative flex-1 max-w-md">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              type="text"
+              placeholder="Search skills by type or name..."
+              value={searchValue}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {isSearching && (
+            <Button onClick={handleClearSearch} variant="outline" size="sm">
+              Clear
+            </Button>
+          )}
         </div>
-        {isSearching && (
-          <Button onClick={handleClearSearch} variant="outline" size="sm">
-            Clear
-          </Button>
-        )}
+
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Total Skills: {totalSkills}
+          </div>
+          <PermissionGuard permission="skill:create">
+            <Button onClick={onCreateSkill} startIcon={<PlusIcon />}>
+              Create Skill
+            </Button>
+          </PermissionGuard>
+        </div>
       </div>
 
       {/* Error State */}

@@ -60,34 +60,11 @@ export default function SkillManagementPage() {
         <PageBreadcrumb pageTitle="Skill Management" />
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-          <div className="mb-5 flex items-center justify-between lg:mb-7">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Skills Management
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                View and manage skills that can be assigned to employees
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Total Skills: {skillsData?.total || 0}
-              </div>
-              <PermissionGuard permission="skill:create">
-                <Button onClick={handleCreateClick} startIcon={<PlusIcon />}>
-                  Create Skill
-                </Button>
-              </PermissionGuard>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <SkillList
-              onCreateSkill={handleCreateClick}
-              onEditSkill={handleEditClick}
-            />
-          </div>
+          <SkillList
+            onCreateSkill={handleCreateClick}
+            onEditSkill={handleEditClick}
+            totalSkills={skillsData?.total || 0}
+          />
         </div>
 
         {/* Create/Edit Modal */}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -24,7 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { PlusIcon } from "../icons";
+import { AlertIcon as SearchIcon, PlusIcon } from "../icons";
+import { useSearch } from "../hooks/useDebounce";
 
 export default function AllocationManagement() {
   const navigate = useNavigate();
@@ -38,10 +39,32 @@ export default function AllocationManagement() {
     notes: "",
   });
 
+  // Search hook
+  const { searchValue, debouncedSearchValue, handleSearchChange, clearSearch } =
+    useSearch("");
+
   const { data: allocationsData, isLoading } = useQuery({
     queryKey: QUERY_KEYS.allocations.all,
     queryFn: () => allocationsApi.getAllocations(),
   });
+
+  // Filter allocations based on search
+  const filteredAllocations = useMemo(() => {
+    if (!allocationsData?.data) return [];
+    if (!debouncedSearchValue) return allocationsData.data;
+
+    const searchLower = debouncedSearchValue.toLowerCase();
+    return allocationsData.data.filter((alloc: ProjectAllocation) => {
+      return (
+        alloc.employee?.name?.toLowerCase().includes(searchLower) ||
+        alloc.employee?.adaa_emp_code?.toLowerCase().includes(searchLower) ||
+        alloc.project?.name?.toLowerCase().includes(searchLower) ||
+        alloc.project?.location?.toLowerCase().includes(searchLower) ||
+        alloc.project?.client?.name?.toLowerCase().includes(searchLower) ||
+        alloc.notes?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [allocationsData?.data, debouncedSearchValue]);
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateAllocationRequest }) =>
@@ -105,7 +128,7 @@ export default function AllocationManagement() {
   };
 
   // Group allocations by project
-  const groupedAllocations = (allocationsData?.data || []).reduce(
+  const groupedAllocations = filteredAllocations.reduce(
     (acc: any, alloc: ProjectAllocation) => {
       const projectKey = alloc.projectId;
       if (!acc[projectKey]) {
@@ -144,14 +167,24 @@ export default function AllocationManagement() {
         <PageBreadcrumb pageTitle="Project Allocations" />
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-          <div className="mb-5 flex items-center justify-between lg:mb-7">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Employee-Project Allocations
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Manage employee assignments to projects
-              </p>
+          {/* Header with Search Bar and Actions */}
+          <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 lg:mb-7">
+            <div className="flex items-center gap-4 flex-1 w-full sm:w-auto">
+              <div className="relative flex-1 max-w-md">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search by employee, project, client, or notes..."
+                  value={searchValue}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              {searchValue && (
+                <Button onClick={clearSearch} variant="outline" size="sm">
+                  Clear
+                </Button>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
@@ -304,7 +337,18 @@ export default function AllocationManagement() {
             </div>
           )}
 
-          {!isLoading && allocationsData?.data.length === 0 && (
+          {!isLoading && filteredAllocations.length === 0 && searchValue && (
+            <div className="text-center py-12">
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                No allocations found matching "{searchValue}"
+              </p>
+              <Button onClick={clearSearch} variant="outline">
+                Clear Search
+              </Button>
+            </div>
+          )}
+
+          {!isLoading && allocationsData?.data.length === 0 && !searchValue && (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 No allocations found. Start by allocating employees to a

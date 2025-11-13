@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { clientsApi } from "../services/api/clientsApi";
 import { QUERY_KEYS } from "../lib/constants";
@@ -17,6 +17,8 @@ import {
 } from "../components/ui/table";
 import { toast } from "sonner";
 import { Client, CreateClientRequest } from "../types/client";
+import { AlertIcon as SearchIcon, PlusIcon } from "../icons";
+import { useSearch } from "../hooks/useDebounce";
 
 export default function ClientManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,6 +32,11 @@ export default function ClientManagement() {
     notes: "",
   });
   const queryClient = useQueryClient();
+
+  // Search hook
+  const { searchValue, debouncedSearchValue, handleSearchChange, clearSearch } =
+    useSearch("");
+
   const {
     data: clientsData,
     isLoading,
@@ -38,6 +45,24 @@ export default function ClientManagement() {
     queryKey: QUERY_KEYS.clients.all,
     queryFn: () => clientsApi.getClients(),
   });
+
+  // Filter clients based on search
+  const filteredClients = useMemo(() => {
+    if (!clientsData?.data) return [];
+    if (!debouncedSearchValue) return clientsData.data;
+
+    const searchLower = debouncedSearchValue.toLowerCase();
+    return clientsData.data.filter((client: Client) => {
+      return (
+        client.name?.toLowerCase().includes(searchLower) ||
+        client.address?.toLowerCase().includes(searchLower) ||
+        client.contactPerson?.toLowerCase().includes(searchLower) ||
+        client.contactNumber?.toLowerCase().includes(searchLower) ||
+        client.email?.toLowerCase().includes(searchLower) ||
+        client.notes?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [clientsData?.data, debouncedSearchValue]);
 
   const createMutation = useMutation({
     mutationFn: (data: CreateClientRequest) => clientsApi.createClient(data),
@@ -137,16 +162,29 @@ export default function ClientManagement() {
       />
       <PageBreadcrumb pageTitle="Clients" />
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-        <div className="mb-5 flex items-center justify-between lg:mb-7">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Clients
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              View and manage clients
-            </p>
+        {/* Header with Search Bar and Actions */}
+        <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 lg:mb-7">
+          <div className="flex items-center gap-4 flex-1 w-full sm:w-auto">
+            <div className="relative flex-1 max-w-md">
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder="Search clients by name, contact, email, or address..."
+                value={searchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {searchValue && (
+              <Button onClick={clearSearch} variant="outline" size="sm">
+                Clear
+              </Button>
+            )}
           </div>
-          <Button onClick={openCreate}>+ Add Client</Button>
+
+          <Button onClick={openCreate} startIcon={<PlusIcon />}>
+            Add Client
+          </Button>
         </div>
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
           <div className="max-w-full overflow-x-auto">
@@ -186,41 +224,51 @@ export default function ClientManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                {clientsData?.data?.map((c: Client) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                      {c.name}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                      {c.contactNumber || "-"}
-                      {c.contactPerson ? (
-                        <span className="ml-2 text-xs italic text-gray-600 dark:text-gray-400">
-                          - {c.contactPerson}
-                        </span>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                      {c.email || "-"}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                      {c.notes || "-"}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                      <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => openEdit(c)}>
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
-                          onClick={() => remove(c.id)}
-                        >
-                          Delete
-                        </Button>
+                {filteredClients.length === 0 && searchValue ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="px-5 py-8 text-center">
+                      <div className="text-gray-500 dark:text-gray-400">
+                        No clients found matching "{searchValue}"
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredClients.map((c: Client) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {c.name}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {c.contactNumber || "-"}
+                        {c.contactPerson ? (
+                          <span className="ml-2 text-xs italic text-gray-600 dark:text-gray-400">
+                            - {c.contactPerson}
+                          </span>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {c.email || "-"}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {c.notes || "-"}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        <div className="flex gap-2">
+                          <Button variant="outline" onClick={() => openEdit(c)}>
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                            onClick={() => remove(c.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

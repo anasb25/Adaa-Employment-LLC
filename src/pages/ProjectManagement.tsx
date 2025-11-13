@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectsApi } from "../services/api/projectsApi";
 import { clientsApi } from "../services/api/clientsApi";
@@ -21,6 +21,8 @@ import {
 import { toast } from "sonner";
 import { Project, CreateProjectRequest, ProjectStatus } from "../types/project";
 import ProjectSkillsModal from "../components/projects/ProjectSkillsModal";
+import { AlertIcon as SearchIcon, PlusIcon } from "../icons";
+import { useSearch } from "../hooks/useDebounce";
 
 export default function ProjectManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,6 +37,11 @@ export default function ProjectManagement() {
     clientId: 0,
   });
   const queryClient = useQueryClient();
+
+  // Search hook
+  const { searchValue, debouncedSearchValue, handleSearchChange, clearSearch } =
+    useSearch("");
+
   const { data: projectsData } = useQuery({
     queryKey: QUERY_KEYS.projects.all,
     queryFn: () => projectsApi.getProjects(),
@@ -43,6 +50,26 @@ export default function ProjectManagement() {
     queryKey: QUERY_KEYS.clients.all,
     queryFn: () => clientsApi.getClients(),
   });
+
+  // Filter projects based on search
+  const filteredProjects = useMemo(() => {
+    if (!projectsData?.data) return [];
+    if (!debouncedSearchValue) return projectsData.data;
+
+    const searchLower = debouncedSearchValue.toLowerCase();
+    return projectsData.data.filter((project: Project) => {
+      const clientName =
+        clientsData?.data?.find((c: any) => c.id === project.clientId)?.name ||
+        "";
+      return (
+        project.name?.toLowerCase().includes(searchLower) ||
+        project.location?.toLowerCase().includes(searchLower) ||
+        project.status?.toLowerCase().includes(searchLower) ||
+        clientName.toLowerCase().includes(searchLower) ||
+        project.notes?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [projectsData?.data, debouncedSearchValue, clientsData?.data]);
 
   const createMutation = useMutation({
     mutationFn: (data: CreateProjectRequest) => projectsApi.createProject(data),
@@ -151,16 +178,29 @@ export default function ProjectManagement() {
       />
       <PageBreadcrumb pageTitle="Projects" />
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-        <div className="mb-5 flex items-center justify-between lg:mb-7">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Projects
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              View and manage projects
-            </p>
+        {/* Header with Search Bar and Actions */}
+        <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 lg:mb-7">
+          <div className="flex items-center gap-4 flex-1 w-full sm:w-auto">
+            <div className="relative flex-1 max-w-md">
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder="Search projects by name, location, client, or status..."
+                value={searchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {searchValue && (
+              <Button onClick={clearSearch} variant="outline" size="sm">
+                Clear
+              </Button>
+            )}
           </div>
-          <Button onClick={openCreate}>+ Add Project</Button>
+
+          <Button onClick={openCreate} startIcon={<PlusIcon />}>
+            Add Project
+          </Button>
         </div>
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
           <div className="max-w-full overflow-x-auto">
@@ -206,82 +246,92 @@ export default function ProjectManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                {projectsData?.data?.map((p: Project) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                      {p.name}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                      {clientsData?.data?.find(
-                        (c) => (c as any).id === p.clientId
-                      )?.name || "-"}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                      <Badge
-                        size="sm"
-                        color={
-                          p.status === "planned"
-                            ? "gray"
-                            : p.status === "ongoing"
-                            ? "info"
-                            : p.status === "on_hold"
-                            ? "warning"
-                            : p.status === "completed"
-                            ? "success"
-                            : "error"
-                        }
-                      >
-                        {p.status.replace("_", " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                      {p.projectSkills && p.projectSkills.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {p.projectSkills.map((ps: any) => (
-                            <Badge key={ps.id} size="sm" color="light">
-                              {ps.skill?.skill}
-                              {ps.sale_price && (
-                                <span className="ml-1">
-                                  (${Number(ps.sale_price).toFixed(2)})
-                                </span>
-                              )}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 dark:text-gray-500">
-                          —
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                      {p.notes || "-"}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                      <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => openEdit(p)}>
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedProject(p);
-                            setIsSkillsModalOpen(true);
-                          }}
-                        >
-                          Manage Skills
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
-                          onClick={() => remove(p.id)}
-                        >
-                          Delete
-                        </Button>
+                {filteredProjects.length === 0 && searchValue ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="px-5 py-8 text-center">
+                      <div className="text-gray-500 dark:text-gray-400">
+                        No projects found matching "{searchValue}"
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredProjects.map((p: Project) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {p.name}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {clientsData?.data?.find(
+                          (c) => (c as any).id === p.clientId
+                        )?.name || "-"}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        <Badge
+                          size="sm"
+                          color={
+                            p.status === "planned"
+                              ? "gray"
+                              : p.status === "ongoing"
+                              ? "info"
+                              : p.status === "on_hold"
+                              ? "warning"
+                              : p.status === "completed"
+                              ? "success"
+                              : "error"
+                          }
+                        >
+                          {p.status.replace("_", " ")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {p.projectSkills && p.projectSkills.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {p.projectSkills.map((ps: any) => (
+                              <Badge key={ps.id} size="sm" color="light">
+                                {ps.skill?.skill}
+                                {ps.sale_price && (
+                                  <span className="ml-1">
+                                    (${Number(ps.sale_price).toFixed(2)})
+                                  </span>
+                                )}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">
+                            —
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {p.notes || "-"}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        <div className="flex gap-2">
+                          <Button variant="outline" onClick={() => openEdit(p)}>
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedProject(p);
+                              setIsSkillsModalOpen(true);
+                            }}
+                          >
+                            Manage Skills
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                            onClick={() => remove(p.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

@@ -60,34 +60,11 @@ export default function EmployeeManagementPage() {
         <PageBreadcrumb pageTitle="Employee Management" />
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-          <div className="mb-5 flex items-center justify-between lg:mb-7">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Employees Management
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                View and manage employee records and information
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Total Employees: {employeesData?.total || 0}
-              </div>
-              <PermissionGuard permission="employee:create">
-                <Button onClick={handleCreateClick} startIcon={<PlusIcon />}>
-                  Create Employee
-                </Button>
-              </PermissionGuard>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <EmployeeList
-              onCreateEmployee={handleCreateClick}
-              onEditEmployee={handleEditClick}
-            />
-          </div>
+          <EmployeeList
+            onCreateEmployee={handleCreateClick}
+            onEditEmployee={handleEditClick}
+            totalEmployees={employeesData?.total || 0}
+          />
         </div>
 
         {/* Create/Edit Modal */}

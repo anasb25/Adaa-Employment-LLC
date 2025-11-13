@@ -8,13 +8,20 @@ import StarRating from "../ui/StarRating";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Pagination from "../ui/pagination/Pagination";
-import { AlertIcon as SearchIcon, PencilIcon, TrashBinIcon } from "../../icons";
+import {
+  AlertIcon as SearchIcon,
+  PencilIcon,
+  TrashBinIcon,
+  PlusIcon,
+} from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
 import { Employee, EmployeeStatus } from "../../types/employee";
+import PermissionGuard from "../auth/PermissionGuard";
 
 interface EmployeeListProps {
   onCreateEmployee?: () => void;
   onEditEmployee?: (employee: Employee) => void;
+  totalEmployees?: number;
 }
 
 const formatDate = (dateString?: string) => {
@@ -29,6 +36,7 @@ const formatDate = (dateString?: string) => {
 export default function EmployeeList({
   onCreateEmployee,
   onEditEmployee,
+  totalEmployees = 0,
 }: EmployeeListProps) {
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
@@ -117,23 +125,36 @@ export default function EmployeeList({
 
   return (
     <div className="space-y-6">
-      {/* Search Bar */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            type="text"
-            placeholder="Search employees by name, code, ID, or contact..."
-            value={searchValue}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10"
-          />
+      {/* Header with Search Bar and Actions */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4 flex-1 w-full sm:w-auto">
+          <div className="relative flex-1 max-w-md">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              type="text"
+              placeholder="Search employees by name, code, ID, or contact..."
+              value={searchValue}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {isSearching && (
+            <Button onClick={handleClearSearch} variant="outline" size="sm">
+              Clear
+            </Button>
+          )}
         </div>
-        {isSearching && (
-          <Button onClick={handleClearSearch} variant="outline" size="sm">
-            Clear
-          </Button>
-        )}
+
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Total Employees: {totalEmployees}
+          </div>
+          <PermissionGuard permission="employee:create">
+            <Button onClick={onCreateEmployee} startIcon={<PlusIcon />}>
+              Create Employee
+            </Button>
+          </PermissionGuard>
+        </div>
       </div>
 
       {/* Error State */}
