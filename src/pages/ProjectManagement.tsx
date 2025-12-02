@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { toast } from "sonner";
-import { Project, CreateProjectRequest, ProjectStatus } from "../types/project";
+import { Project, CreateProjectRequest, ProjectStatus, ProjectFAT } from "../types/project";
 import ProjectSkillsModal from "../components/projects/ProjectSkillsModal";
 import { AlertIcon as SearchIcon, PlusIcon } from "../icons";
 import { useSearch } from "../hooks/useDebounce";
@@ -34,6 +34,7 @@ export default function ProjectManagement() {
     location: "",
     status: "planned",
     notes: "",
+    fat: undefined,
     clientId: 0,
   });
   const queryClient = useQueryClient();
@@ -66,7 +67,8 @@ export default function ProjectManagement() {
         project.location?.toLowerCase().includes(searchLower) ||
         project.status?.toLowerCase().includes(searchLower) ||
         clientName.toLowerCase().includes(searchLower) ||
-        project.notes?.toLowerCase().includes(searchLower)
+        project.notes?.toLowerCase().includes(searchLower) ||
+        project.fat?.toLowerCase().includes(searchLower)
       );
     });
   }, [projectsData?.data, debouncedSearchValue, clientsData?.data]);
@@ -83,6 +85,7 @@ export default function ProjectManagement() {
         location: "",
         status: "planned",
         notes: "",
+        fat: undefined,
         clientId: 0,
       });
     },
@@ -135,6 +138,7 @@ export default function ProjectManagement() {
       location: p.location || "",
       status: p.status || "planned",
       notes: p.notes || "",
+      fat: p.fat,
       clientId: p.clientId,
     });
     setIsModalOpen(true);
@@ -168,6 +172,11 @@ export default function ProjectManagement() {
     { value: "on_hold", label: "On Hold" },
     { value: "completed", label: "Completed" },
     { value: "cancelled", label: "Cancelled" },
+  ];
+
+  const fatOptions: { value: ProjectFAT; label: string }[] = [
+    { value: "ADAA", label: "ADAA" },
+    { value: "CLIENT", label: "CLIENT" },
   ];
 
   return (
@@ -229,6 +238,12 @@ export default function ProjectManagement() {
                     isHeader
                     className="px-5 py-3 text-theme-xs text-gray-500 text-start"
                   >
+                    FAT
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 text-theme-xs text-gray-500 text-start"
+                  >
                     Skills
                   </TableCell>
                   <TableCell
@@ -248,7 +263,7 @@ export default function ProjectManagement() {
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                 {filteredProjects.length === 0 && searchValue ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="px-5 py-8 text-center">
+                    <TableCell colSpan={7} className="px-5 py-8 text-center">
                       <div className="text-gray-500 dark:text-gray-400">
                         No projects found matching "{searchValue}"
                       </div>
@@ -282,6 +297,15 @@ export default function ProjectManagement() {
                         >
                           {p.status.replace("_", " ")}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {p.fat ? (
+                          <Badge size="sm" color="light">
+                            {p.fat}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
                         {p.projectSkills && p.projectSkills.length > 0 ? (
@@ -383,6 +407,18 @@ export default function ProjectManagement() {
               value={form.clientId ? String(form.clientId) : ""}
               onChange={(v) => setForm({ ...form, clientId: Number(v) })}
               placeholder="Select client"
+            />
+          </div>
+          <div>
+            <Label htmlFor="project-fat">FAT</Label>
+            <Select
+              options={fatOptions.map((o) => ({
+                value: o.value,
+                label: o.label,
+              }))}
+              value={form.fat || ""}
+              onChange={(v) => setForm({ ...form, fat: v as ProjectFAT | undefined })}
+              placeholder="Select FAT"
             />
           </div>
           <div className="md:col-span-2">

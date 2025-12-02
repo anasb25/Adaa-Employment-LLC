@@ -5,6 +5,8 @@ export type ProjectStatus =
   | "completed"
   | "cancelled";
 
+export type ProjectFAT = "ADAA" | "CLIENT";
+
 import { Client } from "./client";
 import { ProjectSkill } from "./skill";
 
@@ -14,6 +16,7 @@ export interface Project {
   location?: string;
   status: ProjectStatus;
   notes?: string;
+  fat?: ProjectFAT;
   clientId: number;
   client?: Client;
   projectSkills?: ProjectSkill[];
@@ -26,6 +29,7 @@ export interface CreateProjectRequest {
   location?: string;
   status?: ProjectStatus;
   notes?: string;
+  fat?: ProjectFAT;
   clientId: number;
 }
 
