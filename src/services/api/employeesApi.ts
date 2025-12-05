@@ -4,6 +4,7 @@ import {
   CreateEmployeeRequest,
   UpdateEmployeeRequest,
 } from "../../types/employee";
+import { PaginatedResponse } from "./types";
 
 export interface EmployeeListResponse {
   data: Employee[];
@@ -68,5 +69,24 @@ export const employeesApi = {
       )}&page=${page}&limit=${limit}`
     );
     return response.data;
+  },
+
+  // Get employees with their timesheet status for a specific date
+  getEmployeesWithTimesheetStatus: async (
+    date: string,
+    status?: string,
+    page?: number,
+    limit?: number
+  ): Promise<PaginatedResponse<Employee>> => {
+    const params = new URLSearchParams();
+    params.append("date", date);
+    if (status) params.append("status", status);
+    if (page) params.append("page", String(page));
+    if (limit) params.append("limit", String(limit));
+
+    const res = await axiosInstance.get<PaginatedResponse<Employee>>(
+      `/employees/actions/with-timesheet-status?${params.toString()}`
+    );
+    return res.data;
   },
 };

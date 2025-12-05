@@ -84,6 +84,23 @@ const navItems: NavItem[] = [
     permission: "employee:read",
   },
   {
+    name: "Timesheets",
+    icon: <TaskIcon />,
+    permission: "employee:read",
+    subItems: [
+      {
+        name: "Timesheet Management",
+        path: "/timesheets",
+        permission: "employee:read",
+      },
+      {
+        name: "Timesheet Dashboard",
+        path: "/timesheets/dashboard",
+        permission: "employee:read",
+      },
+    ],
+  },
+  {
     name: "Admin",
     icon: <UserCircleIcon />,
     permission: {

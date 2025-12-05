@@ -30,6 +30,9 @@ import ClientManagement from "./pages/ClientManagement";
 import ProjectManagement from "./pages/ProjectManagement";
 import AllocationManagement from "./pages/AllocationManagement";
 import CreateAllocation from "./pages/CreateAllocation";
+import TimesheetManagement from "./pages/TimesheetManagement";
+import DailyTimesheetManagement from "./pages/DailyTimesheetManagement";
+import TimesheetDashboard from "./pages/TimesheetDashboard";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AuthGuard from "./components/auth/AuthGuard";
 import AppProviders from "./providers/AppProviders";
@@ -57,6 +60,15 @@ export default function App() {
             <Route path="/projects" element={<ProjectManagement />} />
             <Route path="/allocations" element={<AllocationManagement />} />
             <Route path="/allocations/create" element={<CreateAllocation />} />
+            <Route path="/timesheets" element={<TimesheetManagement />} />
+            <Route
+              path="/timesheets/daily"
+              element={<DailyTimesheetManagement />}
+            />
+            <Route
+              path="/timesheets/dashboard"
+              element={<TimesheetDashboard />}
+            />
 
             {/* Admin Pages */}
             <Route

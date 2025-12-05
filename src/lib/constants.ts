@@ -59,6 +59,18 @@ export const QUERY_KEYS = {
     byEmployee: (employeeId: number) =>
       ["allocations", "employee", employeeId] as const,
   },
+  timesheets: {
+    all: ["timesheets"] as const,
+    detail: (id: number) => ["timesheets", id] as const,
+    byAllocation: (allocationId: number) =>
+      ["timesheets", "allocation", allocationId] as const,
+    byDate: (date: string) => ["timesheets", "date", date] as const,
+    byProject: (projectId: number) =>
+      ["timesheets", "project", projectId] as const,
+    byEmployee: (employeeId: number) =>
+      ["timesheets", "employee", employeeId] as const,
+    stats: (filters?: string) => ["timesheets", "stats", filters] as const,
+  },
 } as const;
 
 // Local Storage Keys
