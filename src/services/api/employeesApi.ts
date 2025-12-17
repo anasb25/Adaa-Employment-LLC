@@ -16,6 +16,17 @@ export interface EmployeeListResponse {
   hasPrev: boolean;
 }
 
+export interface ImportResult {
+  success: number;
+  failed: number;
+  errors: Array<{
+    row: number;
+    employee: string;
+    errors: string[];
+  }>;
+  imported: any[];
+}
+
 export const employeesApi = {
   // Get all employees with pagination
   getEmployees: async (
@@ -88,5 +99,41 @@ export const employeesApi = {
       `/employees/actions/with-timesheet-status?${params.toString()}`
     );
     return res.data;
+  },
+
+  // Import employees from Excel file
+  importEmployees: async (file: File): Promise<ImportResult> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await axiosInstance.post<ImportResult>(
+      "/employees/actions/import",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  // Export all employees to Excel
+  exportEmployees: async (): Promise<Blob> => {
+    const response = await axiosInstance.get("/employees/actions/export", {
+      responseType: "blob",
+    });
+    return response.data;
+  },
+
+  // Download import template
+  downloadImportTemplate: async (): Promise<Blob> => {
+    const response = await axiosInstance.get(
+      "/employees/actions/import-template",
+      {
+        responseType: "blob",
+      }
+    );
+    return response.data;
   },
 };

@@ -14,11 +14,15 @@ import {
   PencilIcon,
   TrashBinIcon,
   PlusIcon,
+  FileIcon,
+  DownloadIcon,
 } from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
 import { Employee, EmployeeStatus } from "../../types/employee";
 import { AttendanceStatus } from "../../types/timesheet";
 import PermissionGuard from "../auth/PermissionGuard";
+import EmployeeImportModal from "./EmployeeImportModal";
+import { downloadFile } from "../../utils/excelValidator";
 
 interface EmployeeListProps {
   onCreateEmployee?: () => void;
@@ -46,6 +50,7 @@ export default function EmployeeList({
     new Date().toISOString().split("T")[0]
   );
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const limit = 10;
@@ -64,6 +69,18 @@ export default function EmployeeList({
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to delete employee");
+    },
+  });
+
+  // Export employees mutation
+  const exportMutation = useMutation({
+    mutationFn: () => employeesApi.exportEmployees(),
+    onSuccess: (blob) => {
+      downloadFile(blob, `employees_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success("Employees exported successfully!");
+    },
+    onError: () => {
+      toast.error("Failed to export employees");
     },
   });
 
@@ -264,6 +281,25 @@ export default function EmployeeList({
               ? `Showing: ${currentData?.total || 0} employee(s)`
               : `Total Employees: ${totalEmployees}`}
           </div>
+          <PermissionGuard permission="employee:read">
+            <Button
+              onClick={() => exportMutation.mutate()}
+              variant="outline"
+              startIcon={<DownloadIcon />}
+              disabled={exportMutation.isPending}
+            >
+              {exportMutation.isPending ? "Exporting..." : "Export"}
+            </Button>
+          </PermissionGuard>
+          <PermissionGuard permission="employee:create">
+            <Button
+              onClick={() => setIsImportModalOpen(true)}
+              variant="outline"
+              startIcon={<FileIcon />}
+            >
+              Import
+            </Button>
+          </PermissionGuard>
           <PermissionGuard permission="employee:create">
             <Button onClick={onCreateEmployee} startIcon={<PlusIcon />}>
               Create Employee
@@ -643,6 +679,12 @@ export default function EmployeeList({
             />
           </>
         )}
+
+      {/* Import Modal */}
+      <EmployeeImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+      />
     </div>
   );
 }

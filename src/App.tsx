@@ -30,6 +30,8 @@ import ClientManagement from "./pages/ClientManagement";
 import ProjectManagement from "./pages/ProjectManagement";
 import AllocationManagement from "./pages/AllocationManagement";
 import CreateAllocation from "./pages/CreateAllocation";
+import MobilizationManagement from "./pages/MobilizationManagement";
+import CreateMobilization from "./pages/CreateMobilization";
 import TimesheetManagement from "./pages/TimesheetManagement";
 import DailyTimesheetManagement from "./pages/DailyTimesheetManagement";
 import TimesheetDashboard from "./pages/TimesheetDashboard";
@@ -60,6 +62,8 @@ export default function App() {
             <Route path="/projects" element={<ProjectManagement />} />
             <Route path="/allocations" element={<AllocationManagement />} />
             <Route path="/allocations/create" element={<CreateAllocation />} />
+            <Route path="/mobilizations" element={<MobilizationManagement />} />
+            <Route path="/mobilizations/create" element={<CreateMobilization />} />
             <Route path="/timesheets" element={<TimesheetManagement />} />
             <Route
               path="/timesheets/daily"

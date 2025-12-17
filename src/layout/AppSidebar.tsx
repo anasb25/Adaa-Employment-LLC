@@ -84,6 +84,12 @@ const navItems: NavItem[] = [
     permission: "employee:read",
   },
   {
+    name: "Mobilizations",
+    icon: <TaskIcon />,
+    path: "/mobilizations",
+    permission: "employee:read",
+  },
+  {
     name: "Timesheets",
     icon: <TaskIcon />,
     permission: "employee:read",
