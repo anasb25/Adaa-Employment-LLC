@@ -7,13 +7,16 @@ import { Mobilization, MobilizationFilters } from '../types/mobilization';
 import { MOB_STATUS_COLORS, JOB_STATUS_COLORS } from '../lib/mobilizationConstants';
 import Button from '../components/ui/button/Button';
 import Select from '../components/form/Select';
-import { PlusIcon, BuildingOfficeIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, BuildingIcon, GroupIcon, DownloadIcon, FileIcon } from '../icons';
+import MobilizationImportModal from '../components/mobilizations/MobilizationImportModal';
+import { downloadFile } from '../utils/excelValidator';
 
 export default function MobilizationManagement() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<MobilizationFilters>({});
   const [page, setPage] = useState(1);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const limit = 20;
 
   // Fetch mobilizations
@@ -31,6 +34,18 @@ export default function MobilizationManagement() {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to delete mobilization');
+    },
+  });
+
+  // Export mobilizations mutation
+  const exportMutation = useMutation({
+    mutationFn: () => mobilizationsApi.exportMobilizations(),
+    onSuccess: (blob) => {
+      downloadFile(blob, `mobilizations_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success("Mobilizations exported successfully!");
+    },
+    onError: () => {
+      toast.error("Failed to export mobilizations");
     },
   });
 
@@ -70,11 +85,19 @@ export default function MobilizationManagement() {
         </div>
         <div className="flex gap-3">
           <Button
-            onClick={() => navigate('/mobilizations/statistics')}
+            onClick={() => exportMutation.mutate()}
             variant="outline"
-            leftIcon={<BuildingOfficeIcon className="h-5 w-5" />}
+            leftIcon={<DownloadIcon className="h-5 w-5" />}
+            disabled={exportMutation.isPending}
           >
-            Statistics
+            {exportMutation.isPending ? "Exporting..." : "Export"}
+          </Button>
+          <Button
+            onClick={() => setIsImportModalOpen(true)}
+            variant="outline"
+            leftIcon={<FileIcon className="h-5 w-5" />}
+          >
+            Import
           </Button>
           <Button
             onClick={() => navigate('/mobilizations/create')}
@@ -85,12 +108,18 @@ export default function MobilizationManagement() {
         </div>
       </div>
 
+      {/* Import Modal */}
+      <MobilizationImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+      />
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <UserGroupIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <GroupIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>

@@ -8,6 +8,17 @@ import {
   MobilizationStatistics,
 } from '../../types/mobilization';
 
+export interface ImportMobilizationResult {
+  success: number;
+  failed: number;
+  errors: Array<{
+    row: number;
+    employee: string;
+    errors: string[];
+  }>;
+  imported: any[];
+}
+
 export const mobilizationsApi = {
   // Get all mobilizations with pagination and filters
   getAll: async (params?: MobilizationFilters & { page?: number; limit?: number }) => {
@@ -61,6 +72,42 @@ export const mobilizationsApi = {
     const response = await axiosInstance.get('/mobilizations/statistics', {
       params: projectId ? { projectId } : {},
     });
+    return response.data;
+  },
+
+  // Import mobilizations from Excel file
+  importMobilizations: async (file: File): Promise<ImportMobilizationResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await axiosInstance.post<ImportMobilizationResult>(
+      '/mobilizations/actions/import',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
+
+  // Export all mobilizations to Excel
+  exportMobilizations: async (): Promise<Blob> => {
+    const response = await axiosInstance.get('/mobilizations/actions/export', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  // Download import template
+  downloadImportTemplate: async (): Promise<Blob> => {
+    const response = await axiosInstance.get(
+      '/mobilizations/actions/import-template',
+      {
+        responseType: 'blob',
+      }
+    );
     return response.data;
   },
 };
