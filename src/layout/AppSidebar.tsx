@@ -78,33 +78,16 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    name: "Allocations",
-    icon: <TaskIcon />,
-    path: "/allocations",
-    permission: "employee:read",
-  },
-  {
     name: "Mobilizations",
     icon: <TaskIcon />,
-    path: "/mobilizations",
+    path: "/mobilizations/daily",
     permission: "employee:read",
   },
   {
     name: "Timesheets",
     icon: <TaskIcon />,
+    path: "/timesheets/monthly",
     permission: "employee:read",
-    subItems: [
-      {
-        name: "Timesheet Management",
-        path: "/timesheets",
-        permission: "employee:read",
-      },
-      {
-        name: "Timesheet Dashboard",
-        path: "/timesheets/dashboard",
-        permission: "employee:read",
-      },
-    ],
   },
   {
     name: "Admin",

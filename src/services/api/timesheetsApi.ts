@@ -1,155 +1,89 @@
-import axiosInstance from "../../lib/axios";
-import { PaginatedResponse } from "./types";
+import { axiosInstance } from '../../lib/axios';
 import {
   Timesheet,
+  MonthlyProjectTimesheetData,
   CreateTimesheetRequest,
-  BulkCreateTimesheetRequest,
-  UpdateTimesheetRequest,
+  SaveTimesheetEntriesRequest,
+  SubmitTimesheetRequest,
+  ApproveTimesheetRequest,
   TimesheetFilters,
-  TimesheetStats,
-} from "../../types/timesheet";
+} from '../../types/timesheet';
 
 export const timesheetsApi = {
   /**
-   * Generate daily timesheets for all employees
+   * Get monthly project timesheet with data
+   * @param projectId Project ID
+   * @param month Format: YYYY-MM
    */
-  generateDailyTimesheets: async (
-    date: string
-  ): Promise<{ created: number; existing: number; message: string }> => {
-    const response = await axiosInstance.post("/timesheets/generate-daily", {
-      date,
-    });
+  getMonthlyProjectTimesheet: async (
+    projectId: number,
+    month: string,
+  ): Promise<MonthlyProjectTimesheetData> => {
+    const response = await axiosInstance.get(`/timesheets/project/${projectId}/month/${month}`);
     return response.data;
   },
 
   /**
-   * Get all timesheets with optional filters
+   * Create or get timesheet
    */
-  getTimesheets: async (
-    filters?: TimesheetFilters
-  ): Promise<PaginatedResponse<Timesheet>> => {
-    const params = new URLSearchParams();
-    if (filters?.projectId)
-      params.append("projectId", filters.projectId.toString());
-    if (filters?.employeeId)
-      params.append("employeeId", filters.employeeId.toString());
-    if (filters?.startDate) params.append("startDate", filters.startDate);
-    if (filters?.endDate) params.append("endDate", filters.endDate);
-    if (filters?.status) params.append("status", filters.status);
+  createOrGetTimesheet: async (data: CreateTimesheetRequest): Promise<Timesheet> => {
+    const response = await axiosInstance.post('/timesheets', data);
+    return response.data;
+  },
 
-    const queryString = params.toString();
-    const url = queryString ? `/timesheets?${queryString}` : "/timesheets";
+  /**
+   * Save timesheet entries
+   */
+  saveTimesheetEntries: async (
+    timesheetId: number,
+    data: SaveTimesheetEntriesRequest,
+  ): Promise<any> => {
+    const response = await axiosInstance.put(`/timesheets/${timesheetId}/entries`, data);
+    return response.data;
+  },
 
-    const res = await axiosInstance.get<PaginatedResponse<Timesheet>>(url);
-    return res.data;
+  /**
+   * Submit timesheet for approval
+   */
+  submitTimesheet: async (
+    timesheetId: number,
+    data: SubmitTimesheetRequest,
+  ): Promise<Timesheet> => {
+    const response = await axiosInstance.post(`/timesheets/${timesheetId}/submit`, data);
+    return response.data;
+  },
+
+  /**
+   * Approve or reject timesheet
+   */
+  approveTimesheet: async (
+    timesheetId: number,
+    data: ApproveTimesheetRequest,
+  ): Promise<Timesheet> => {
+    const response = await axiosInstance.post(`/timesheets/${timesheetId}/approve`, data);
+    return response.data;
+  },
+
+  /**
+   * Get all timesheets with filters
+   */
+  getTimesheets: async (filters?: TimesheetFilters): Promise<Timesheet[]> => {
+    const response = await axiosInstance.get('/timesheets', { params: filters });
+    return response.data;
   },
 
   /**
    * Get a single timesheet by ID
    */
   getTimesheet: async (id: number): Promise<Timesheet> => {
-    const res = await axiosInstance.get<Timesheet>(`/timesheets/${id}`);
-    return res.data;
+    const response = await axiosInstance.get(`/timesheets/${id}`);
+    return response.data;
   },
 
   /**
-   * Get timesheets for a specific allocation
-   */
-  getTimesheetsByAllocation: async (
-    allocationId: number
-  ): Promise<Timesheet[]> => {
-    const res = await axiosInstance.get<Timesheet[]>(
-      `/timesheets/allocation/${allocationId}`
-    );
-    return res.data;
-  },
-
-  /**
-   * Get timesheets for a specific date
-   */
-  getTimesheetsByDate: async (date: string): Promise<Timesheet[]> => {
-    const res = await axiosInstance.get<Timesheet[]>(
-      `/timesheets/by-date/${date}`
-    );
-    return res.data;
-  },
-
-  /**
-   * Get timesheet statistics
-   */
-  getTimesheetStats: async (
-    filters?: TimesheetFilters
-  ): Promise<TimesheetStats> => {
-    const params = new URLSearchParams();
-    if (filters?.projectId)
-      params.append("projectId", filters.projectId.toString());
-    if (filters?.employeeId)
-      params.append("employeeId", filters.employeeId.toString());
-    if (filters?.startDate) params.append("startDate", filters.startDate);
-    if (filters?.endDate) params.append("endDate", filters.endDate);
-
-    const queryString = params.toString();
-    const url = queryString
-      ? `/timesheets/stats?${queryString}`
-      : "/timesheets/stats";
-
-    const res = await axiosInstance.get<TimesheetStats>(url);
-    return res.data;
-  },
-
-  /**
-   * Create a single timesheet entry
-   */
-  createTimesheet: async (data: CreateTimesheetRequest): Promise<Timesheet> => {
-    const res = await axiosInstance.post<Timesheet>("/timesheets", data);
-    return res.data;
-  },
-
-  /**
-   * Create multiple timesheet entries at once (bulk EOD entry)
-   */
-  bulkCreateTimesheets: async (
-    data: BulkCreateTimesheetRequest
-  ): Promise<Timesheet[]> => {
-    const res = await axiosInstance.post<Timesheet[]>("/timesheets/bulk", data);
-    return res.data;
-  },
-
-  /**
-   * Update a timesheet entry
-   */
-  updateTimesheet: async (
-    id: number,
-    data: UpdateTimesheetRequest
-  ): Promise<Timesheet> => {
-    const res = await axiosInstance.patch<Timesheet>(`/timesheets/${id}`, data);
-    return res.data;
-  },
-
-  /**
-   * Delete a timesheet entry
+   * Delete a timesheet
    */
   deleteTimesheet: async (id: number): Promise<void> => {
     await axiosInstance.delete(`/timesheets/${id}`);
-  },
-
-  /**
-   * Get dashboard analytics
-   */
-  getDashboardAnalytics: async (filters?: {
-    startDate?: string;
-    endDate?: string;
-  }) => {
-    const params = new URLSearchParams();
-    if (filters?.startDate) params.append("startDate", filters.startDate);
-    if (filters?.endDate) params.append("endDate", filters.endDate);
-
-    const queryString = params.toString();
-    const url = queryString
-      ? `/timesheets/dashboard/analytics?${queryString}`
-      : "/timesheets/dashboard/analytics";
-
-    const res = await axiosInstance.get(url);
-    return res.data;
   },
 };

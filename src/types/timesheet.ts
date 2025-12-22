@@ -1,65 +1,110 @@
-import { ProjectAllocation } from "./allocation";
-import { Skill } from "./skill";
-import { Employee } from "./employee";
-
-export enum AttendanceStatus {
-  ACTIVE = "active", // Employee was present as expected
-  ON_HOLD = "on_hold", // Employee was not present
-  IDLE = "idle", // Employee not allocated to any project (default)
+export enum TimesheetStatus {
+  DRAFT = "draft",
+  SUBMITTED = "submitted",
+  APPROVED = "approved",
+  REJECTED = "rejected",
 }
 
 export interface Timesheet {
   id: number;
-  allocationId?: number | null;
-  employeeId?: number | null;
-  date: string; // YYYY-MM-DD
-  status: AttendanceStatus;
-  tradeInSiteId?: number; // The skill they actually worked as on site
-  hoursWorked: number; // Default 10, minimum 0
-  notes?: string;
+  projectId: number;
+  month: string; // YYYY-MM
+  status: TimesheetStatus;
+  submittedAt: string | null;
+  submittedBy: number | null;
+  approvedAt: string | null;
+  approvedBy: number | null;
+  notes: string | null;
+  project?: {
+    id: number;
+    name: string;
+    client?: {
+      id: number;
+      name: string;
+    };
+  };
+  entries?: TimesheetEntry[];
+}
 
-  // Relations
-  allocation?: ProjectAllocation | null;
-  employee?: Employee | null; // Direct employee reference for idle employees
-  tradeInSite?: Skill; // The skill they worked as on site
+export interface TimesheetEntry {
+  id: number;
+  timesheetId: number;
+  employeeId: number;
+  date: string;
+  tradeInSiteId: number | null;
+  hoursWorked: number;
+  jobStatus: string;
+  notes: string | null;
+  employee?: {
+    id: number;
+    name: string;
+    adaa_emp_code: string;
+  };
+  tradeInSite?: {
+    id: number;
+    skill: string;
+  };
+}
 
-  createdAt: string;
-  updatedAt: string;
+export interface DailyHours {
+  date: string;
+  day: number;
+  hoursWorked: number;
+  jobStatus: string | null;
+  notes: string | null;
+  entryId: number | null;
+}
+
+export interface EmployeeTimesheet {
+  srNo: number;
+  employeeId: number;
+  idNo: string;
+  name: string;
+  trade: string;
+  dailyHours: DailyHours[];
+}
+
+export interface MonthlyProjectTimesheetData {
+  timesheet: Timesheet | null;
+  project: {
+    id: number;
+    name: string;
+    client: {
+      id: number;
+      name: string;
+    };
+  };
+  employees: EmployeeTimesheet[];
 }
 
 export interface CreateTimesheetRequest {
-  allocationId?: number;
-  employeeId?: number;
-  date: string;
-  status: AttendanceStatus;
-  tradeInSiteId?: number;
-  hoursWorked: number;
+  projectId: number;
+  month: string;
   notes?: string;
 }
 
-export interface BulkCreateTimesheetRequest {
-  timesheets: CreateTimesheetRequest[];
+export interface SaveTimesheetEntriesRequest {
+  entries: {
+    employeeId: number;
+    date: string;
+    tradeInSiteId?: number;
+    hoursWorked: number;
+    jobStatus: string;
+    notes?: string;
+  }[];
 }
 
-export interface UpdateTimesheetRequest {
-  status?: AttendanceStatus;
-  tradeInSiteId?: number;
-  hoursWorked?: number;
+export interface SubmitTimesheetRequest {
+  notes?: string;
+}
+
+export interface ApproveTimesheetRequest {
+  status: TimesheetStatus.APPROVED | TimesheetStatus.REJECTED;
   notes?: string;
 }
 
 export interface TimesheetFilters {
   projectId?: number;
-  employeeId?: number;
-  startDate?: string;
-  endDate?: string;
-  status?: AttendanceStatus;
-}
-
-export interface TimesheetStats {
-  totalHours: number;
-  totalDays: number;
-  activeCount: number;
-  onHoldCount: number;
-  idleCount: number;
+  month?: string;
+  status?: TimesheetStatus;
 }

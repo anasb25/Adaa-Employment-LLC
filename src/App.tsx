@@ -28,14 +28,10 @@ import SkillManagement from "./pages/SkillManagement";
 import SkillTypesManagement from "./pages/SkillTypesManagement";
 import ClientManagement from "./pages/ClientManagement";
 import ProjectManagement from "./pages/ProjectManagement";
-import AllocationManagement from "./pages/AllocationManagement";
-import CreateAllocation from "./pages/CreateAllocation";
 import CreateMobilization from "./pages/CreateMobilization";
 import EditMobilization from "./pages/EditMobilization";
 import DailyMobilizationManagement from "./pages/DailyMobilizationManagement";
-import TimesheetManagement from "./pages/TimesheetManagement";
-import DailyTimesheetManagement from "./pages/DailyTimesheetManagement";
-import TimesheetDashboard from "./pages/TimesheetDashboard";
+import MonthlyProjectTimesheets from "./pages/MonthlyProjectTimesheets";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AuthGuard from "./components/auth/AuthGuard";
 import AppProviders from "./providers/AppProviders";
@@ -61,21 +57,12 @@ export default function App() {
             <Route path="/skills" element={<SkillManagement />} />
             <Route path="/clients" element={<ClientManagement />} />
             <Route path="/projects" element={<ProjectManagement />} />
-            <Route path="/allocations" element={<AllocationManagement />} />
-            <Route path="/allocations/create" element={<CreateAllocation />} />
             <Route path="/mobilizations" element={<DailyMobilizationManagement />} />
             <Route path="/mobilizations/create" element={<CreateMobilization />} />
             <Route path="/mobilizations/:id/edit" element={<EditMobilization />} />
             <Route path="/mobilizations/daily" element={<DailyMobilizationManagement />} />
-            <Route path="/timesheets" element={<TimesheetManagement />} />
-            <Route
-              path="/timesheets/daily"
-              element={<DailyTimesheetManagement />}
-            />
-            <Route
-              path="/timesheets/dashboard"
-              element={<TimesheetDashboard />}
-            />
+            <Route path="/timesheets" element={<MonthlyProjectTimesheets />} />
+            <Route path="/timesheets/monthly" element={<MonthlyProjectTimesheets />} />
 
             {/* Admin Pages */}
             <Route
