@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useQueries,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import { timesheetsApi } from "../services/api/timesheetsApi";
 import { projectsApi } from "../services/api/projectsApi";
@@ -11,7 +16,17 @@ import PermissionGuard from "../components/auth/PermissionGuard";
 import Button from "../components/ui/button/Button";
 import Badge from "../components/ui/badge/Badge";
 import Label from "../components/form/Label";
-import { ChevronDownIcon, ChevronUpIcon, CheckCircleIcon, PaperPlaneIcon, CheckLineIcon, CloseIcon } from "../icons";
+import TimesheetExportModal from "../components/timesheets/TimesheetExportModal";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CheckCircleIcon,
+  PaperPlaneIcon,
+  CheckLineIcon,
+  CloseIcon,
+  DownloadIcon,
+  LockIcon,
+} from "../icons";
 
 interface ProjectEdits {
   [projectId: number]: Map<string, number>;
@@ -19,15 +34,28 @@ interface ProjectEdits {
 
 export default function MonthlyProjectTimesheets() {
   const queryClient = useQueryClient();
-  
+
   // Get current month as default
   const currentDate = new Date();
-  const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-  
+  const currentMonth = `${currentDate.getFullYear()}-${String(
+    currentDate.getMonth() + 1
+  ).padStart(2, "0")}`;
+
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
-  const [expandedProjects, setExpandedProjects] = useState<Set<number>>(new Set());
+  const [expandedProjects, setExpandedProjects] = useState<Set<number>>(
+    new Set()
+  );
   const [projectEdits, setProjectEdits] = useState<ProjectEdits>({});
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<Set<number>>(new Set());
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<Set<number>>(
+    new Set()
+  );
+  const [exportProjectId, setExportProjectId] = useState<number | null>(null);
+  const [unlockedApprovedProjects, setUnlockedApprovedProjects] = useState<
+    Set<number>
+  >(new Set());
+  const [unlockConfirmProjectId, setUnlockConfirmProjectId] = useState<
+    number | null
+  >(null);
 
   // Fetch projects
   const { data: projectsData } = useQuery({
@@ -35,16 +63,22 @@ export default function MonthlyProjectTimesheets() {
     queryFn: () => projectsApi.getProjects(),
   });
 
-  // Fetch timesheet data for all projects
+  // Fetch timesheet data for all projects using useQueries
   const projectIds = projectsData?.data?.map((p: any) => p.id) || [];
-  
-  const timesheetQueries = projectIds.map((projectId: number) => 
-    useQuery({
-      queryKey: [...QUERY_KEYS.timesheets.all, 'project', projectId, selectedMonth],
-      queryFn: () => timesheetsApi.getMonthlyProjectTimesheet(projectId, selectedMonth),
+
+  const timesheetQueries = useQueries({
+    queries: projectIds.map((projectId: number) => ({
+      queryKey: [
+        ...QUERY_KEYS.timesheets.all,
+        "project",
+        projectId,
+        selectedMonth,
+      ],
+      queryFn: () =>
+        timesheetsApi.getMonthlyProjectTimesheet(projectId, selectedMonth),
       enabled: !!projectId && !!selectedMonth,
-    })
-  );
+    })),
+  });
 
   // Create timesheet mutation
   const createTimesheetMutation = useMutation({
@@ -61,7 +95,7 @@ export default function MonthlyProjectTimesheets() {
     onSuccess: (_, variables) => {
       toast.success("Timesheet saved successfully!");
       // Remove from unsaved changes
-      setHasUnsavedChanges(prev => {
+      setHasUnsavedChanges((prev) => {
         const newSet = new Set(prev);
         // Find project ID from timesheet
         timesheetQueries.forEach((query, idx) => {
@@ -87,7 +121,9 @@ export default function MonthlyProjectTimesheets() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to submit timesheet");
+      toast.error(
+        error.response?.data?.message || "Failed to submit timesheet"
+      );
     },
   });
 
@@ -100,12 +136,14 @@ export default function MonthlyProjectTimesheets() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to update timesheet");
+      toast.error(
+        error.response?.data?.message || "Failed to update timesheet"
+      );
     },
   });
 
   const getDaysInMonth = (month: string) => {
-    const [year, monthNum] = month.split('-').map(Number);
+    const [year, monthNum] = month.split("-").map(Number);
     return new Date(year, monthNum, 0).getDate();
   };
 
@@ -122,18 +160,27 @@ export default function MonthlyProjectTimesheets() {
     setExpandedProjects(newExpanded);
   };
 
-  const handleHoursChange = (projectId: number, employeeId: number, date: string, hours: number) => {
+  const handleHoursChange = (
+    projectId: number,
+    employeeId: number,
+    date: string,
+    hours: number
+  ) => {
     const key = `${employeeId}-${date}`;
-    
-    setProjectEdits(prev => ({
+
+    setProjectEdits((prev) => ({
       ...prev,
       [projectId]: new Map(prev[projectId] || new Map()).set(key, hours),
     }));
-    
-    setHasUnsavedChanges(prev => new Set(prev).add(projectId));
+
+    setHasUnsavedChanges((prev) => new Set(prev).add(projectId));
   };
 
-  const getHoursValue = (projectId: number, employeeId: number, dailyHours: DailyHours): number => {
+  const getHoursValue = (
+    projectId: number,
+    employeeId: number,
+    dailyHours: DailyHours
+  ): number => {
     const key = `${employeeId}-${dailyHours.date}`;
     const edits = projectEdits[projectId];
     return edits?.has(key) ? edits.get(key)! : dailyHours.hoursWorked;
@@ -156,13 +203,15 @@ export default function MonthlyProjectTimesheets() {
       // Prepare entries
       const entries: any[] = [];
       const edits = projectEdits[projectId] || new Map();
-      
+
       timesheetData.employees.forEach((employee: any) => {
         employee.dailyHours.forEach((dailyHour: any) => {
-          if (dailyHour.jobStatus && dailyHour.jobStatus !== 'demobilized') {
+          if (dailyHour.jobStatus && dailyHour.jobStatus !== "demobilized") {
             const key = `${employee.employeeId}-${dailyHour.date}`;
-            const hours = edits.has(key) ? edits.get(key)! : dailyHour.hoursWorked;
-            
+            const hours = edits.has(key)
+              ? edits.get(key)!
+              : dailyHour.hoursWorked;
+
             entries.push({
               employeeId: employee.employeeId,
               date: dailyHour.date,
@@ -175,15 +224,15 @@ export default function MonthlyProjectTimesheets() {
       });
 
       await saveEntriesMutation.mutateAsync({ timesheetId, entries });
-      
+
       // Clear edits for this project
-      setProjectEdits(prev => {
+      setProjectEdits((prev) => {
         const newEdits = { ...prev };
         delete newEdits[projectId];
         return newEdits;
       });
     } catch (error) {
-      console.error('Error saving timesheet:', error);
+      console.error("Error saving timesheet:", error);
     }
   };
 
@@ -194,7 +243,7 @@ export default function MonthlyProjectTimesheets() {
       // Create timesheet if it doesn't exist and/or save entries
       let timesheetId = timesheetData.timesheet?.id;
       const hasChanges = hasUnsavedChanges.has(projectId);
-      
+
       if (!timesheetId) {
         const newTimesheet = await createTimesheetMutation.mutateAsync({
           projectId,
@@ -207,13 +256,15 @@ export default function MonthlyProjectTimesheets() {
       if (hasChanges || !timesheetData.timesheet?.id) {
         const entries: any[] = [];
         const edits = projectEdits[projectId] || new Map();
-        
+
         timesheetData.employees.forEach((employee: any) => {
           employee.dailyHours.forEach((dailyHour: any) => {
-            if (dailyHour.jobStatus && dailyHour.jobStatus !== 'demobilized') {
+            if (dailyHour.jobStatus && dailyHour.jobStatus !== "demobilized") {
               const key = `${employee.employeeId}-${dailyHour.date}`;
-              const hours = edits.has(key) ? edits.get(key)! : dailyHour.hoursWorked;
-              
+              const hours = edits.has(key)
+                ? edits.get(key)!
+                : dailyHour.hoursWorked;
+
               entries.push({
                 employeeId: employee.employeeId,
                 date: dailyHour.date,
@@ -226,9 +277,9 @@ export default function MonthlyProjectTimesheets() {
         });
 
         await saveEntriesMutation.mutateAsync({ timesheetId, entries });
-        
+
         // Clear edits for this project
-        setProjectEdits(prev => {
+        setProjectEdits((prev) => {
           const newEdits = { ...prev };
           delete newEdits[projectId];
           return newEdits;
@@ -238,35 +289,46 @@ export default function MonthlyProjectTimesheets() {
       // Submit the timesheet
       await submitTimesheetMutation.mutateAsync({ timesheetId });
     } catch (error) {
-      console.error('Error submitting timesheet:', error);
+      console.error("Error submitting timesheet:", error);
     }
   };
 
-  const handleApprove = async (timesheetId: number, status: TimesheetStatus.APPROVED | TimesheetStatus.REJECTED) => {
+  const handleApprove = async (
+    timesheetId: number,
+    status: TimesheetStatus.APPROVED | TimesheetStatus.REJECTED
+  ) => {
     await approveTimesheetMutation.mutateAsync({ timesheetId, status });
+  };
+
+  const handleUnlockApproved = (projectId: number) => {
+    setUnlockedApprovedProjects((prev) => new Set(prev).add(projectId));
+    setUnlockConfirmProjectId(null);
+    toast.info(
+      "Timesheet unlocked for editing. Remember to resubmit after changes."
+    );
   };
 
   const getStatusBadgeColor = (status: TimesheetStatus) => {
     switch (status) {
       case TimesheetStatus.DRAFT:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
       case TimesheetStatus.SUBMITTED:
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
       case TimesheetStatus.APPROVED:
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
       case TimesheetStatus.REJECTED:
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const isLoading = timesheetQueries.some(q => q.isLoading);
+  const isLoading = timesheetQueries.some((q) => q.isLoading);
 
   return (
     <PermissionGuard requiredPermissions={["view_timesheets"]}>
       <PageMeta title="Monthly Project Timesheets" />
-      
+
       <div className="space-y-6">
         <PageBreadcrumb
           items={[
@@ -312,7 +374,9 @@ export default function MonthlyProjectTimesheets() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12">
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
-              <span className="ml-3 text-gray-600 dark:text-gray-400">Loading timesheets...</span>
+              <span className="ml-3 text-gray-600 dark:text-gray-400">
+                Loading timesheets...
+              </span>
             </div>
           </div>
         )}
@@ -323,14 +387,22 @@ export default function MonthlyProjectTimesheets() {
             {timesheetQueries.map((query, index) => {
               const projectId = projectIds[index];
               const timesheetData = query.data;
-              
-              if (!timesheetData || timesheetData.employees.length === 0) return null;
+
+              if (!timesheetData || timesheetData.employees.length === 0)
+                return null;
 
               const isExpanded = expandedProjects.has(projectId);
               const hasChanges = hasUnsavedChanges.has(projectId);
-              const status = timesheetData.timesheet?.status || TimesheetStatus.DRAFT;
+              const status =
+                timesheetData.timesheet?.status || TimesheetStatus.DRAFT;
               const isSubmitted = status === TimesheetStatus.SUBMITTED;
-              const canEdit = status !== TimesheetStatus.SUBMITTED;
+              const isApproved =
+                status === TimesheetStatus.APPROVED ||
+                status === TimesheetStatus.REJECTED;
+              const isUnlocked = unlockedApprovedProjects.has(projectId);
+              const canEdit =
+                status !== TimesheetStatus.SUBMITTED &&
+                (!isApproved || isUnlocked);
 
               return (
                 <div
@@ -355,12 +427,16 @@ export default function MonthlyProjectTimesheets() {
                           {timesheetData.project.name}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {timesheetData.project.client.name} • {timesheetData.employees.length} employees
+                          {timesheetData.project.client.name} •{" "}
+                          {timesheetData.employees.length} employees
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="flex items-center gap-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Badge className={getStatusBadgeColor(status)}>
                         {status.toUpperCase()}
                       </Badge>
@@ -376,77 +452,120 @@ export default function MonthlyProjectTimesheets() {
                   {isExpanded && (
                     <div className="border-t border-gray-200 dark:border-gray-700">
                       {/* Action Buttons */}
-                      <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/30 border-b border-gray-200 dark:border-gray-700 flex items-center justify-end gap-2">
-                        {canEdit && (
-                          <>
+                      <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/30 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+                        <Button
+                          onClick={() => setExportProjectId(projectId)}
+                          variant="outline"
+                          size="sm"
+                          startIcon={<DownloadIcon />}
+                        >
+                          Export
+                        </Button>
+
+                        <div className="flex gap-2">
+                          {isApproved && !isUnlocked && (
                             <Button
-                              onClick={() => handleSave(projectId, timesheetData)}
-                              disabled={!hasChanges || saveEntriesMutation.isPending}
-                              size="sm"
-                              startIcon={<CheckCircleIcon />}
-                            >
-                              {saveEntriesMutation.isPending ? "Saving..." : "Save"}
-                            </Button>
-                            <Button
-                              onClick={() => handleSubmit(projectId, timesheetData)}
-                              variant="primary"
-                              size="sm"
-                              disabled={submitTimesheetMutation.isPending}
-                              startIcon={<PaperPlaneIcon />}
-                            >
-                              {submitTimesheetMutation.isPending ? "Submitting..." : "Submit"}
-                            </Button>
-                          </>
-                        )}
-                        {isSubmitted && (
-                          <>
-                            <Button
-                              onClick={() => handleApprove(timesheetData.timesheet!.id, TimesheetStatus.REJECTED)}
+                              onClick={() =>
+                                setUnlockConfirmProjectId(projectId)
+                              }
                               variant="outline"
                               size="sm"
-                              disabled={approveTimesheetMutation.isPending}
-                              startIcon={<CloseIcon />}
+                              startIcon={<LockIcon />}
                             >
-                              Reject
+                              Unlock
                             </Button>
-                            <Button
-                              onClick={() => handleApprove(timesheetData.timesheet!.id, TimesheetStatus.APPROVED)}
-                              variant="primary"
-                              size="sm"
-                              disabled={approveTimesheetMutation.isPending}
-                              startIcon={<CheckLineIcon />}
-                            >
-                              Approve
-                            </Button>
-                          </>
-                        )}
+                          )}
+                          {canEdit && (
+                            <>
+                              <Button
+                                onClick={() =>
+                                  handleSave(projectId, timesheetData)
+                                }
+                                disabled={
+                                  !hasChanges || saveEntriesMutation.isPending
+                                }
+                                size="sm"
+                                startIcon={<CheckCircleIcon />}
+                              >
+                                {saveEntriesMutation.isPending
+                                  ? "Saving..."
+                                  : "Save"}
+                              </Button>
+                              <Button
+                                onClick={() =>
+                                  handleSubmit(projectId, timesheetData)
+                                }
+                                variant="primary"
+                                size="sm"
+                                disabled={submitTimesheetMutation.isPending}
+                                startIcon={<PaperPlaneIcon />}
+                              >
+                                {submitTimesheetMutation.isPending
+                                  ? "Submitting..."
+                                  : "Submit"}
+                              </Button>
+                            </>
+                          )}
+                          {isSubmitted && (
+                            <>
+                              <Button
+                                onClick={() =>
+                                  handleApprove(
+                                    timesheetData.timesheet!.id,
+                                    TimesheetStatus.REJECTED
+                                  )
+                                }
+                                variant="outline"
+                                size="sm"
+                                disabled={approveTimesheetMutation.isPending}
+                                startIcon={<CloseIcon />}
+                              >
+                                Reject
+                              </Button>
+                              <Button
+                                onClick={() =>
+                                  handleApprove(
+                                    timesheetData.timesheet!.id,
+                                    TimesheetStatus.APPROVED
+                                  )
+                                }
+                                variant="primary"
+                                size="sm"
+                                disabled={approveTimesheetMutation.isPending}
+                                startIcon={<CheckLineIcon />}
+                              >
+                                Approve
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
 
                       <div className="overflow-x-auto">
                         <table className="min-w-full border-collapse">
                           <thead className="bg-gray-50 dark:bg-gray-900/50">
                             <tr>
-                              <th 
+                              <th
                                 className="sticky left-0 z-20 bg-gray-50 dark:bg-gray-900/50 px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-b border-gray-200 dark:border-gray-700"
-                                style={{ minWidth: '40px', width: '40px' }}
+                                style={{ minWidth: "40px", width: "40px" }}
                               >
                                 Sr
                               </th>
-                              <th 
+                              <th
                                 className="sticky left-[40px] z-20 bg-gray-50 dark:bg-gray-900/50 px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-b border-gray-200 dark:border-gray-700"
-                                style={{ minWidth: '90px', width: '90px' }}
+                                style={{ minWidth: "90px", width: "90px" }}
                               >
                                 ID No
                               </th>
-                              <th 
+                              <th
                                 className="sticky left-[130px] z-20 bg-gray-50 dark:bg-gray-900/50 px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-b border-gray-200 dark:border-gray-700"
-                                style={{ minWidth: '150px', width: '150px' }}
+                                style={{ minWidth: "150px", width: "150px" }}
                               >
                                 Name
                               </th>
-                              <th 
+                              <th
                                 className="sticky left-[280px] z-20 bg-gray-50 dark:bg-gray-900/50 px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-b border-gray-200 dark:border-gray-700"
-                                style={{ minWidth: '120px', width: '120px' }}
+                                style={{ minWidth: "120px", width: "120px" }}
                               >
                                 Trade
                               </th>
@@ -454,74 +573,265 @@ export default function MonthlyProjectTimesheets() {
                                 <th
                                   key={day}
                                   className="px-0.5 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 border-r border-b border-gray-200 dark:border-gray-700 whitespace-nowrap"
-                                  style={{ minWidth: '45px', width: '45px' }}
+                                  style={{ minWidth: "45px", width: "45px" }}
                                 >
                                   {day}
                                 </th>
                               ))}
+                              <th
+                                className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800"
+                                style={{ minWidth: "70px", width: "70px" }}
+                              >
+                                Total
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800">
-                            {timesheetData.employees.map((employee: any) => (
-                              <tr key={employee.employeeId} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 border-b border-gray-200 dark:border-gray-700">
-                                <td 
-                                  className="sticky left-0 z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap"
-                                  style={{ minWidth: '40px', width: '40px' }}
+                            {timesheetData.employees.map((employee: any) => {
+                              // Calculate total hours for this employee
+                              const employeeTotal = Math.round(
+                                employee.dailyHours.reduce(
+                                  (sum: number, dh: any) => {
+                                    if (
+                                      dh.jobStatus &&
+                                      dh.jobStatus !== "demobilized" &&
+                                      dh.jobStatus !== null
+                                    ) {
+                                      const hoursValue = getHoursValue(
+                                        projectId,
+                                        employee.employeeId,
+                                        dh
+                                      );
+                                      return sum + hoursValue;
+                                    }
+                                    return sum;
+                                  },
+                                  0
+                                )
+                              );
+
+                              return (
+                                <tr
+                                  key={employee.employeeId}
+                                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 border-b border-gray-200 dark:border-gray-700"
                                 >
-                                  {employee.srNo}
-                                </td>
-                                <td 
-                                  className="sticky left-[40px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap"
-                                  style={{ minWidth: '90px', width: '90px' }}
-                                >
-                                  {employee.idNo}
-                                </td>
-                                <td 
-                                  className="sticky left-[130px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
-                                  style={{ minWidth: '150px', width: '150px' }}
-                                >
-                                  <div className="truncate" title={employee.name}>
-                                    {employee.name}
-                                  </div>
-                                </td>
-                                <td 
-                                  className="sticky left-[280px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
-                                  style={{ minWidth: '120px', width: '120px' }}
-                                >
-                                  <div className="truncate" title={employee.trade}>
-                                    {employee.trade}
-                                  </div>
-                                </td>
-                                {employee.dailyHours.map((dailyHour: any) => (
                                   <td
-                                    key={dailyHour.day}
-                                    className="px-0.5 py-1 text-center border-r border-gray-200 dark:border-gray-700"
-                                    style={{ minWidth: '45px', width: '45px' }}
+                                    className="sticky left-0 z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                                    style={{ minWidth: "40px", width: "40px" }}
                                   >
-                                    {dailyHour.jobStatus === 'demobilized' ? (
-                                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Dem</span>
-                                    ) : dailyHour.jobStatus === null ? (
-                                      <span className="text-xs text-gray-400 dark:text-gray-600">-</span>
-                                    ) : (
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        max="24"
-                                        step="0.5"
-                                        value={getHoursValue(projectId, employee.employeeId, dailyHour)}
-                                        onChange={(e) => handleHoursChange(projectId, employee.employeeId, dailyHour.date, Number(e.target.value))}
-                                        disabled={!canEdit}
-                                        className="w-full px-0.5 py-0.5 text-xs text-center border border-gray-300 dark:border-gray-600 rounded
-                                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                                 focus:ring-1 focus:ring-brand-500 focus:border-brand-500
-                                                 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed
-                                                 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                      />
-                                    )}
+                                    {employee.srNo}
                                   </td>
-                                ))}
-                              </tr>
-                            ))}
+                                  <td
+                                    className="sticky left-[40px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                                    style={{ minWidth: "90px", width: "90px" }}
+                                  >
+                                    {employee.idNo}
+                                  </td>
+                                  <td
+                                    className="sticky left-[130px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
+                                    style={{
+                                      minWidth: "150px",
+                                      width: "150px",
+                                    }}
+                                  >
+                                    <div
+                                      className="truncate"
+                                      title={employee.name}
+                                    >
+                                      {employee.name}
+                                    </div>
+                                  </td>
+                                  <td
+                                    className="sticky left-[280px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
+                                    style={{
+                                      minWidth: "120px",
+                                      width: "120px",
+                                    }}
+                                  >
+                                    <div
+                                      className="truncate"
+                                      title={employee.trade}
+                                    >
+                                      {employee.trade}
+                                    </div>
+                                  </td>
+                                  {days.map((day) => {
+                                    // Find the dailyHour entry for this specific day
+                                    const dailyHour = employee.dailyHours.find(
+                                      (dh: any) => dh.day === day
+                                    );
+                                    const hoursValue = dailyHour
+                                      ? Math.round(
+                                          getHoursValue(
+                                            projectId,
+                                            employee.employeeId,
+                                            dailyHour
+                                          )
+                                        )
+                                      : 0;
+                                    const isZero = hoursValue === 0;
+                                    const isNoticePeriod =
+                                      dailyHour?.jobStatus === "notice_period";
+
+                                    // Determine color based on status
+                                    let colorClass = "";
+                                    if (isZero) {
+                                      colorClass =
+                                        "text-red-600 dark:text-red-400";
+                                    } else if (isNoticePeriod) {
+                                      colorClass =
+                                        "text-orange-600 dark:text-orange-400";
+                                    } else {
+                                      colorClass =
+                                        "text-green-600 dark:text-green-400";
+                                    }
+
+                                    return (
+                                      <td
+                                        key={day}
+                                        className="px-0.5 py-1 text-center border-r border-gray-200 dark:border-gray-700"
+                                        style={{
+                                          minWidth: "45px",
+                                          width: "45px",
+                                        }}
+                                      >
+                                        {!dailyHour ? (
+                                          <span className="text-xs text-gray-400 dark:text-gray-600">
+                                            -
+                                          </span>
+                                        ) : dailyHour.jobStatus ===
+                                          "demobilized" ? (
+                                          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                            Dem
+                                          </span>
+                                        ) : dailyHour.jobStatus === null ? (
+                                          <span className="text-xs text-gray-400 dark:text-gray-600">
+                                            -
+                                          </span>
+                                        ) : (
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            max="24"
+                                            step="1"
+                                            value={hoursValue}
+                                            onChange={(e) =>
+                                              handleHoursChange(
+                                                projectId,
+                                                employee.employeeId,
+                                                dailyHour.date,
+                                                Math.round(
+                                                  Number(e.target.value)
+                                                )
+                                              )
+                                            }
+                                            disabled={!canEdit}
+                                            className={`w-full px-0.5 py-0.5 text-xs text-center border border-gray-300 dark:border-gray-600 rounded
+                                                   bg-white dark:bg-gray-700 font-medium
+                                                   focus:ring-1 focus:ring-brand-500 focus:border-brand-500
+                                                   disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed
+                                                   [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
+                                                   ${colorClass}`}
+                                          />
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                                  <td
+                                    className="px-2 py-2 text-center text-sm font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900/50"
+                                    style={{ minWidth: "70px", width: "70px" }}
+                                  >
+                                    {employeeTotal}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+
+                            {/* Total Row */}
+                            <tr className="bg-gray-100 dark:bg-gray-900 font-bold border-t-2 border-gray-300 dark:border-gray-600">
+                              <td
+                                colSpan={4}
+                                className="sticky left-0 z-10 px-2 py-3 text-right text-sm font-bold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900"
+                                style={{ minWidth: "400px" }}
+                              >
+                                Total Hrs
+                              </td>
+                              {days.map((day) => {
+                                // Calculate total for this day across all employees
+                                const dayTotal = Math.round(
+                                  timesheetData.employees.reduce(
+                                    (sum: number, employee: any) => {
+                                      const dailyHour =
+                                        employee.dailyHours.find(
+                                          (dh: any) => dh.day === day
+                                        );
+                                      if (
+                                        dailyHour &&
+                                        dailyHour.jobStatus &&
+                                        dailyHour.jobStatus !== "demobilized" &&
+                                        dailyHour.jobStatus !== null
+                                      ) {
+                                        return (
+                                          sum +
+                                          getHoursValue(
+                                            projectId,
+                                            employee.employeeId,
+                                            dailyHour
+                                          )
+                                        );
+                                      }
+                                      return sum;
+                                    },
+                                    0
+                                  )
+                                );
+
+                                return (
+                                  <td
+                                    key={day}
+                                    className="px-0.5 py-3 text-center text-xs font-bold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
+                                    style={{ minWidth: "45px", width: "45px" }}
+                                  >
+                                    {dayTotal > 0 ? dayTotal : "-"}
+                                  </td>
+                                );
+                              })}
+                              <td
+                                className="px-2 py-3 text-center text-sm font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-800"
+                                style={{ minWidth: "70px", width: "70px" }}
+                              >
+                                {Math.round(
+                                  timesheetData.employees.reduce(
+                                    (grandTotal: number, employee: any) => {
+                                      return (
+                                        grandTotal +
+                                        employee.dailyHours.reduce(
+                                          (sum: number, dh: any) => {
+                                            if (
+                                              dh.jobStatus &&
+                                              dh.jobStatus !== "demobilized" &&
+                                              dh.jobStatus !== null
+                                            ) {
+                                              return (
+                                                sum +
+                                                getHoursValue(
+                                                  projectId,
+                                                  employee.employeeId,
+                                                  dh
+                                                )
+                                              );
+                                            }
+                                            return sum;
+                                          },
+                                          0
+                                        )
+                                      );
+                                    },
+                                    0
+                                  )
+                                )}
+                              </td>
+                            </tr>
                           </tbody>
                         </table>
                       </div>
@@ -533,6 +843,71 @@ export default function MonthlyProjectTimesheets() {
           </div>
         )}
       </div>
+
+      {/* Export Modal */}
+      {exportProjectId !== null &&
+        (() => {
+          const exportTimesheetData = timesheetQueries.find(
+            (_, idx) => projectIds[idx] === exportProjectId
+          )?.data;
+          if (!exportTimesheetData) return null;
+
+          return (
+            <TimesheetExportModal
+              isOpen={true}
+              onClose={() => setExportProjectId(null)}
+              timesheetData={exportTimesheetData}
+              month={selectedMonth}
+              projectEdits={projectEdits[exportProjectId] || new Map()}
+              getHoursValue={(employeeId, dailyHour) => {
+                const key = `${employeeId}-${dailyHour.date}`;
+                const edits = projectEdits[exportProjectId];
+                return edits?.has(key)
+                  ? edits.get(key)!
+                  : dailyHour.hoursWorked;
+              }}
+            />
+          );
+        })()}
+
+      {/* Unlock Confirmation Modal */}
+      {unlockConfirmProjectId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                <LockIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Unlock Approved Timesheet
+              </h3>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              This is an approved timesheet. Are you sure you want to unlock it
+              for editing? You will need to resubmit the timesheet after making
+              changes.
+            </p>
+
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={() => setUnlockConfirmProjectId(null)}
+                variant="outline"
+                size="sm"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => handleUnlockApproved(unlockConfirmProjectId)}
+                variant="primary"
+                size="sm"
+              >
+                Yes, Unlock
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </PermissionGuard>
   );
 }
