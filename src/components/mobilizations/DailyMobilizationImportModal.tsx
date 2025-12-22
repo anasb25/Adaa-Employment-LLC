@@ -135,12 +135,15 @@ export default function DailyMobilizationImportModal({
           </h4>
           <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
             <li>Download the template file to see the required format</li>
+            <li><strong>Required columns:</strong> ID NO, STATUS, MOB-DEM, DATE</li>
+            <li><strong>Optional:</strong> MOBILIZED TRADE (uses employee's first actual trade if not provided)</li>
+            <li><strong>Conditionally required:</strong> CLIENT and SITE are required when MOB-DEM is "Mobilized"</li>
             <li>ID NO should match existing employee ADAA EMP CODE</li>
             <li>MOBILIZED TRADE will be created if it doesn't exist</li>
             <li>SITE and CLIENT will be created if they don't exist</li>
             <li>Date format should be YYYY-MM-DD (e.g., {selectedDate})</li>
-            <li>MOB-DEM should be either "mobilized" or "demobilized"</li>
-            <li>REASON maps to job status (On Job, On Vacation, Cancelled, Absconded)</li>
+            <li>MOB-DEM should be either "Mobilized" or "Demobilized"</li>
+            <li>STATUS maps to job status (Active, On Vacation, Cancelled, Absconded, Absent, Sick Leave, etc.)</li>
           </ul>
         </div>
 
