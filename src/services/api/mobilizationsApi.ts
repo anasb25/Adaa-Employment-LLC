@@ -32,9 +32,43 @@ export const mobilizationsApi = {
     return response.data;
   },
 
+  // Get current status for all employees (most recent mobilization for each)
+  getCurrentStatusForAllEmployees: async (): Promise<Mobilization[]> => {
+    const response = await axiosInstance.get('/mobilizations/current-status');
+    return response.data;
+  },
+
+  // Get effective status for all employees on a specific date (carry-forward logic)
+  getEffectiveStatusForAllEmployeesOnDate: async (date: string): Promise<Mobilization[]> => {
+    const response = await axiosInstance.get('/mobilizations/effective-status-on-date', {
+      params: { date },
+    });
+    return response.data;
+  },
+
   // Get latest active mobilization for an employee
   getLatestForEmployee: async (employeeId: number): Promise<Mobilization | null> => {
     const response = await axiosInstance.get(`/mobilizations/employee/${employeeId}/latest`);
+    return response.data;
+  },
+
+  // Get employee's effective status on a specific date (carry-forward logic)
+  getEffectiveStatusOnDate: async (employeeId: number, date: string): Promise<Mobilization | null> => {
+    const response = await axiosInstance.get(`/mobilizations/employee/${employeeId}/status-on-date`, {
+      params: { date },
+    });
+    return response.data;
+  },
+
+  // Get employee mobilization history within date range
+  getEmployeeHistory: async (
+    employeeId: number,
+    startDate?: string,
+    endDate?: string
+  ): Promise<Mobilization[]> => {
+    const response = await axiosInstance.get(`/mobilizations/employee/${employeeId}/history`, {
+      params: { startDate, endDate },
+    });
     return response.data;
   },
 

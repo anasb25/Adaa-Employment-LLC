@@ -30,7 +30,6 @@ import ClientManagement from "./pages/ClientManagement";
 import ProjectManagement from "./pages/ProjectManagement";
 import AllocationManagement from "./pages/AllocationManagement";
 import CreateAllocation from "./pages/CreateAllocation";
-import MobilizationManagement from "./pages/MobilizationManagement";
 import CreateMobilization from "./pages/CreateMobilization";
 import EditMobilization from "./pages/EditMobilization";
 import DailyMobilizationManagement from "./pages/DailyMobilizationManagement";
@@ -64,7 +63,7 @@ export default function App() {
             <Route path="/projects" element={<ProjectManagement />} />
             <Route path="/allocations" element={<AllocationManagement />} />
             <Route path="/allocations/create" element={<CreateAllocation />} />
-            <Route path="/mobilizations" element={<MobilizationManagement />} />
+            <Route path="/mobilizations" element={<DailyMobilizationManagement />} />
             <Route path="/mobilizations/create" element={<CreateMobilization />} />
             <Route path="/mobilizations/:id/edit" element={<EditMobilization />} />
             <Route path="/mobilizations/daily" element={<DailyMobilizationManagement />} />

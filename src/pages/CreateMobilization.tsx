@@ -13,6 +13,7 @@ import Label from '../components/form/Label';
 import Input from '../components/form/input/InputField';
 import { AngleLeftIcon, TrashBinIcon, PlusIcon } from '../icons';
 import { MOB_STATUS_OPTIONS, JOB_STATUS_OPTIONS } from '../lib/mobilizationConstants';
+import CarryForwardInfo from '../components/mobilizations/CarryForwardInfo';
 
 interface BulkMobilizationRow {
   id: string;
@@ -89,7 +90,7 @@ export default function CreateMobilization() {
     onSuccess: () => {
       toast.success('Mobilization created successfully');
       queryClient.invalidateQueries({ queryKey: ['mobilizations'] });
-      navigate('/mobilizations');
+      navigate('/mobilizations/daily');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to create mobilization');
@@ -119,7 +120,7 @@ export default function CreateMobilization() {
     onSuccess: (results) => {
       toast.success(`Successfully created ${results.length} mobilization(s)`);
       queryClient.invalidateQueries({ queryKey: ['mobilizations'] });
-      navigate('/mobilizations');
+      navigate('/mobilizations/daily');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to create mobilizations');
@@ -198,6 +199,9 @@ export default function CreateMobilization() {
           </p>
         </div>
       </div>
+
+      {/* Info Panel */}
+      <CarryForwardInfo variant="compact" />
 
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
