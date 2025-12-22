@@ -86,8 +86,19 @@ const navItems: NavItem[] = [
   {
     name: "Mobilizations",
     icon: <TaskIcon />,
-    path: "/mobilizations",
     permission: "employee:read",
+    subItems: [
+      {
+        name: "Daily Mobilizations",
+        path: "/mobilizations/daily",
+        permission: "employee:read",
+      },
+      {
+        name: "All Mobilizations",
+        path: "/mobilizations",
+        permission: "employee:read",
+      },
+    ],
   },
   {
     name: "Timesheets",

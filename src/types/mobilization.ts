@@ -1,18 +1,19 @@
-export enum MobilizationStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-}
-
 export enum MobStatus {
   MOBILIZED = 'mobilized',
   DEMOBILIZED = 'demobilized',
 }
 
 export enum JobStatus {
-  ON_JOB = 'on_job',
+  ACTIVE = 'active',
   CANCELLED = 'cancelled',
-  ON_VACATION = 'on_vacation',
   ABSCONDED = 'absconded',
+  ON_VACATION = 'on_vacation',
+  ABSENT = 'absent',
+  SICK_LEAVE = 'sick_leave',
+  CASUAL_LEAVE = 'casual_leave',
+  NOTICE_PERIOD = 'notice_period',
+  RESIGNED = 'resigned',
+  IDLE = 'idle',
 }
 
 export interface Mobilization {
@@ -20,7 +21,6 @@ export interface Mobilization {
   employeeId: number;
   mobilizedTradeId: number;
   projectId: number | null;
-  status: MobilizationStatus;
   mobStatus: MobStatus;
   jobStatus: JobStatus;
   actionDate: string;
@@ -51,7 +51,6 @@ export interface CreateMobilizationRequest {
   employeeId: number;
   mobilizedTradeId: number;
   projectId?: number | null;
-  status?: MobilizationStatus;
   mobStatus: MobStatus;
   jobStatus: JobStatus;
   actionDate: string;
@@ -62,7 +61,6 @@ export interface BulkCreateMobilizationRequest {
   employeeIds: number[];
   mobilizedTradeId: number;
   projectId?: number | null;
-  status?: MobilizationStatus;
   mobStatus: MobStatus;
   jobStatus: JobStatus;
   actionDate: string;
@@ -73,7 +71,6 @@ export interface UpdateMobilizationRequest {
   employeeId?: number;
   mobilizedTradeId?: number;
   projectId?: number | null;
-  status?: MobilizationStatus;
   mobStatus?: MobStatus;
   jobStatus?: JobStatus;
   actionDate?: string;
@@ -84,7 +81,6 @@ export interface MobilizationFilters {
   employeeId?: number;
   projectId?: number;
   mobilizedTradeId?: number;
-  status?: MobilizationStatus;
   mobStatus?: MobStatus;
   jobStatus?: JobStatus;
   actionDate?: string;
@@ -99,10 +95,16 @@ export interface MobilizationStatistics {
     demobilized: number;
   };
   byJobStatus: {
-    on_job: number;
+    active: number;
     cancelled: number;
-    on_vacation: number;
     absconded: number;
+    on_vacation: number;
+    absent: number;
+    sick_leave: number;
+    casual_leave: number;
+    notice_period: number;
+    resigned: number;
+    idle: number;
   };
   byProject: Array<{
     project: string;

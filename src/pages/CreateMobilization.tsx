@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { mobilizationsApi } from '../services/api/mobilizationsApi';
 import { employeesApi } from '../services/api/employeesApi';
 import { projectsApi } from '../services/api/projectsApi';
 import { skillsApi } from '../services/api/skillsApi';
-import { MobStatus, JobStatus, MobilizationStatus } from '../types/mobilization';
+import { MobStatus, JobStatus } from '../types/mobilization';
 import Button from '../components/ui/button/Button';
 import Select from '../components/form/Select';
 import Label from '../components/form/Label';
@@ -28,17 +28,20 @@ interface BulkMobilizationRow {
 export default function CreateMobilization() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [isBulk, setIsBulk] = useState(false);
+
+  // Get date from URL query parameter, or use today's date
+  const dateFromUrl = searchParams.get('date') || new Date().toISOString().split('T')[0];
 
   // Single form state
   const [formData, setFormData] = useState({
     employeeId: undefined as number | undefined,
     mobilizedTradeId: undefined as number | undefined,
     projectId: undefined as number | undefined,
-    status: MobilizationStatus.ACTIVE,
     mobStatus: MobStatus.DEMOBILIZED,
-    jobStatus: JobStatus.ON_JOB,
-    actionDate: new Date().toISOString().split('T')[0],
+    jobStatus: JobStatus.ACTIVE,
+    actionDate: dateFromUrl,
     notes: '',
   });
 
@@ -51,10 +54,18 @@ export default function CreateMobilization() {
       projectId: null,
       mobStatus: 'demobilized',
       jobStatus: 'on_job',
-      actionDate: new Date().toISOString().split('T')[0],
+      actionDate: dateFromUrl,
       notes: '',
     },
   ]);
+
+  // Update date when URL parameter changes
+  useEffect(() => {
+    if (dateFromUrl) {
+      setFormData(prev => ({ ...prev, actionDate: dateFromUrl }));
+      setBulkRows(prev => prev.map(row => ({ ...row, actionDate: dateFromUrl })));
+    }
+  }, [dateFromUrl]);
 
   // Fetch data for dropdowns
   const { data: employees } = useQuery({
@@ -156,7 +167,7 @@ export default function CreateMobilization() {
       projectId: null,
       mobStatus: 'demobilized',
       jobStatus: 'on_job',
-      actionDate: new Date().toISOString().split('T')[0],
+      actionDate: dateFromUrl,
       notes: '',
     };
     setBulkRows([...bulkRows, newRow]);

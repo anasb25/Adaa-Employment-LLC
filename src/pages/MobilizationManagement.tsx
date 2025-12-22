@@ -160,29 +160,19 @@ export default function MobilizationManagement() {
             <Select
               options={[
                 { value: '', label: 'All' },
-                { value: 'on_job', label: 'On Job' },
+                { value: 'active', label: 'Active' },
                 { value: 'cancelled', label: 'Cancelled' },
-                { value: 'on_vacation', label: 'On Vacation' },
                 { value: 'absconded', label: 'Absconded' },
+                { value: 'on_vacation', label: 'On Vacation' },
+                { value: 'absent', label: 'Absent' },
+                { value: 'sick_leave', label: 'Sick Leave' },
+                { value: 'casual_leave', label: 'Casual Leave' },
+                { value: 'notice_period', label: 'Notice Period' },
+                { value: 'resigned', label: 'Resigned' },
+                { value: 'idle', label: 'Idle' },
               ]}
               value={filters.jobStatus || ''}
               onChange={(value) => setFilters({ ...filters, jobStatus: value as any })}
-              placeholder="All"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Status
-            </label>
-            <Select
-              options={[
-                { value: '', label: 'All' },
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' },
-              ]}
-              value={filters.status || ''}
-              onChange={(value) => setFilters({ ...filters, status: value as any })}
               placeholder="All"
             />
           </div>

@@ -32,6 +32,8 @@ import AllocationManagement from "./pages/AllocationManagement";
 import CreateAllocation from "./pages/CreateAllocation";
 import MobilizationManagement from "./pages/MobilizationManagement";
 import CreateMobilization from "./pages/CreateMobilization";
+import EditMobilization from "./pages/EditMobilization";
+import DailyMobilizationManagement from "./pages/DailyMobilizationManagement";
 import TimesheetManagement from "./pages/TimesheetManagement";
 import DailyTimesheetManagement from "./pages/DailyTimesheetManagement";
 import TimesheetDashboard from "./pages/TimesheetDashboard";
@@ -64,6 +66,8 @@ export default function App() {
             <Route path="/allocations/create" element={<CreateAllocation />} />
             <Route path="/mobilizations" element={<MobilizationManagement />} />
             <Route path="/mobilizations/create" element={<CreateMobilization />} />
+            <Route path="/mobilizations/:id/edit" element={<EditMobilization />} />
+            <Route path="/mobilizations/daily" element={<DailyMobilizationManagement />} />
             <Route path="/timesheets" element={<TimesheetManagement />} />
             <Route
               path="/timesheets/daily"

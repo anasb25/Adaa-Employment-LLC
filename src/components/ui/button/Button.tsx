@@ -5,6 +5,7 @@ interface ButtonProps {
   size?: "sm" | "md"; // Button size
   variant?: "primary" | "outline"; // Button variant
   startIcon?: ReactNode; // Icon before the text
+  leftIcon?: ReactNode; // Alias for startIcon (for compatibility)
   endIcon?: ReactNode; // Icon after the text
   onClick?: () => void; // Click handler
   disabled?: boolean; // Disabled state
@@ -17,12 +18,15 @@ const Button: React.FC<ButtonProps> = ({
   size = "md",
   variant = "primary",
   startIcon,
+  leftIcon,
   endIcon,
   onClick,
   className = "",
   disabled = false,
   type = "button",
 }) => {
+  // Use leftIcon as alias for startIcon if startIcon is not provided
+  const iconToShow = startIcon || leftIcon;
   // Size Classes
   const sizeClasses = {
     sm: "px-4 py-3 text-sm",
@@ -48,7 +52,7 @@ const Button: React.FC<ButtonProps> = ({
       onClick={onClick}
       disabled={disabled}
     >
-      {startIcon && <span className="flex items-center">{startIcon}</span>}
+      {iconToShow && <span className="flex items-center">{iconToShow}</span>}
       {children}
       {endIcon && <span className="flex items-center">{endIcon}</span>}
     </button>
