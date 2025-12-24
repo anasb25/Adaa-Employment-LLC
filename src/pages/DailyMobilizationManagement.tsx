@@ -519,69 +519,83 @@ export default function DailyMobilizationManagement() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                      {group.mobilizations.map((mobilization) => (
-                        <tr key={mobilization.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/30">
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                {mobilization.employee?.name}
+                      {group.mobilizations.map((mobilization) => {
+                        // Check if this is an off day (job status is "off" and it's a carried-forward record)
+                        const isOffDay = showCarryForward && 
+                          mobilization.jobStatus === 'off' && 
+                          new Date(mobilization.actionDate).toISOString().split('T')[0] !== selectedDate;
+
+                        return (
+                          <tr 
+                            key={mobilization.id} 
+                            className={
+                              isOffDay 
+                                ? "bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30" 
+                                : "hover:bg-gray-50 dark:hover:bg-gray-900/30"
+                            }
+                          >
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {mobilization.employee?.name}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  {mobilization.employee?.adaa_emp_code}
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {mobilization.employee?.adaa_emp_code}
-                              </div>
-                            </div>
-                          </td>
-                          {showCarryForward && (
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {new Date(mobilization.actionDate).toLocaleDateString()}
                             </td>
-                          )}
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {mobilization.mobilizedTrade?.skill || '-'}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            {getMobStatusBadge(mobilization.mobStatus)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            {getJobStatusBadge(mobilization.jobStatus)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                            {mobilization.notes || '-'}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() =>
-                                  setHistoryModal({
-                                    isOpen: true,
-                                    employeeId: mobilization.employeeId,
-                                    employeeName: mobilization.employee?.name || 'Unknown',
-                                  })
-                                }
-                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
-                                title="View History"
-                              >
-                                <TimeIcon className="h-4 w-4 inline mr-1" />
-                                History
-                              </button>
-                              <span className="text-gray-300 dark:text-gray-700">|</span>
-                              <button
-                                onClick={() => navigate(`/mobilizations/${mobilization.id}/edit`)}
-                                className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium"
-                              >
-                                Edit
-                              </button>
-                              <span className="text-gray-300 dark:text-gray-700">|</span>
-                              <button
-                                onClick={() => handleDelete(mobilization.id)}
-                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            {showCarryForward && (
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                {new Date(mobilization.actionDate).toLocaleDateString()}
+                              </td>
+                            )}
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                              {mobilization.mobilizedTrade?.skill || '-'}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {getMobStatusBadge(mobilization.mobStatus)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {getJobStatusBadge(mobilization.jobStatus)}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                              {mobilization.notes || '-'}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() =>
+                                    setHistoryModal({
+                                      isOpen: true,
+                                      employeeId: mobilization.employeeId,
+                                      employeeName: mobilization.employee?.name || 'Unknown',
+                                    })
+                                  }
+                                  className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
+                                  title="View History"
+                                >
+                                  <TimeIcon className="h-4 w-4 inline mr-1" />
+                                  History
+                                </button>
+                                <span className="text-gray-300 dark:text-gray-700">|</span>
+                                <button
+                                  onClick={() => navigate(`/mobilizations/${mobilization.id}/edit`)}
+                                  className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium"
+                                >
+                                  Edit
+                                </button>
+                                <span className="text-gray-300 dark:text-gray-700">|</span>
+                                <button
+                                  onClick={() => handleDelete(mobilization.id)}
+                                  className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

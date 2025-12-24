@@ -797,6 +797,7 @@ export default function MonthlyProjectTimesheets() {
                                     const isZero = hoursValue === 0;
                                     const isNoticePeriod =
                                       statusValue === "notice_period";
+                                    const isOffDay = statusValue === "off";
 
                                     // Determine color based on status
                                     let colorClass = "";
@@ -811,10 +812,15 @@ export default function MonthlyProjectTimesheets() {
                                         "text-green-600 dark:text-green-400";
                                     }
 
+                                    // Background color for off days
+                                    const bgClass = isOffDay
+                                      ? "bg-orange-50 dark:bg-orange-900/20"
+                                      : "";
+
                                     return (
                                       <td
                                         key={day}
-                                        className="px-0.5 py-1 text-center border-r border-gray-200 dark:border-gray-700"
+                                        className={`px-0.5 py-1 text-center border-r border-gray-200 dark:border-gray-700 ${bgClass}`}
                                         style={{
                                           minWidth: "60px",
                                           width: "60px",

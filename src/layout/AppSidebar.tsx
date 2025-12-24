@@ -118,6 +118,12 @@ const navItems: NavItem[] = [
         pro: false,
         permission: "user:read", // User management requires user read permission
       },
+      {
+        name: "Special Days",
+        path: "/special-days",
+        pro: false,
+        permission: "user:read", // Special days management
+      },
     ],
   },
 ];
