@@ -14,7 +14,6 @@ import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import PermissionGuard from "../components/auth/PermissionGuard";
 import Button from "../components/ui/button/Button";
-import Badge from "../components/ui/badge/Badge";
 import Label from "../components/form/Label";
 import TimesheetExportModal from "../components/timesheets/TimesheetExportModal";
 import {
@@ -442,16 +441,14 @@ export default function MonthlyProjectTimesheets() {
   const isLoading = timesheetQueries.some((q) => q.isLoading);
 
   return (
-    <PermissionGuard requiredPermissions={["view_timesheets"]}>
-      <PageMeta title="Monthly Project Timesheets" />
+    <PermissionGuard permissions={["view_timesheets"]}>
+      <PageMeta
+        title="Monthly Project Timesheets"
+        description="Manage employee hours by project for the selected month"
+      />
 
       <div className="space-y-6">
-        <PageBreadcrumb
-          items={[
-            { label: "Timesheets", href: "/timesheets" },
-            { label: "Monthly View", href: "/timesheets/monthly" },
-          ]}
-        />
+        <PageBreadcrumb pageTitle="Monthly Project Timesheets" />
 
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -553,13 +550,17 @@ export default function MonthlyProjectTimesheets() {
                       className="flex items-center gap-3"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Badge className={getStatusBadgeColor(status)}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(
+                          status
+                        )}`}
+                      >
                         {status.toUpperCase()}
-                      </Badge>
+                      </span>
                       {hasChanges && (
-                        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
                           Unsaved
-                        </Badge>
+                        </span>
                       )}
                     </div>
                   </button>

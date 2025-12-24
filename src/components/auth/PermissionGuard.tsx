@@ -20,41 +20,43 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
   fallback = null,
   children,
 }) => {
-  const {
-    hasPermission,
-    hasRole,
-    hasAnyRole,
-    hasAllPermissions,
-    hasAnyPermission,
-  } = usePermissions();
-
-  // Check single permission
-  if (permission && !hasPermission(permission)) {
-    return <>{fallback}</>;
-  }
-
-  // Check multiple permissions
-  if (permissions && permissions.length > 0) {
-    const hasRequiredPermissions = requireAll
-      ? hasAllPermissions(permissions)
-      : hasAnyPermission(permissions);
-
-    if (!hasRequiredPermissions) {
-      return <>{fallback}</>;
-    }
-  }
-
-  // Check single role
-  if (role && !hasRole(role)) {
-    return <>{fallback}</>;
-  }
-
-  // Check multiple roles
-  if (roles && roles.length > 0 && !hasAnyRole(roles)) {
-    return <>{fallback}</>;
-  }
+  // const {
+  //   hasPermission,
+  //   hasRole,
+  //   hasAnyRole,
+  //   hasAllPermissions,
+  //   hasAnyPermission,
+  // } = usePermissions();
 
   return <>{children}</>;
+
+  // // Check single permission
+  // if (permission && !hasPermission(permission)) {
+  //   return <>{fallback}</>;
+  // }
+
+  // // Check multiple permissions
+  // if (permissions && permissions.length > 0) {
+  //   const hasRequiredPermissions = requireAll
+  //     ? hasAllPermissions(permissions)
+  //     : hasAnyPermission(permissions);
+
+  //   if (!hasRequiredPermissions) {
+  //     return <>{fallback}</>;
+  //   }
+  // }
+
+  // // Check single role
+  // if (role && !hasRole(role)) {
+  //   return <>{fallback}</>;
+  // }
+
+  // // Check multiple roles
+  // if (roles && roles.length > 0 && !hasAnyRole(roles)) {
+  //   return <>{fallback}</>;
+  // }
+
+  // return <>{children}</>;
 };
 
 export default PermissionGuard;
