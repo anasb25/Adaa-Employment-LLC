@@ -3,6 +3,7 @@ import { Modal } from "../ui/ReusableModal";
 import Button from "../ui/button/Button";
 import { MonthlyProjectTimesheetData } from "../../types/timesheet";
 import { DownloadIcon, FileIcon } from "../../icons";
+import * as XLSX from "xlsx";
 import {
   Document,
   Packer,
@@ -43,6 +44,37 @@ export default function TimesheetExportModal({
   getStatusValue,
 }: TimesheetExportModalProps) {
   const [isExporting, setIsExporting] = useState(false);
+
+  // Job status abbreviations
+  const jobStatusAbbreviations: { [key: string]: string } = {
+    active: "Act",
+    idle: "Idl",
+    notice_period: "NP",
+    on_vacation: "Vac",
+    absent: "A",
+    sick_leave: "SL",
+    casual_leave: "CL",
+    off: "Off",
+    cancelled: "Cnx",
+    absconded: "Abn",
+    resigned: "Res",
+    demobilized: "Dem",
+  };
+
+  const getStatusAbbreviation = (status: string): string => {
+    return jobStatusAbbreviations[status] || status.substring(0, 3).toUpperCase();
+  };
+
+  const getDisplayValue = (employeeId: number, dailyHour: any): string => {
+    if (!dailyHour || dailyHour.jobStatus === null) return "-";
+    if (dailyHour.jobStatus === "demobilized") return "Dem";
+    
+    const hours = Math.round(getHoursValue(employeeId, dailyHour));
+    const status = getStatusValue(employeeId, dailyHour);
+    
+    // If hours are 0, show abbreviation instead of 0
+    return hours === 0 ? getStatusAbbreviation(status) : hours.toString();
+  };
 
   const getDaysInMonth = (monthStr: string) => {
     const [year, monthNum] = monthStr.split("-").map(Number);
@@ -126,21 +158,33 @@ export default function TimesheetExportModal({
 
       days.forEach((day) => {
         const dailyHour = employee.dailyHours.find((dh: any) => dh.day === day);
-        if (!dailyHour || dailyHour.jobStatus === null) {
+        const displayValue = getDisplayValue(employee.employeeId, dailyHour);
+        
+        if (displayValue === "-") {
           row += '<td style="text-align: center;">-</td>';
-        } else if (dailyHour.jobStatus === "demobilized") {
+        } else if (displayValue === "Dem") {
           row += '<td style="text-align: center;">Dem</td>';
         } else {
-          const hours = Math.round(
-            getHoursValue(employee.employeeId, dailyHour)
-          );
+          // Check if it's a number or abbreviation
+          const isNumber = /^\d+$/.test(displayValue);
           let color = "#059669"; // Default green
-          if (hours === 0) {
-            color = "#dc2626"; // Red for zero
-          } else if (dailyHour.jobStatus === "notice_period") {
-            color = "#ea580c"; // Orange for notice period
+          
+          if (!isNumber) {
+            // It's an abbreviation (0 hours status)
+            color = "#dc2626"; // Red for zero hours
+          } else {
+            const hours = parseInt(displayValue);
+            if (hours === 0) {
+              color = "#dc2626"; // Red for zero
+            } else {
+              const status = getStatusValue(employee.employeeId, dailyHour);
+              if (status === "notice_period") {
+                color = "#ea580c"; // Orange for notice period
+              }
+            }
           }
-          row += `<td style="text-align: center; color: ${color}; font-weight: bold;">${hours}</td>`;
+          
+          row += `<td style="text-align: center; color: ${color}; font-weight: bold;">${displayValue}</td>`;
         }
       });
 
@@ -401,18 +445,7 @@ export default function TimesheetExportModal({
             const dailyHour = employee.dailyHours.find(
               (dh: any) => dh.day === day
             );
-            let cellText = "-";
-
-            if (dailyHour) {
-              if (dailyHour.jobStatus === "demobilized") {
-                cellText = "Dem";
-              } else if (dailyHour.jobStatus && dailyHour.jobStatus !== null) {
-                const hours = Math.round(
-                  getHoursValue(employee.employeeId, dailyHour)
-                );
-                cellText = hours.toString();
-              }
-            }
+            const cellText = getDisplayValue(employee.employeeId, dailyHour);
 
             cells.push(
               new TableCell({
@@ -577,6 +610,126 @@ export default function TimesheetExportModal({
     }
   };
 
+  const handleExportExcel = () => {
+    try {
+      setIsExporting(true);
+
+      // Prepare data for Excel
+      const excelData: any[] = [];
+
+      // Title rows
+      excelData.push(["ADAA"]);
+      excelData.push(["ADAA Employment LLC"]);
+      excelData.push([]);
+      excelData.push([
+        `Site: ${timesheetData.project.name}`,
+        "",
+        "",
+        `Client: ${timesheetData.project.client.name}`,
+        "",
+        "",
+        `Period: ${monthName} ${year}`,
+      ]);
+      excelData.push([]);
+
+      // Header row
+      const headerRow = ["Sr", "ID No", "Name", "Trade", ""];
+      days.forEach((day) => headerRow.push(day.toString()));
+      headerRow.push("Total");
+      excelData.push(headerRow);
+
+      // Employee rows
+      timesheetData.employees.forEach((employee, idx) => {
+        const row: any[] = [
+          employee.srNo,
+          employee.idNo,
+          employee.name,
+          employee.trade,
+          "",
+        ];
+
+        // Add daily values
+        days.forEach((day) => {
+          const dailyHour = employee.dailyHours.find((dh: any) => dh.day === day);
+          const displayValue = getDisplayValue(employee.employeeId, dailyHour);
+          row.push(displayValue);
+        });
+
+        // Add total
+        row.push(employeeTotals[idx]);
+        excelData.push(row);
+      });
+
+      // Total row
+      const totalRow = ["", "", "", "", "Total Hrs"];
+      days.forEach((day, idx) => {
+        totalRow.push(dayTotals[idx] > 0 ? dayTotals[idx] : "-");
+      });
+      totalRow.push(grandTotal);
+      excelData.push(totalRow);
+
+      // Signature row
+      excelData.push([]);
+      excelData.push([]);
+      excelData.push([
+        "Prepared By _____________",
+        "",
+        "Checked By _____________",
+        "",
+        "Checked By _____________",
+        "",
+        "Approved By _____________",
+      ]);
+
+      // Create worksheet
+      const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 5 },  // Sr
+        { wch: 12 }, // ID No
+        { wch: 25 }, // Name
+        { wch: 20 }, // Trade
+        { wch: 2 },  // Empty column
+      ];
+      days.forEach(() => colWidths.push({ wch: 5 })); // Day columns
+      colWidths.push({ wch: 8 }); // Total column
+      ws["!cols"] = colWidths;
+
+      // Merge cells for title
+      ws["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // ADAA title
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Company name
+      ];
+
+      // Apply styles (basic)
+      // Note: xlsx library has limited styling support without xlsx-style
+      // For better styling, consider using exceljs library
+
+      // Create workbook and add worksheet
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Timesheet");
+
+      // Generate Excel file
+      const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      saveAs(
+        blob,
+        `Timesheet_${timesheetData.project.name}_${monthName}_${year}.xlsx`
+      );
+
+      onClose();
+    } catch (error) {
+      console.error("Error generating Excel:", error);
+      alert("Failed to generate Excel file. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Export Timesheet" size="md">
       <div className="space-y-4 p-6">
@@ -596,13 +749,23 @@ export default function TimesheetExportModal({
           </Button>
 
           <Button
+            onClick={handleExportExcel}
+            startIcon={<DownloadIcon />}
+            variant="outline"
+            className="w-full justify-center"
+            disabled={isExporting}
+          >
+            {isExporting ? "Generating..." : "Export as Excel"}
+          </Button>
+
+          <Button
             onClick={handleExportDOCX}
             startIcon={<DownloadIcon />}
             variant="outline"
             className="w-full justify-center"
             disabled={isExporting}
           >
-            {isExporting ? "Generating..." : "Export as DOCX"}
+            {isExporting ? "Generating..." : "Export as Word"}
           </Button>
         </div>
 

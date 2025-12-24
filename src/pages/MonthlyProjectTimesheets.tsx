@@ -192,6 +192,7 @@ export default function MonthlyProjectTimesheets() {
       defaultHours: 0,
       abbr: "CL",
     },
+    { value: "off", label: "Off", defaultHours: 0, abbr: "Off" },
     { value: "cancelled", label: "Cancelled", defaultHours: 0, abbr: "Cnx" },
     { value: "absconded", label: "Absconded", defaultHours: 0, abbr: "Abn" },
     { value: "resigned", label: "Resigned", defaultHours: 0, abbr: "Res" },
