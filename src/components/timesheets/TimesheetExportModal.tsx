@@ -18,13 +18,19 @@ import {
 } from "docx";
 import { saveAs } from "file-saver";
 
+interface DayEdit {
+  hours: number;
+  status?: string;
+}
+
 interface TimesheetExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   timesheetData: MonthlyProjectTimesheetData;
   month: string;
-  projectEdits: Map<string, number>;
+  projectEdits: Map<string, DayEdit>;
   getHoursValue: (employeeId: number, dailyHour: any) => number;
+  getStatusValue: (employeeId: number, dailyHour: any) => string;
 }
 
 export default function TimesheetExportModal({
@@ -34,6 +40,7 @@ export default function TimesheetExportModal({
   month,
   projectEdits,
   getHoursValue,
+  getStatusValue,
 }: TimesheetExportModalProps) {
   const [isExporting, setIsExporting] = useState(false);
 

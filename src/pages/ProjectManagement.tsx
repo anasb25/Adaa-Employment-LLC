@@ -8,6 +8,7 @@ import PageMeta from "../components/common/PageMeta";
 import Button from "../components/ui/button/Button";
 import Input from "../components/form/input/InputField";
 import Select from "../components/form/Select";
+import MultiSelect from "../components/form/MultiSelect";
 import Label from "../components/form/Label";
 import Badge from "../components/ui/badge/Badge";
 import { Modal } from "../components/ui/ReusableModal";
@@ -19,7 +20,7 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { toast } from "sonner";
-import { Project, CreateProjectRequest, ProjectStatus, ProjectFAT } from "../types/project";
+import { Project, CreateProjectRequest, ProjectFAT } from "../types/project";
 import ProjectSkillsModal from "../components/projects/ProjectSkillsModal";
 import { AlertIcon as SearchIcon, PlusIcon } from "../icons";
 import { useSearch } from "../hooks/useDebounce";
@@ -32,9 +33,9 @@ export default function ProjectManagement() {
   const [form, setForm] = useState<CreateProjectRequest>({
     name: "",
     location: "",
-    status: "planned",
     notes: "",
     fat: undefined,
+    offDays: [],
     clientId: 0,
   });
   const queryClient = useQueryClient();
@@ -65,7 +66,6 @@ export default function ProjectManagement() {
       return (
         project.name?.toLowerCase().includes(searchLower) ||
         project.location?.toLowerCase().includes(searchLower) ||
-        project.status?.toLowerCase().includes(searchLower) ||
         clientName.toLowerCase().includes(searchLower) ||
         project.notes?.toLowerCase().includes(searchLower) ||
         project.fat?.toLowerCase().includes(searchLower)
@@ -83,9 +83,9 @@ export default function ProjectManagement() {
       setForm({
         name: "",
         location: "",
-        status: "planned",
         notes: "",
         fat: undefined,
+        offDays: [],
         clientId: 0,
       });
     },
@@ -124,8 +124,9 @@ export default function ProjectManagement() {
     setForm({
       name: "",
       location: "",
-      status: "planned",
       notes: "",
+      fat: undefined,
+      offDays: [],
       clientId: 0,
     });
     setIsModalOpen(true);
@@ -136,9 +137,9 @@ export default function ProjectManagement() {
     setForm({
       name: p.name || "",
       location: p.location || "",
-      status: p.status || "planned",
       notes: p.notes || "",
       fat: p.fat,
+      offDays: p.offDays || [],
       clientId: p.clientId,
     });
     setIsModalOpen(true);
@@ -166,17 +167,19 @@ export default function ProjectManagement() {
     }
   };
 
-  const statusOptions: { value: ProjectStatus; label: string }[] = [
-    { value: "planned", label: "Planned" },
-    { value: "ongoing", label: "Ongoing" },
-    { value: "on_hold", label: "On Hold" },
-    { value: "completed", label: "Completed" },
-    { value: "cancelled", label: "Cancelled" },
-  ];
-
   const fatOptions: { value: ProjectFAT; label: string }[] = [
     { value: "ADAA", label: "ADAA" },
     { value: "CLIENT", label: "CLIENT" },
+  ];
+
+  const daysOfWeekOptions = [
+    { value: "Sunday", text: "Sunday" },
+    { value: "Monday", text: "Monday" },
+    { value: "Tuesday", text: "Tuesday" },
+    { value: "Wednesday", text: "Wednesday" },
+    { value: "Thursday", text: "Thursday" },
+    { value: "Friday", text: "Friday" },
+    { value: "Saturday", text: "Saturday" },
   ];
 
   return (
@@ -194,7 +197,7 @@ export default function ProjectManagement() {
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 type="text"
-                placeholder="Search projects by name, location, client, or status..."
+                placeholder="Search projects by name, location, client, or FAT..."
                 value={searchValue}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
@@ -232,13 +235,19 @@ export default function ProjectManagement() {
                     isHeader
                     className="px-5 py-3 text-theme-xs text-gray-500 text-start"
                   >
-                    Status
+                    Location
                   </TableCell>
                   <TableCell
                     isHeader
                     className="px-5 py-3 text-theme-xs text-gray-500 text-start"
                   >
                     FAT
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 text-theme-xs text-gray-500 text-start"
+                  >
+                    Off Days
                   </TableCell>
                   <TableCell
                     isHeader
@@ -263,7 +272,7 @@ export default function ProjectManagement() {
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                 {filteredProjects.length === 0 && searchValue ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="px-5 py-8 text-center">
+                    <TableCell colSpan={8} className="px-5 py-8 text-center">
                       <div className="text-gray-500 dark:text-gray-400">
                         No projects found matching "{searchValue}"
                       </div>
@@ -281,28 +290,26 @@ export default function ProjectManagement() {
                         )?.name || "-"}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
-                        <Badge
-                          size="sm"
-                          color={
-                            p.status === "planned"
-                              ? "gray"
-                              : p.status === "ongoing"
-                              ? "info"
-                              : p.status === "on_hold"
-                              ? "warning"
-                              : p.status === "completed"
-                              ? "success"
-                              : "error"
-                          }
-                        >
-                          {p.status.replace("_", " ")}
-                        </Badge>
+                        {p.location || "-"}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
                         {p.fat ? (
                           <Badge size="sm" color="light">
                             {p.fat}
                           </Badge>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {p.offDays && p.offDays.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {p.offDays.map((day: string, idx: number) => (
+                              <Badge key={idx} size="sm" color="light">
+                                {day}
+                              </Badge>
+                            ))}
+                          </div>
                         ) : (
                           <span className="text-gray-400 dark:text-gray-500">—</span>
                         )}
@@ -370,6 +377,18 @@ export default function ProjectManagement() {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-2">
           <div>
+            <Label htmlFor="project-client">Client</Label>
+            <Select
+              options={(clientsData?.data || []).map((c: any) => ({
+                value: String(c.id),
+                label: c.name,
+              }))}
+              value={form.clientId ? String(form.clientId) : ""}
+              onChange={(v) => setForm({ ...form, clientId: Number(v) })}
+              placeholder="Select client"
+            />
+          </div>
+          <div>
             <Label htmlFor="project-name">Name</Label>
             <Input
               id="project-name"
@@ -386,30 +405,6 @@ export default function ProjectManagement() {
             />
           </div>
           <div>
-            <Label htmlFor="project-status">Status</Label>
-            <Select
-              options={statusOptions.map((o) => ({
-                value: o.value,
-                label: o.label,
-              }))}
-              value={form.status || "planned"}
-              onChange={(v) => setForm({ ...form, status: v as ProjectStatus })}
-              placeholder="Select status"
-            />
-          </div>
-          <div>
-            <Label htmlFor="project-client">Client</Label>
-            <Select
-              options={(clientsData?.data || []).map((c: any) => ({
-                value: String(c.id),
-                label: c.name,
-              }))}
-              value={form.clientId ? String(form.clientId) : ""}
-              onChange={(v) => setForm({ ...form, clientId: Number(v) })}
-              placeholder="Select client"
-            />
-          </div>
-          <div>
             <Label htmlFor="project-fat">FAT</Label>
             <Select
               options={fatOptions.map((o) => ({
@@ -419,6 +414,15 @@ export default function ProjectManagement() {
               value={form.fat || ""}
               onChange={(v) => setForm({ ...form, fat: v as ProjectFAT | undefined })}
               placeholder="Select FAT"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <MultiSelect
+              label="Off Days"
+              options={daysOfWeekOptions}
+              value={form.offDays || []}
+              onChange={(days) => setForm({ ...form, offDays: days })}
+              placeholder="Select off days"
             />
           </div>
           <div className="md:col-span-2">

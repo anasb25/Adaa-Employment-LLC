@@ -1,10 +1,3 @@
-export type ProjectStatus =
-  | "planned"
-  | "ongoing"
-  | "on_hold"
-  | "completed"
-  | "cancelled";
-
 export type ProjectFAT = "ADAA" | "CLIENT";
 
 import { Client } from "./client";
@@ -14,9 +7,9 @@ export interface Project {
   id: number;
   name: string;
   location?: string;
-  status: ProjectStatus;
   notes?: string;
   fat?: ProjectFAT;
+  offDays?: string[];
   clientId: number;
   client?: Client;
   projectSkills?: ProjectSkill[];
@@ -27,9 +20,9 @@ export interface Project {
 export interface CreateProjectRequest {
   name: string;
   location?: string;
-  status?: ProjectStatus;
   notes?: string;
   fat?: ProjectFAT;
+  offDays?: string[];
   clientId: number;
 }
 

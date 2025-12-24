@@ -6,6 +6,7 @@ import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import Button from "../components/ui/button/Button";
 import Input from "../components/form/input/InputField";
+import Select from "../components/form/Select";
 import Label from "../components/form/Label";
 import { Modal } from "../components/ui/ReusableModal";
 import {
@@ -16,7 +17,7 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { toast } from "sonner";
-import { Client, CreateClientRequest } from "../types/client";
+import { Client, CreateClientRequest, PaymentTerms } from "../types/client";
 import { AlertIcon as SearchIcon, PlusIcon } from "../icons";
 import { useSearch } from "../hooks/useDebounce";
 
@@ -30,6 +31,8 @@ export default function ClientManagement() {
     contactNumber: "",
     email: "",
     notes: "",
+    paymentTerms: undefined,
+    trn: "",
   });
   const queryClient = useQueryClient();
 
@@ -78,6 +81,8 @@ export default function ClientManagement() {
         contactNumber: "",
         email: "",
         notes: "",
+        paymentTerms: undefined,
+        trn: "",
       });
     },
     onError: (e: any) => {
@@ -132,6 +137,8 @@ export default function ClientManagement() {
       contactNumber: c.contactNumber || "",
       email: c.email || "",
       notes: c.notes || "",
+      paymentTerms: c.paymentTerms,
+      trn: c.trn || "",
     });
     setIsModalOpen(true);
   };
@@ -153,6 +160,13 @@ export default function ClientManagement() {
       deleteMutation.mutate(id);
     }
   };
+
+  const paymentTermsOptions: { value: PaymentTerms; label: string }[] = [
+    { value: "15", label: "15 Days" },
+    { value: "30", label: "30 Days" },
+    { value: "45", label: "45 Days" },
+    { value: "60", label: "60 Days" },
+  ];
 
   return (
     <>
@@ -213,6 +227,18 @@ export default function ClientManagement() {
                     isHeader
                     className="px-5 py-3 text-theme-xs text-gray-500 text-start"
                   >
+                    Payment Terms
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 text-theme-xs text-gray-500 text-start"
+                  >
+                    TRN
+                  </TableCell>
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 text-theme-xs text-gray-500 text-start"
+                  >
                     Notes
                   </TableCell>
                   <TableCell
@@ -226,7 +252,7 @@ export default function ClientManagement() {
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                 {filteredClients.length === 0 && searchValue ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="px-5 py-8 text-center">
+                    <TableCell colSpan={7} className="px-5 py-8 text-center">
                       <div className="text-gray-500 dark:text-gray-400">
                         No clients found matching "{searchValue}"
                       </div>
@@ -248,6 +274,12 @@ export default function ClientManagement() {
                       </TableCell>
                       <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
                         {c.email || "-"}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {c.paymentTerms ? `${c.paymentTerms} Days` : "-"}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
+                        {c.trn || "-"}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
                         {c.notes || "-"}
@@ -328,6 +360,26 @@ export default function ClientManagement() {
             />
           </div>
           <div>
+            <Label htmlFor="client-payment-terms">Payment Terms</Label>
+            <Select
+              options={paymentTermsOptions.map((o) => ({
+                value: o.value,
+                label: o.label,
+              }))}
+              value={form.paymentTerms || ""}
+              onChange={(v) => setForm({ ...form, paymentTerms: v as PaymentTerms })}
+              placeholder="Select payment terms"
+            />
+          </div>
+          <div>
+            <Label htmlFor="client-trn">TRN</Label>
+            <Input
+              id="client-trn"
+              value={form.trn || ""}
+              onChange={(e) => setForm({ ...form, trn: e.target.value })}
+            />
+          </div>
+          <div className="md:col-span-2">
             <Label htmlFor="client-notes">Notes</Label>
             <Input
               id="client-notes"
