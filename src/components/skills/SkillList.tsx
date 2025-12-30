@@ -18,10 +18,50 @@ import {
   PencilIcon,
   TrashBinIcon,
   PlusIcon,
+  SettingsIcon,
 } from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
 import { Skill } from "../../types/skill";
 import PermissionGuard from "../auth/PermissionGuard";
+import SkillRatesModal from "./SkillRatesModal";
+import { skillRatesApi } from "../../services/api/skillRatesApi";
+
+// Component to show skill rate configuration status
+function SkillRateStatus({ skillId }: { skillId: number }) {
+  const { data: rates = [], isLoading } = useQuery({
+    queryKey: ["skillRates", skillId],
+    queryFn: () => skillRatesApi.getSkillRates(skillId),
+    staleTime: 0,
+  });
+
+  if (isLoading) {
+    return (
+      <span className="text-xs text-gray-400 dark:text-gray-500">
+        Loading...
+      </span>
+    );
+  }
+
+  if (!rates || rates.length === 0) {
+    return (
+      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
+        Not Configured
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 w-fit">
+        {rates.length} Rate{rates.length !== 1 ? "s" : ""} Set
+      </span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">
+        {rates.map(r => r.rateVariant?.name).filter(Boolean).slice(0, 2).join(", ")}
+        {rates.length > 2 && ` +${rates.length - 2}`}
+      </span>
+    </div>
+  );
+}
 
 interface SkillListProps {
   onCreateSkill?: () => void;
@@ -35,6 +75,8 @@ export default function SkillList({
   totalSkills = 0,
 }: SkillListProps) {
   const [page, setPage] = useState(1);
+  const [ratesModalOpen, setRatesModalOpen] = useState(false);
+  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const queryClient = useQueryClient();
 
   const limit = 10;
@@ -60,6 +102,7 @@ export default function SkillList({
     queryKey: [...QUERY_KEYS.skills.all, page, limit],
     queryFn: () => skillsApi.getSkills(page, limit),
     enabled: !isSearching,
+    staleTime: 0, // Always refetch to show updated rate configurations
   });
 
   // Search skills
@@ -223,19 +266,13 @@ export default function SkillList({
                         isHeader
                         className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                       >
-                        Cost Price
-                      </TableCell>
-                      <TableCell
-                        isHeader
-                        className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                      >
-                        Sale Price
-                      </TableCell>
-                      <TableCell
-                        isHeader
-                        className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                      >
                         Employees Count
+                      </TableCell>
+                      <TableCell
+                        isHeader
+                        className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      >
+                        Rate Status
                       </TableCell>
                       <TableCell
                         isHeader
@@ -259,42 +296,53 @@ export default function SkillList({
                           {skill.skillType?.type || "—"}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {skill.cost_price !== undefined &&
-                          skill.cost_price !== null
-                            ? `$${Number(skill.cost_price).toFixed(2)}`
-                            : "—"}
-                        </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                          {skill.sale_price !== undefined &&
-                          skill.sale_price !== null
-                            ? `$${Number(skill.sale_price).toFixed(2)}`
-                            : "—"}
-                        </TableCell>
-                        <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                           {skill.employeeSkills?.length || 0}
                         </TableCell>
                         <TableCell className="px-4 py-3">
+                          <SkillRateStatus skillId={skill.id} />
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(skill)}
-                              className="px-3 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
-                            >
-                              <PencilIcon className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(skill.id)}
-                              disabled={
-                                deleteMutation.isPending &&
-                                deleteMutation.variables === skill.id
-                              }
-                              className="px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
-                            >
-                              <TrashBinIcon className="w-4 h-4" />
-                            </Button>
+                            <PermissionGuard permission="skill:update">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(skill)}
+                                className="px-3 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
+                                title="Edit Skill"
+                              >
+                                <PencilIcon className="w-4 h-4" />
+                              </Button>
+                            </PermissionGuard>
+                            <PermissionGuard permission="skill:update">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedSkill(skill);
+                                  setRatesModalOpen(true);
+                                }}
+                                className="px-3 py-1 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
+                                title="Configure Rate Variants"
+                              >
+                                <SettingsIcon className="w-4 h-4" />
+                              </Button>
+                            </PermissionGuard>
+                            <PermissionGuard permission="skill:delete">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(skill.id)}
+                                disabled={
+                                  deleteMutation.isPending &&
+                                  deleteMutation.variables === skill.id
+                                }
+                                className="px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                                title="Delete Skill"
+                              >
+                                <TrashBinIcon className="w-4 h-4" />
+                              </Button>
+                            </PermissionGuard>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -314,6 +362,19 @@ export default function SkillList({
             />
           </>
         )}
+
+      {/* Skill Rates Modal */}
+      {selectedSkill && (
+        <SkillRatesModal
+          skillId={selectedSkill.id}
+          skillName={selectedSkill.skill}
+          isOpen={ratesModalOpen}
+          onClose={() => {
+            setRatesModalOpen(false);
+            setSelectedSkill(null);
+          }}
+        />
+      )}
     </div>
   );
 }

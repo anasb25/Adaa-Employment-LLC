@@ -16,6 +16,7 @@ export const JOB_STATUS_OPTIONS = [
   { value: 'notice_period', label: 'Notice Period' },
   { value: 'resigned', label: 'Resigned' },
   { value: 'idle', label: 'Idle' },
+  { value: 'off', label: 'Off' },
 ];
 
 export const MOB_STATUS_COLORS: Record<MobStatus, string> = {
@@ -34,5 +35,6 @@ export const JOB_STATUS_COLORS: Record<JobStatus, string> = {
   [JobStatus.NOTICE_PERIOD]: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
   [JobStatus.RESIGNED]: 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300',
   [JobStatus.IDLE]: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  [JobStatus.OFF]: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
 };
 

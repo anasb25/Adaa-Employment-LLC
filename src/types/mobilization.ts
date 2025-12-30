@@ -14,6 +14,7 @@ export enum JobStatus {
   NOTICE_PERIOD = 'notice_period',
   RESIGNED = 'resigned',
   IDLE = 'idle',
+  OFF = 'off',
 }
 
 export interface Mobilization {
@@ -105,6 +106,7 @@ export interface MobilizationStatistics {
     notice_period: number;
     resigned: number;
     idle: number;
+    off: number;
   };
   byProject: Array<{
     project: string;

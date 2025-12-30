@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { specialDaysApi } from "../services/api/specialDaysApi";
-import { SpecialDay, CreateSpecialDayRequest } from "../types/special-day";
+import { SpecialDay, CreateSpecialDayRequest, SpecialDayType } from "../types/special-day";
 import Button from "../components/ui/button/Button";
 import Label from "../components/form/Label";
 import { PlusIcon, PencilIcon, TrashBinIcon } from "../icons";
@@ -25,6 +25,11 @@ export default function SpecialDaysManagement() {
     isActive: true,
     isRecurring: false,
     color: "#3b82f6",
+    dayType: SpecialDayType.REGULAR,
+    clientRateMultiplier: 1.0,
+    employeeRateMultiplier: 1.0,
+    isDefaultOff: false,
+    notes: "",
   });
 
   // Fetch special days
@@ -87,6 +92,11 @@ export default function SpecialDaysManagement() {
       isActive: true,
       isRecurring: false,
       color: "#3b82f6",
+      dayType: SpecialDayType.REGULAR,
+      clientRateMultiplier: 1.0,
+      employeeRateMultiplier: 1.0,
+      isDefaultOff: false,
+      notes: "",
     });
     setIsModalOpen(true);
   };
@@ -102,6 +112,11 @@ export default function SpecialDaysManagement() {
       isActive: day.isActive,
       isRecurring: day.isRecurring,
       color: day.color || "#3b82f6",
+      dayType: day.dayType || SpecialDayType.REGULAR,
+      clientRateMultiplier: day.clientRateMultiplier || 1.0,
+      employeeRateMultiplier: day.employeeRateMultiplier || 1.0,
+      isDefaultOff: day.isDefaultOff || false,
+      notes: day.notes || "",
     });
     setIsModalOpen(true);
   };
@@ -212,10 +227,16 @@ export default function SpecialDaysManagement() {
                       Category
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Start Date
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       End Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Rates
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
@@ -254,6 +275,24 @@ export default function SpecialDaysManagement() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {day.category || "-"}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            day.dayType === SpecialDayType.MANDATORY_OFF
+                              ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                              : day.dayType === SpecialDayType.OPTIONAL_OFF
+                              ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
+                              : day.dayType === SpecialDayType.PREMIUM_RATE
+                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                              : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                          }`}
+                        >
+                          {day.dayType === SpecialDayType.MANDATORY_OFF && "Mandatory Off"}
+                          {day.dayType === SpecialDayType.OPTIONAL_OFF && "Optional Off"}
+                          {day.dayType === SpecialDayType.PREMIUM_RATE && "Premium Rate"}
+                          {day.dayType === SpecialDayType.REGULAR && "Regular"}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {new Date(day.startDate).toLocaleDateString()}
                       </td>
@@ -261,6 +300,18 @@ export default function SpecialDaysManagement() {
                         {day.endDate
                           ? new Date(day.endDate).toLocaleDateString()
                           : "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {day.dayType === SpecialDayType.MANDATORY_OFF || day.dayType === SpecialDayType.REGULAR ? (
+                          "-"
+                        ) : (
+                          <div>
+                            <div>Client: {(day.clientRateMultiplier * 100).toFixed(0)}%</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Emp: {(day.employeeRateMultiplier * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
@@ -401,6 +452,108 @@ export default function SpecialDaysManagement() {
                                bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                                focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       placeholder="Additional details about this day"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="dayType">Day Type *</Label>
+                    <select
+                      id="dayType"
+                      required
+                      value={form.dayType}
+                      onChange={(e) => setForm({ ...form, dayType: e.target.value as SpecialDayType })}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                               bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                               focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                    >
+                      <option value={SpecialDayType.REGULAR}>Regular (Reference Only)</option>
+                      <option value={SpecialDayType.PREMIUM_RATE}>Premium Rate</option>
+                      <option value={SpecialDayType.OPTIONAL_OFF}>Optional Off Day</option>
+                      <option value={SpecialDayType.MANDATORY_OFF}>Mandatory Off Day</option>
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {form.dayType === SpecialDayType.MANDATORY_OFF && "Cannot be overridden - all employees must be off"}
+                      {form.dayType === SpecialDayType.OPTIONAL_OFF && "Default to off, but can work with premium rates"}
+                      {form.dayType === SpecialDayType.PREMIUM_RATE && "Normal working day with premium billing rates"}
+                      {form.dayType === SpecialDayType.REGULAR && "Just marked for reference, no special treatment"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center pt-6">
+                    <input
+                      id="isDefaultOff"
+                      type="checkbox"
+                      checked={form.isDefaultOff}
+                      onChange={(e) => setForm({ ...form, isDefaultOff: e.target.checked })}
+                      className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500"
+                      disabled={form.dayType === SpecialDayType.MANDATORY_OFF}
+                    />
+                    <Label htmlFor="isDefaultOff" className="ml-2 mb-0">
+                      Default to Off Status
+                    </Label>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="clientRateMultiplier">Client Rate Multiplier</Label>
+                    <div className="mt-1 relative">
+                      <input
+                        id="clientRateMultiplier"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="10"
+                        value={form.clientRateMultiplier}
+                        onChange={(e) => setForm({ ...form, clientRateMultiplier: parseFloat(e.target.value) || 1.0 })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                        disabled={form.dayType === SpecialDayType.MANDATORY_OFF || form.dayType === SpecialDayType.REGULAR}
+                      />
+                      <div className="absolute right-3 top-2 text-sm text-gray-500">
+                        {((form.clientRateMultiplier || 1) * 100).toFixed(0)}%
+                      </div>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      e.g., 1.10 = 110% (10% extra charge to client)
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="employeeRateMultiplier">Employee Rate Multiplier</Label>
+                    <div className="mt-1 relative">
+                      <input
+                        id="employeeRateMultiplier"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="10"
+                        value={form.employeeRateMultiplier}
+                        onChange={(e) => setForm({ ...form, employeeRateMultiplier: parseFloat(e.target.value) || 1.0 })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                        disabled={form.dayType === SpecialDayType.MANDATORY_OFF || form.dayType === SpecialDayType.REGULAR}
+                      />
+                      <div className="absolute right-3 top-2 text-sm text-gray-500">
+                        {((form.employeeRateMultiplier || 1) * 100).toFixed(0)}%
+                      </div>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      e.g., 1.05 = 105% (5% extra pay to employee)
+                    </p>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label htmlFor="notes">Internal Notes</Label>
+                    <textarea
+                      id="notes"
+                      rows={2}
+                      value={form.notes}
+                      onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                               bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                               focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      placeholder="Internal admin notes (not shown to employees)"
                     />
                   </div>
 

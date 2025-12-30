@@ -29,6 +29,7 @@ import SkillTypesManagement from "./pages/SkillTypesManagement";
 import ClientManagement from "./pages/ClientManagement";
 import ProjectManagement from "./pages/ProjectManagement";
 import SpecialDaysManagement from "./pages/SpecialDaysManagement";
+import RateVariantsManagement from "./pages/RateVariantsManagement";
 import CreateMobilization from "./pages/CreateMobilization";
 import EditMobilization from "./pages/EditMobilization";
 import DailyMobilizationManagement from "./pages/DailyMobilizationManagement";
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="/clients" element={<ClientManagement />} />
             <Route path="/projects" element={<ProjectManagement />} />
             <Route path="/special-days" element={<SpecialDaysManagement />} />
+            <Route path="/rate-variants" element={<RateVariantsManagement />} />
             <Route path="/mobilizations" element={<DailyMobilizationManagement />} />
             <Route path="/mobilizations/create" element={<CreateMobilization />} />
             <Route path="/mobilizations/:id/edit" element={<EditMobilization />} />
