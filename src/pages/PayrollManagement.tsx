@@ -9,12 +9,14 @@ import PageMeta from "../components/common/PageMeta";
 import PermissionGuard from "../components/auth/PermissionGuard";
 import Button from "../components/ui/button/Button";
 import Label from "../components/form/Label";
+import AllowanceDeductionImportModal from "../components/payroll/AllowanceDeductionImportModal";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
   PencilIcon,
   TrashBinIcon,
   BoltIcon,
+  FileIcon,
 } from "../icons";
 
 export default function PayrollManagement() {
@@ -30,6 +32,7 @@ export default function PayrollManagement() {
   const [expandedEmployees, setExpandedEmployees] = useState<Set<number>>(
     new Set()
   );
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Fetch payroll data for selected month
   const { data: payrollData, isLoading } = useQuery({
@@ -161,6 +164,16 @@ export default function PayrollManagement() {
                 </Button>
               </PermissionGuard>
 
+              <PermissionGuard permissions={["payroll:update"]}>
+                <Button
+                  onClick={() => setIsImportModalOpen(true)}
+                  variant="outline"
+                  startIcon={<FileIcon />}
+                >
+                  Import Allowances/Deductions
+                </Button>
+              </PermissionGuard>
+
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 {payrollData?.length || 0} employee(s) found
               </div>
@@ -235,9 +248,6 @@ export default function PayrollManagement() {
                       <div className="text-right">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
                           Total Hours: {formatNumber(payroll.totalHours)}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          OT: {formatNumber(payroll.totalOtHours)} hrs
                         </div>
                       </div>
                     </div>
@@ -340,9 +350,6 @@ export default function PayrollManagement() {
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                         Special Day
                                       </th>
-                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                                        Date
-                                      </th>
                                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                         Hours
                                       </th>
@@ -367,11 +374,6 @@ export default function PayrollManagement() {
                                               ).toFixed(0)}
                                               %)
                                             </span>
-                                          </td>
-                                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                            {new Date(
-                                              item.date
-                                            ).toLocaleDateString()}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                             {formatNumber(item.hours)}
@@ -423,6 +425,13 @@ export default function PayrollManagement() {
                                             {new Date(
                                               item.date
                                             ).toLocaleDateString()}
+                                            <span className="ml-2 text-xs text-gray-500">
+                                              (
+                                              {(
+                                                item.rateMultiplier * 100
+                                              ).toFixed(0)}
+                                              %)
+                                            </span>
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                             {formatNumber(item.hours)}
@@ -443,32 +452,59 @@ export default function PayrollManagement() {
                           )}
 
                           {/* Idle Hours */}
-                          {payroll.hoursBreakdown.idle.hours > 0 && (
+                          {payroll.hoursBreakdown.idle.length > 0 && (
                             <div className="space-y-3">
                               <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                                Idle Hours
+                                Idle Days
                               </h4>
-                              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                                      {formatNumber(
-                                        payroll.hoursBreakdown.idle.hours
-                                      )}{" "}
-                                      hours @ AED{" "}
-                                      {formatNumber(
-                                        payroll.hoursBreakdown.idle.hourlyRate
-                                      )}
-                                      /hr
-                                    </span>
-                                  </div>
-                                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                    AED{" "}
-                                    {formatNumber(
-                                      payroll.hoursBreakdown.idle.amount
+                              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                  <thead className="bg-gray-50 dark:bg-gray-900/50">
+                                    <tr>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Date
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Hours
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Rate/Hr
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Amount
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                    {payroll.hoursBreakdown.idle.map(
+                                      (item, idx) => (
+                                        <tr key={idx}>
+                                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                            {new Date(
+                                              item.date
+                                            ).toLocaleDateString()}
+                                            <span className="ml-2 text-xs text-gray-500">
+                                              (
+                                              {(
+                                                item.rateMultiplier * 100
+                                              ).toFixed(0)}
+                                              %)
+                                            </span>
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                                            {formatNumber(item.hours)}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                                            AED {formatNumber(item.hourlyRate)}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
+                                            AED {formatNumber(item.amount)}
+                                          </td>
+                                        </tr>
+                                      )
                                     )}
-                                  </div>
-                                </div>
+                                  </tbody>
+                                </table>
                               </div>
                             </div>
                           )}
@@ -528,14 +564,6 @@ export default function PayrollManagement() {
                               </span>
                               <p className="text-sm text-gray-900 dark:text-white mt-1">
                                 {formatJsonDisplay(payroll.allowances)}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                Arrears:
-                              </span>
-                              <p className="text-sm text-gray-900 dark:text-white mt-1">
-                                {formatJsonDisplay(payroll.arrears)}
                               </p>
                             </div>
                           </div>
@@ -615,6 +643,13 @@ export default function PayrollManagement() {
           </div>
         )}
       </div>
+
+      {/* Import Modal */}
+      <AllowanceDeductionImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        selectedMonth={selectedMonth}
+      />
     </PermissionGuard>
   );
 }

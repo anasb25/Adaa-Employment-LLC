@@ -8,7 +8,6 @@ export interface HoursBreakdown {
   }>;
   specialDays: Array<{
     specialDayName: string;
-    date: string;
     hours: number;
     rateMultiplier: number;
     hourlyRate: number;
@@ -17,14 +16,17 @@ export interface HoursBreakdown {
   offDays: Array<{
     date: string;
     hours: number;
+    rateMultiplier: number;
     hourlyRate: number;
     amount: number;
   }>;
-  idle: {
+  idle: Array<{
+    date: string;
     hours: number;
+    rateMultiplier: number;
     hourlyRate: number;
     amount: number;
-  };
+  }>;
 }
 
 export interface Payroll {
@@ -36,7 +38,6 @@ export interface Payroll {
   totalOffdaysWorkedHours: number;
   totalIdleDayHours: number;
   allowances: Record<string, any> | null;
-  arrears: Record<string, any> | null;
   absentDaysDeductible: number;
   otherDeductions: Record<string, any> | null;
   notes: string | null;
@@ -60,7 +61,6 @@ export interface CreatePayrollRequest {
   totalOffdaysWorkedHours?: number;
   totalIdleDayHours?: number;
   allowances?: Record<string, any>;
-  arrears?: Record<string, any>;
   absentDaysDeductible?: number;
   otherDeductions?: Record<string, any>;
   notes?: string;
@@ -72,7 +72,6 @@ export interface UpdatePayrollRequest {
   totalOffdaysWorkedHours?: number;
   totalIdleDayHours?: number;
   allowances?: Record<string, any>;
-  arrears?: Record<string, any>;
   absentDaysDeductible?: number;
   otherDeductions?: Record<string, any>;
   notes?: string;

@@ -1,17 +1,17 @@
-import { axiosInstance } from '../../lib/axios';
+import { axiosInstance } from "../../lib/axios";
 import {
   Payroll,
   CreatePayrollRequest,
   UpdatePayrollRequest,
   PayrollFilters,
-} from '../../types/payroll';
+} from "../../types/payroll";
 
 export const payrollApi = {
   /**
    * Get all payrolls with filters
    */
   getPayrolls: async (filters?: PayrollFilters): Promise<any> => {
-    const response = await axiosInstance.get('/payroll', { params: filters });
+    const response = await axiosInstance.get("/payroll", { params: filters });
     return response.data;
   },
 
@@ -35,7 +35,7 @@ export const payrollApi = {
    * Create a new payroll entry
    */
   createPayroll: async (data: CreatePayrollRequest): Promise<Payroll> => {
-    const response = await axiosInstance.post('/payroll', data);
+    const response = await axiosInstance.post("/payroll", data);
     return response.data;
   },
 
@@ -43,22 +43,27 @@ export const payrollApi = {
    * Create or update payroll (upsert)
    */
   upsertPayroll: async (data: CreatePayrollRequest): Promise<Payroll> => {
-    const response = await axiosInstance.post('/payroll/upsert', data);
+    const response = await axiosInstance.post("/payroll/upsert", data);
     return response.data;
   },
 
   /**
    * Bulk create or update payrolls
    */
-  bulkUpsertPayrolls: async (payrolls: CreatePayrollRequest[]): Promise<Payroll[]> => {
-    const response = await axiosInstance.post('/payroll/bulk', payrolls);
+  bulkUpsertPayrolls: async (
+    payrolls: CreatePayrollRequest[]
+  ): Promise<Payroll[]> => {
+    const response = await axiosInstance.post("/payroll/bulk", payrolls);
     return response.data;
   },
 
   /**
    * Update an existing payroll entry
    */
-  updatePayroll: async (id: number, data: UpdatePayrollRequest): Promise<Payroll> => {
+  updatePayroll: async (
+    id: number,
+    data: UpdatePayrollRequest
+  ): Promise<Payroll> => {
     const response = await axiosInstance.put(`/payroll/${id}`, data);
     return response.data;
   },
@@ -74,7 +79,9 @@ export const payrollApi = {
    * Calculate payroll for a specific month from approved timesheets
    */
   calculatePayrollForMonth: async (month: string): Promise<Payroll[]> => {
-    const response = await axiosInstance.post(`/payroll/calculate/month/${month}`);
+    const response = await axiosInstance.post(
+      `/payroll/calculate/month/${month}`
+    );
     return response.data;
   },
 
@@ -83,12 +90,52 @@ export const payrollApi = {
    */
   calculatePayrollForProject: async (
     projectId: number,
-    month: string,
+    month: string
   ): Promise<Payroll[]> => {
     const response = await axiosInstance.post(
-      `/payroll/calculate/project/${projectId}/month/${month}`,
+      `/payroll/calculate/project/${projectId}/month/${month}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Import allowances and deductions from Excel file
+   */
+  importAllowancesDeductions: async (
+    month: string,
+    file: File
+  ): Promise<{
+    success: boolean;
+    message: string;
+    updated: number;
+    notFound: string[];
+    errors: string[];
+  }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await axiosInstance.post(
+      `/payroll/import-allowances-deductions/${month}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Download Excel template for allowances/deductions import
+   */
+  downloadAllowancesDeductionsTemplate: async (): Promise<Blob> => {
+    const response = await axiosInstance.get(
+      "/payroll/template/allowances-deductions",
+      {
+        responseType: "blob",
+      }
     );
     return response.data;
   },
 };
-
