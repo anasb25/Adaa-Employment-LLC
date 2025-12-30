@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectsApi } from "../services/api/projectsApi";
 import { clientsApi } from "../services/api/clientsApi";
+import { specialDaysApi } from "../services/api/specialDaysApi";
 import { QUERY_KEYS } from "../lib/constants";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
@@ -20,9 +21,14 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { toast } from "sonner";
-import { Project, CreateProjectRequest, ProjectFAT } from "../types/project";
+import {
+  Project,
+  CreateProjectRequest,
+  ProjectFAT,
+  ProjectSpecialDayRateRequest,
+} from "../types/project";
 import ProjectSkillsModal from "../components/projects/ProjectSkillsModal";
-import { AlertIcon as SearchIcon, PlusIcon } from "../icons";
+import { AlertIcon as SearchIcon, PlusIcon, TrashBinIcon } from "../icons";
 import { useSearch } from "../hooks/useDebounce";
 
 export default function ProjectManagement() {
@@ -36,6 +42,8 @@ export default function ProjectManagement() {
     notes: "",
     fat: undefined,
     offDays: [],
+    offDayMultiplier: 1.0,
+    specialDayRates: [],
     clientId: 0,
   });
   const queryClient = useQueryClient();
@@ -51,6 +59,11 @@ export default function ProjectManagement() {
   const { data: clientsData } = useQuery({
     queryKey: QUERY_KEYS.clients.all,
     queryFn: () => clientsApi.getClients(),
+  });
+
+  const { data: specialDaysData } = useQuery({
+    queryKey: ["specialDays", "all"],
+    queryFn: () => specialDaysApi.getSpecialDays(),
   });
 
   // Filter projects based on search
@@ -86,6 +99,8 @@ export default function ProjectManagement() {
         notes: "",
         fat: undefined,
         offDays: [],
+        offDayMultiplier: 1.0,
+        specialDayRates: [],
         clientId: 0,
       });
     },
@@ -140,6 +155,12 @@ export default function ProjectManagement() {
       notes: p.notes || "",
       fat: p.fat,
       offDays: p.offDays || [],
+      offDayMultiplier: p.offDayMultiplier || 1.0,
+      specialDayRates:
+        p.specialDayRates?.map((rate) => ({
+          specialDayId: rate.specialDayId,
+          clientRateMultiplier: rate.clientRateMultiplier,
+        })) || [],
       clientId: p.clientId,
     });
     setIsModalOpen(true);
@@ -181,6 +202,32 @@ export default function ProjectManagement() {
     { value: "Friday", text: "Friday" },
     { value: "Saturday", text: "Saturday" },
   ];
+
+  const addSpecialDayRate = () => {
+    setForm({
+      ...form,
+      specialDayRates: [
+        ...(form.specialDayRates || []),
+        { specialDayId: 0, clientRateMultiplier: 1.0 },
+      ],
+    });
+  };
+
+  const updateSpecialDayRate = (
+    index: number,
+    field: keyof ProjectSpecialDayRateRequest,
+    value: any
+  ) => {
+    const updated = [...(form.specialDayRates || [])];
+    updated[index] = { ...updated[index], [field]: value };
+    setForm({ ...form, specialDayRates: updated });
+  };
+
+  const removeSpecialDayRate = (index: number) => {
+    const updated = [...(form.specialDayRates || [])];
+    updated.splice(index, 1);
+    setForm({ ...form, specialDayRates: updated });
+  };
 
   return (
     <>
@@ -425,6 +472,29 @@ export default function ProjectManagement() {
               placeholder="Select off days"
             />
           </div>
+          <div>
+            <Label htmlFor="project-off-day-multiplier">
+              Off Day Multiplier (Client Rate)
+            </Label>
+            <Input
+              id="project-off-day-multiplier"
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.offDayMultiplier || 1.0}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  offDayMultiplier: parseFloat(e.target.value) || 1.0,
+                })
+              }
+              placeholder="1.0"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Multiplier for client billing when employee works on project off
+              days (e.g., 1.25 = 125%)
+            </p>
+          </div>
           <div className="md:col-span-2">
             <Label htmlFor="project-notes">Notes</Label>
             <Input
@@ -432,6 +502,88 @@ export default function ProjectManagement() {
               value={form.notes || ""}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
+          </div>
+          <div className="md:col-span-2">
+            <div className="flex items-center justify-between mb-2">
+              <Label>Special Day Rates (Client Multipliers)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSpecialDayRate}
+                startIcon={<PlusIcon />}
+              >
+                Add Rate
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">
+              Set project-specific client rate multipliers for special days.
+              Employee multipliers remain global.
+            </p>
+            {form.specialDayRates && form.specialDayRates.length > 0 && (
+              <div className="space-y-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                {form.specialDayRates.map((rate, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end"
+                  >
+                    <div>
+                      <Label>Special Day</Label>
+                      <Select
+                        options={(specialDaysData || []).map((sd) => ({
+                          value: String(sd.id),
+                          label: sd.name,
+                        }))}
+                        value={
+                          rate.specialDayId ? String(rate.specialDayId) : ""
+                        }
+                        onChange={(v) =>
+                          updateSpecialDayRate(
+                            index,
+                            "specialDayId",
+                            Number(v)
+                          )
+                        }
+                        placeholder="Select special day"
+                      />
+                    </div>
+                    <div>
+                      <Label>Client Multiplier</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={rate.clientRateMultiplier || 1.0}
+                        onChange={(e) =>
+                          updateSpecialDayRate(
+                            index,
+                            "clientRateMultiplier",
+                            parseFloat(e.target.value) || 1.0
+                          )
+                        }
+                        placeholder="1.0"
+                      />
+                    </div>
+                    <div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => removeSpecialDayRate(index)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <TrashBinIcon className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(!form.specialDayRates ||
+              form.specialDayRates.length === 0) && (
+              <div className="text-sm text-gray-500 italic p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                No special day rates configured. Click "Add Rate" to add one.
+              </div>
+            )}
           </div>
         </div>
         <div className="flex justify-end gap-2 p-4">

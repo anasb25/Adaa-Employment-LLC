@@ -16,7 +16,6 @@ export interface SpecialDay {
   isRecurring: boolean;
   color?: string;
   dayType: SpecialDayType;
-  clientRateMultiplier: number;
   employeeRateMultiplier: number;
   isDefaultOff: boolean;
   notes?: string;
@@ -34,7 +33,6 @@ export interface CreateSpecialDayRequest {
   isRecurring?: boolean;
   color?: string;
   dayType?: SpecialDayType;
-  clientRateMultiplier?: number;
   employeeRateMultiplier?: number;
   isDefaultOff?: boolean;
   notes?: string;

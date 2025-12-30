@@ -9,8 +9,9 @@ interface ButtonProps {
   endIcon?: ReactNode; // Icon after the text
   onClick?: () => void; // Click handler
   disabled?: boolean; // Disabled state
-  className?: string; // Disabled state
+  className?: string; // Additional CSS classes
   type?: "button" | "submit" | "reset"; // Button type for forms
+  title?: string; // Tooltip text
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -24,6 +25,7 @@ const Button: React.FC<ButtonProps> = ({
   className = "",
   disabled = false,
   type = "button",
+  title,
 }) => {
   // Use leftIcon as alias for startIcon if startIcon is not provided
   const iconToShow = startIcon || leftIcon;
@@ -51,6 +53,7 @@ const Button: React.FC<ButtonProps> = ({
       }`}
       onClick={onClick}
       disabled={disabled}
+      title={title}
     >
       {iconToShow && <span className="flex items-center">{iconToShow}</span>}
       {children}

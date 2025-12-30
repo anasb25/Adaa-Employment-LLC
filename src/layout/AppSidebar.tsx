@@ -130,6 +130,12 @@ const navItems: NavItem[] = [
         pro: false,
         permission: "user:read", // Special days management
       },
+      {
+        name: "Rate Variants",
+        path: "/rate-variants",
+        pro: false,
+        permission: "user:read", // Rate variants management
+      },
     ],
   },
 ];

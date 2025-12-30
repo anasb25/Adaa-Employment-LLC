@@ -15,6 +15,9 @@ const RateVariantsManagement = () => {
     displayOrder: 0,
     isActive: true,
     color: "#3b82f6",
+    employeeRateMultiplier: 1.0,
+    minHours: null,
+    maxHours: null,
   });
 
   useEffect(() => {
@@ -41,6 +44,9 @@ const RateVariantsManagement = () => {
       displayOrder: rateVariants.length,
       isActive: true,
       color: "#3b82f6",
+      employeeRateMultiplier: 1.0,
+      minHours: null,
+      maxHours: null,
     });
     setEditingRateVariant(null);
     setIsModalOpen(true);
@@ -54,6 +60,9 @@ const RateVariantsManagement = () => {
       displayOrder: variant.displayOrder,
       isActive: variant.isActive,
       color: variant.color,
+      employeeRateMultiplier: variant.employeeRateMultiplier,
+      minHours: variant.minHours ?? null,
+      maxHours: variant.maxHours ?? null,
     });
     setEditingRateVariant(variant);
     setIsModalOpen(true);
@@ -126,6 +135,12 @@ const RateVariantsManagement = () => {
                   Order
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                  Employee Multiplier
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                  Hour Range
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Status
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
@@ -163,6 +178,18 @@ const RateVariantsManagement = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {variant.displayOrder}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {variant.employeeRateMultiplier}x
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {variant.minHours !== null && variant.minHours !== undefined
+                      ? variant.maxHours !== null && variant.maxHours !== undefined
+                        ? `${variant.minHours} - ${variant.maxHours} hrs`
+                        : `>${variant.minHours} hrs`
+                      : variant.maxHours !== null && variant.maxHours !== undefined
+                      ? `<${variant.maxHours} hrs`
+                      : "All hours"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
@@ -256,6 +283,67 @@ const RateVariantsManagement = () => {
                     onChange={(e) => setForm({ ...form, color: e.target.value })}
                     className="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Employee Rate Multiplier (e.g., 1.05 = 105%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.employeeRateMultiplier ?? 1.0}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        employeeRateMultiplier: parseFloat(e.target.value) || 1.0,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Min Hours (leave empty for no minimum)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.minHours ?? ""}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          minHours: e.target.value ? parseFloat(e.target.value) : null,
+                        })
+                      }
+                      placeholder="e.g., 10 for >10 hours"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Max Hours (leave empty for no maximum)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.maxHours ?? ""}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          maxHours: e.target.value ? parseFloat(e.target.value) : null,
+                        })
+                      }
+                      placeholder="e.g., 4 for <4 hours"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center">

@@ -6,6 +6,9 @@ export interface RateVariant {
   displayOrder: number;
   isActive: boolean;
   color?: string;
+  employeeRateMultiplier: number;
+  minHours?: number | null;
+  maxHours?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -17,6 +20,9 @@ export interface CreateRateVariantRequest {
   displayOrder?: number;
   isActive?: boolean;
   color?: string;
+  employeeRateMultiplier?: number;
+  minHours?: number | null;
+  maxHours?: number | null;
 }
 
 export interface UpdateRateVariantRequest extends Partial<CreateRateVariantRequest> {}
