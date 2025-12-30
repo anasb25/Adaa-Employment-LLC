@@ -34,6 +34,7 @@ import CreateMobilization from "./pages/CreateMobilization";
 import EditMobilization from "./pages/EditMobilization";
 import DailyMobilizationManagement from "./pages/DailyMobilizationManagement";
 import MonthlyProjectTimesheets from "./pages/MonthlyProjectTimesheets";
+import PayrollManagement from "./pages/PayrollManagement";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AuthGuard from "./components/auth/AuthGuard";
 import AppProviders from "./providers/AppProviders";
@@ -67,6 +68,7 @@ export default function App() {
             <Route path="/mobilizations/daily" element={<DailyMobilizationManagement />} />
             <Route path="/timesheets" element={<MonthlyProjectTimesheets />} />
             <Route path="/timesheets/monthly" element={<MonthlyProjectTimesheets />} />
+            <Route path="/payroll" element={<PayrollManagement />} />
 
             {/* Admin Pages */}
             <Route
