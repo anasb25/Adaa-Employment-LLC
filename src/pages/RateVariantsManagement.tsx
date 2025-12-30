@@ -11,7 +11,6 @@ const RateVariantsManagement = () => {
   const [form, setForm] = useState<CreateRateVariantRequest>({
     name: "",
     description: "",
-    isBaseRate: false,
     displayOrder: 0,
     isActive: true,
     color: "#3b82f6",
@@ -40,7 +39,6 @@ const RateVariantsManagement = () => {
     setForm({
       name: "",
       description: "",
-      isBaseRate: false,
       displayOrder: rateVariants.length,
       isActive: true,
       color: "#3b82f6",
@@ -56,7 +54,6 @@ const RateVariantsManagement = () => {
     setForm({
       name: variant.name,
       description: variant.description,
-      isBaseRate: variant.isBaseRate,
       displayOrder: variant.displayOrder,
       isActive: variant.isActive,
       color: variant.color,
@@ -129,9 +126,6 @@ const RateVariantsManagement = () => {
                   Description
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Base Rate
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Order
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
@@ -166,15 +160,6 @@ const RateVariantsManagement = () => {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                     {variant.description || "-"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {variant.isBaseRate ? (
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                        Base Rate
-                      </span>
-                    ) : (
-                      <span className="text-sm text-gray-500 dark:text-gray-400">-</span>
-                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {variant.displayOrder}
@@ -212,8 +197,7 @@ const RateVariantsManagement = () => {
                     <button
                       onClick={() => handleDelete(variant.id)}
                       className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      disabled={variant.isBaseRate}
-                      title={variant.isBaseRate ? "Cannot delete base rate" : "Delete"}
+                      title="Delete"
                     >
                       <TrashBinIcon className="w-5 h-5" />
                     </button>
@@ -344,22 +328,6 @@ const RateVariantsManagement = () => {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="isBaseRate"
-                    checked={form.isBaseRate}
-                    onChange={(e) => setForm({ ...form, isBaseRate: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 rounded"
-                  />
-                  <label
-                    htmlFor="isBaseRate"
-                    className="ml-2 text-sm text-gray-700 dark:text-gray-300"
-                  >
-                    Is Base Rate (only one allowed)
-                  </label>
                 </div>
 
                 <div className="flex items-center">
