@@ -246,11 +246,237 @@ export default function PayrollManagement() {
                   {/* Employee Details */}
                   {isExpanded && (
                     <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-900/30">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Hours Section */}
+                      {/* Salary Summary */}
+                      {payroll.hoursBreakdown && (
+                        <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                Total Gross Salary
+                              </h4>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Base Rate: AED{" "}
+                                {formatNumber(payroll.baseHourlyRate || 0)}/hr
+                              </p>
+                            </div>
+                            <div className="text-2xl font-bold text-brand-600 dark:text-brand-400">
+                              AED {formatNumber(payroll.totalGrossSalary || 0)}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Detailed Hours Breakdown */}
+                      {payroll.hoursBreakdown ? (
+                        <div className="space-y-6">
+                          {/* Regular Hours with Rate Variants */}
+                          {payroll.hoursBreakdown.regular.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                                Regular Working Hours
+                              </h4>
+                              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                  <thead className="bg-gray-50 dark:bg-gray-900/50">
+                                    <tr>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Rate Type
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Hours
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Rate/Hr
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Amount
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                    {payroll.hoursBreakdown.regular.map(
+                                      (item, idx) => (
+                                        <tr key={idx}>
+                                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                            {item.rateVariantName}
+                                            {item.rateMultiplier !== 1 && (
+                                              <span className="ml-2 text-xs text-gray-500">
+                                                (
+                                                {(
+                                                  item.rateMultiplier * 100
+                                                ).toFixed(0)}
+                                                %)
+                                              </span>
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                                            {formatNumber(item.hours)}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                                            AED {formatNumber(item.hourlyRate)}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
+                                            AED {formatNumber(item.amount)}
+                                          </td>
+                                        </tr>
+                                      )
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Special Days */}
+                          {payroll.hoursBreakdown.specialDays.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                                Special Days
+                              </h4>
+                              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                  <thead className="bg-gray-50 dark:bg-gray-900/50">
+                                    <tr>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Special Day
+                                      </th>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Date
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Hours
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Rate/Hr
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Amount
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                    {payroll.hoursBreakdown.specialDays.map(
+                                      (item, idx) => (
+                                        <tr key={idx}>
+                                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                            {item.specialDayName}
+                                            <span className="ml-2 text-xs text-gray-500">
+                                              (
+                                              {(
+                                                item.rateMultiplier * 100
+                                              ).toFixed(0)}
+                                              %)
+                                            </span>
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                            {new Date(
+                                              item.date
+                                            ).toLocaleDateString()}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                                            {formatNumber(item.hours)}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                                            AED {formatNumber(item.hourlyRate)}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
+                                            AED {formatNumber(item.amount)}
+                                          </td>
+                                        </tr>
+                                      )
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Off Days */}
+                          {payroll.hoursBreakdown.offDays.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                                Off Days Worked
+                              </h4>
+                              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                  <thead className="bg-gray-50 dark:bg-gray-900/50">
+                                    <tr>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Date
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Hours
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Rate/Hr
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        Amount
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                    {payroll.hoursBreakdown.offDays.map(
+                                      (item, idx) => (
+                                        <tr key={idx}>
+                                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                            {new Date(
+                                              item.date
+                                            ).toLocaleDateString()}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                                            {formatNumber(item.hours)}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                                            AED {formatNumber(item.hourlyRate)}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
+                                            AED {formatNumber(item.amount)}
+                                          </td>
+                                        </tr>
+                                      )
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Idle Hours */}
+                          {payroll.hoursBreakdown.idle.hours > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                                Idle Hours
+                              </h4>
+                              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                                      {formatNumber(
+                                        payroll.hoursBreakdown.idle.hours
+                                      )}{" "}
+                                      hours @ AED{" "}
+                                      {formatNumber(
+                                        payroll.hoursBreakdown.idle.hourlyRate
+                                      )}
+                                      /hr
+                                    </span>
+                                  </div>
+                                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                    AED{" "}
+                                    {formatNumber(
+                                      payroll.hoursBreakdown.idle.amount
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
                         <div className="space-y-3">
                           <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                            Hours Breakdown
+                            Hours Summary (Legacy)
                           </h4>
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
@@ -271,7 +497,7 @@ export default function PayrollManagement() {
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="text-gray-600 dark:text-gray-400">
-                                Off-days Hours Worked:
+                                Off-days Hours:
                               </span>
                               <span className="font-medium text-gray-900 dark:text-white">
                                 {formatNumber(payroll.totalOffdaysWorkedHours)}
@@ -287,7 +513,9 @@ export default function PayrollManagement() {
                             </div>
                           </div>
                         </div>
+                      )}
 
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                         {/* Allowances & Arrears */}
                         <div className="space-y-3">
                           <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">

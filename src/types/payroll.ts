@@ -1,3 +1,32 @@
+export interface HoursBreakdown {
+  regular: Array<{
+    rateVariantName: string;
+    hours: number;
+    rateMultiplier: number;
+    hourlyRate: number;
+    amount: number;
+  }>;
+  specialDays: Array<{
+    specialDayName: string;
+    date: string;
+    hours: number;
+    rateMultiplier: number;
+    hourlyRate: number;
+    amount: number;
+  }>;
+  offDays: Array<{
+    date: string;
+    hours: number;
+    hourlyRate: number;
+    amount: number;
+  }>;
+  idle: {
+    hours: number;
+    hourlyRate: number;
+    amount: number;
+  };
+}
+
 export interface Payroll {
   id: number;
   employeeId: number;
@@ -11,6 +40,9 @@ export interface Payroll {
   absentDaysDeductible: number;
   otherDeductions: Record<string, any> | null;
   notes: string | null;
+  hoursBreakdown?: HoursBreakdown;
+  baseHourlyRate?: number;
+  totalGrossSalary?: number;
   createdAt: string;
   updatedAt: string;
   employee?: {
