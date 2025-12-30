@@ -8,6 +8,7 @@ import {
 } from "../../lib/mobilizationConstants";
 import { Modal } from "../ui/ReusableModal";
 import Button from "../ui/button/Button";
+import { formatDateShort } from "../../utils/dateUtils";
 
 interface EmployeeMobilizationHistoryModalProps {
   isOpen: boolean;
@@ -141,7 +142,7 @@ export default function EmployeeMobilizationHistoryModal({
                       className="hover:bg-gray-50 dark:hover:bg-gray-900/50"
                     >
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                        {new Date(mobilization.actionDate).toLocaleDateString()}
+                        {formatDateShort(mobilization.actionDate)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {mobilization.mobilizedTrade?.skill || "-"}

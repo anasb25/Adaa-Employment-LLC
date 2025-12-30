@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { mobilizationsApi } from '../../services/api/mobilizationsApi';
 import { Mobilization } from '../../types/mobilization';
 import { MOB_STATUS_COLORS, JOB_STATUS_COLORS } from '../../lib/mobilizationConstants';
+import { formatDateShort, getTodayDateString } from '../../utils/dateUtils';
 
 interface EmployeeMobilizationHistoryProps {
   employeeId: number;
@@ -14,9 +15,7 @@ export default function EmployeeMobilizationHistory({
   employeeName,
 }: EmployeeMobilizationHistoryProps) {
   const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [endDate, setEndDate] = useState<string>(getTodayDateString());
 
   // Fetch employee history
   const { data: history, isLoading } = useQuery({
@@ -117,7 +116,7 @@ export default function EmployeeMobilizationHistory({
                 {history.map((mobilization: Mobilization) => (
                   <tr key={mobilization.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                      {new Date(mobilization.actionDate).toLocaleDateString()}
+                      {formatDateShort(mobilization.actionDate)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {mobilization.mobilizedTrade?.skill || '-'}

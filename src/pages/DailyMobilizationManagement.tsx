@@ -16,6 +16,7 @@ import DailyMobilizationImportModal from '../components/mobilizations/DailyMobil
 import EmployeeMobilizationHistoryModal from '../components/mobilizations/EmployeeMobilizationHistoryModal';
 import { PlusIcon, FileIcon, CalenderIcon, DownloadIcon, BuildingIcon, GroupIcon, TimeIcon } from '../icons';
 import { downloadFile } from '../utils/excelValidator';
+import { formatDateLong, getTodayDateString } from '../utils/dateUtils';
 
 interface ProjectGroup {
   projectId: number | null;
@@ -27,9 +28,7 @@ interface ProjectGroup {
 export default function DailyMobilizationManagement() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString());
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [showCarryForward, setShowCarryForward] = useState(false); // Default to false (real records only)
   const [searchQuery, setSearchQuery] = useState('');
@@ -169,12 +168,7 @@ export default function DailyMobilizationManagement() {
     );
   };
 
-  const formattedDate = new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  const formattedDate = formatDateLong(selectedDate);
 
   const totalMobilizations = mobilizations?.data?.length || 0;
   const mobilizedCount = mobilizations?.data?.filter((m: Mobilization) => m.mobStatus === 'mobilized').length || 0;

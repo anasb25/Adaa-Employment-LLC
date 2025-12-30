@@ -9,7 +9,13 @@ import PageMeta from "../components/common/PageMeta";
 import PermissionGuard from "../components/auth/PermissionGuard";
 import Button from "../components/ui/button/Button";
 import Label from "../components/form/Label";
-import { ChevronDownIcon, ChevronUpIcon, PencilIcon, TrashBinIcon, BoltIcon } from "../icons";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  PencilIcon,
+  TrashBinIcon,
+  BoltIcon,
+} from "../icons";
 
 export default function PayrollManagement() {
   const queryClient = useQueryClient();
@@ -249,7 +255,7 @@ export default function PayrollManagement() {
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span className="text-gray-600 dark:text-gray-400">
-                                Total Hours:
+                                Regular Hours:
                               </span>
                               <span className="font-medium text-gray-900 dark:text-white">
                                 {formatNumber(payroll.totalHours)}
@@ -265,7 +271,7 @@ export default function PayrollManagement() {
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="text-gray-600 dark:text-gray-400">
-                                Off-days Worked:
+                                Off-days Hours Worked:
                               </span>
                               <span className="font-medium text-gray-900 dark:text-white">
                                 {formatNumber(payroll.totalOffdaysWorkedHours)}
@@ -384,4 +390,3 @@ export default function PayrollManagement() {
     </PermissionGuard>
   );
 }
-
