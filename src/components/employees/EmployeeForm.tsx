@@ -59,6 +59,9 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     status: employee?.status || EmployeeStatus.ACTIVE,
     date_of_joining: employee?.date_of_joining || "",
     date_of_arrival: employee?.date_of_arrival || "",
+    basic_salary: employee?.basic_salary || undefined,
+    hra: employee?.hra || undefined,
+    other_allowance: employee?.other_allowance || undefined,
   });
 
   const createMutation = useMutation({
@@ -374,6 +377,7 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     ? employeeSkills.map((es: EmployeeSkill) => ({
         skillId: es.skillId,
         rating: es.rating,
+        cost_price: es.cost_price,
         skill: es.skill,
         isPending: false,
         id: es.id,
@@ -381,6 +385,7 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     : pendingSkills.map((ps, index) => ({
         skillId: ps.skillId,
         rating: ps.rating,
+        cost_price: ps.cost_price,
         skill: ps.skill,
         isPending: true,
         id: `pending-${index}`,
@@ -649,6 +654,89 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
           />
         </div>
 
+        {/* Salary Information */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Salary Information
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="basic_salary">Basic Salary</Label>
+              <Input
+                type="number"
+                id="basic_salary"
+                value={formData.basic_salary || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    basic_salary: e.target.value
+                      ? parseFloat(e.target.value)
+                      : undefined,
+                  }))
+                }
+                placeholder="Enter basic salary"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <Label htmlFor="hra">HRA (House Rent Allowance)</Label>
+              <Input
+                type="number"
+                id="hra"
+                value={formData.hra || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    hra: e.target.value ? parseFloat(e.target.value) : undefined,
+                  }))
+                }
+                placeholder="Enter HRA"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <Label htmlFor="other_allowance">Other Allowance</Label>
+              <Input
+                type="number"
+                id="other_allowance"
+                value={formData.other_allowance || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    other_allowance: e.target.value
+                      ? parseFloat(e.target.value)
+                      : undefined,
+                  }))
+                }
+                placeholder="Enter other allowances"
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          {/* Salary Summary Card */}
+          {(formData.basic_salary || formData.hra || formData.other_allowance) && (
+            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-green-900 dark:text-green-100">
+                  Total Monthly Salary
+                </span>
+                <span className="text-lg font-bold text-green-700 dark:text-green-400">
+                  AED{" "}
+                  {(
+                    (parseFloat(formData.basic_salary?.toString() || "0") || 0) +
+                    (parseFloat(formData.hra?.toString() || "0") || 0) +
+                    (parseFloat(formData.other_allowance?.toString() || "0") || 0)
+                  ).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Skills Section - Available for both create and edit */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -910,6 +998,84 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
               })
             )}
           </div>
+
+          {/* Salary & Rate Summary Card */}
+          {isEditing && employee && (
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-3">
+                Salary & Rate Information
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">
+                    Monthly Salary Components
+                  </p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-blue-800 dark:text-blue-200">
+                        Basic Salary:
+                      </span>
+                      <span className="font-medium text-blue-900 dark:text-blue-100">
+                        AED {employee.basic_salary ? parseFloat(employee.basic_salary.toString()).toFixed(2) : "0.00"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-blue-800 dark:text-blue-200">HRA:</span>
+                      <span className="font-medium text-blue-900 dark:text-blue-100">
+                        AED {employee.hra ? parseFloat(employee.hra.toString()).toFixed(2) : "0.00"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-blue-800 dark:text-blue-200">
+                        Other Allowance:
+                      </span>
+                      <span className="font-medium text-blue-900 dark:text-blue-100">
+                        AED {employee.other_allowance ? parseFloat(employee.other_allowance.toString()).toFixed(2) : "0.00"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between pt-2 mt-2 border-t border-blue-200 dark:border-blue-700">
+                      <span className="font-semibold text-blue-900 dark:text-blue-100">
+                        Total:
+                      </span>
+                      <span className="font-bold text-blue-900 dark:text-blue-100">
+                        AED{" "}
+                        {(
+                          (parseFloat(employee.basic_salary?.toString() || "0") || 0) +
+                          (parseFloat(employee.hra?.toString() || "0") || 0) +
+                          (parseFloat(employee.other_allowance?.toString() || "0") || 0)
+                        ).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">
+                    Hourly Rates (from Skills)
+                  </p>
+                  <div className="space-y-1 text-sm">
+                    {displaySkills.length > 0 ? (
+                      displaySkills.map((skill: any) => (
+                        <div key={skill.id} className="flex justify-between">
+                          <span className="text-blue-800 dark:text-blue-200 truncate">
+                            {skill.skill.skill}:
+                          </span>
+                          <span className="font-medium text-blue-900 dark:text-blue-100 ml-2">
+                            {skill.cost_price
+                              ? `AED ${parseFloat(skill.cost_price.toString()).toFixed(2)}/hr`
+                              : "Not set"}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-blue-700 dark:text-blue-300 italic">
+                        No skills assigned
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

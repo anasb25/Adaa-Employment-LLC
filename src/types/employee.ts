@@ -23,6 +23,9 @@ export interface Employee {
   status: EmployeeStatus;
   date_of_joining?: string;
   date_of_arrival?: string;
+  basic_salary?: number | null;
+  hra?: number | null;
+  other_allowance?: number | null;
   createdAt: string;
   updatedAt: string;
   createdBy?: number;
@@ -47,6 +50,9 @@ export interface CreateEmployeeRequest {
   status?: EmployeeStatus;
   date_of_joining?: string;
   date_of_arrival?: string;
+  basic_salary?: number;
+  hra?: number;
+  other_allowance?: number;
 }
 
 export interface UpdateEmployeeRequest extends Partial<CreateEmployeeRequest> {}

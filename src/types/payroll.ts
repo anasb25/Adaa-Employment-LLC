@@ -44,12 +44,16 @@ export interface Payroll {
   hoursBreakdown?: HoursBreakdown;
   baseHourlyRate?: number;
   totalGrossSalary?: number;
+  netSalary?: number | null;
   createdAt: string;
   updatedAt: string;
   employee?: {
     id: number;
     name: string;
     adaa_emp_code: string;
+    basic_salary?: number | null;
+    hra?: number | null;
+    other_allowance?: number | null;
   };
 }
 
