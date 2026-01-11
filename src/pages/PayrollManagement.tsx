@@ -136,7 +136,7 @@ export default function PayrollManagement() {
           .total-row { font-weight: bold; background: #f9f9f9; }
           .salary-box { background: #e8f5e9; padding: 15px; margin: 10px 0; border-radius: 5px; }
           .gross-box { background: #e3f2fd; padding: 15px; margin: 10px 0; border-radius: 5px; }
-          .net-box { background: #fff3e0; padding: 15px; margin: 10px 0; border-radius: 5px; font-size: 18px; font-weight: bold; }
+          .net-box { background: #c8e6c9; padding: 15px; margin: 10px 0; border-radius: 5px; font-size: 18px; font-weight: bold; }
           @media print { button { display: none; } }
         </style>
       </head>
@@ -158,23 +158,9 @@ export default function PayrollManagement() {
           </table>
         </div>
 
-        <div class="section">
-          <div class="section-title">Fixed Monthly Salary</div>
-          <table>
-            <tr><th>Component</th><th>Amount (AED)</th></tr>
-            <tr><td>Basic Salary</td><td>${formatNumber(
-              Number(employee?.basic_salary) || 0
-            )}</td></tr>
-            <tr><td>HRA</td><td>${formatNumber(
-              Number(employee?.hra) || 0
-            )}</td></tr>
-            <tr><td>Other Allowance</td><td>${formatNumber(
-              Number(employee?.other_allowance) || 0
-            )}</td></tr>
-            <tr class="total-row"><td>Monthly Salary Total</td><td>${formatNumber(
-              employeeSalaryTotal
-            )}</td></tr>
-          </table>
+        <div class="net-box">
+          NET SALARY: AED ${formatNumber(payroll.netSalary || 0)}
+          <div style="font-size: 12px; font-weight: normal; margin-top: 5px;">Gross salary + allowances + deductions</div>
         </div>
 
         <div class="section">
@@ -194,11 +180,25 @@ export default function PayrollManagement() {
               payroll.totalIdleDayHours
             )}</td></tr>
           </table>
-          <div class="gross-box">
-            <strong>Gross Salary from Hours:</strong> AED ${formatNumber(
-              payroll.totalGrossSalary || 0
-            )}
-          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Fixed Monthly Salary</div>
+          <table>
+            <tr><th>Component</th><th>Amount (AED)</th></tr>
+            <tr><td>Basic Salary</td><td>${formatNumber(
+              Number(employee?.basic_salary) || 0
+            )}</td></tr>
+            <tr><td>HRA</td><td>${formatNumber(
+              Number(employee?.hra) || 0
+            )}</td></tr>
+            <tr><td>Other Allowance</td><td>${formatNumber(
+              Number(employee?.other_allowance) || 0
+            )}</td></tr>
+            <tr class="total-row"><td>Monthly Salary Total</td><td>${formatNumber(
+              employeeSalaryTotal
+            )}</td></tr>
+          </table>
         </div>
 
         <div class="section">
@@ -243,8 +243,13 @@ export default function PayrollManagement() {
           </table>
         </div>
 
-        <div class="net-box">
-          NET SALARY: AED ${formatNumber(payroll.netSalary || 0)}
+        <div class="gross-box">
+          <strong>TOTAL GROSS SALARY:</strong> AED ${formatNumber(
+            payroll.totalGrossSalary || 0
+          )}
+          <div style="font-size: 12px; margin-top: 5px;">Base Rate: AED ${formatNumber(
+            payroll.baseHourlyRate || 0
+          )}/hr</div>
         </div>
 
         ${
@@ -446,116 +451,34 @@ export default function PayrollManagement() {
                     {/* Employee Details */}
                     {isExpanded && (
                       <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-900/30">
-                        {/* Salary Summary */}
-                        {payroll.hoursBreakdown && (
-                          <div className="mb-6 space-y-4">
-                            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    Total Gross Salary
-                                  </h4>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Base Rate: AED{" "}
-                                    {formatNumber(payroll.baseHourlyRate || 0)}
-                                    /hr
-                                  </p>
-                                </div>
-                                <div className="text-2xl font-bold text-brand-600 dark:text-brand-400">
-                                  AED{" "}
-                                  {formatNumber(payroll.totalGrossSalary || 0)}
+                        {/* Net Salary - FIRST */}
+                        {payroll.netSalary !== null &&
+                          payroll.netSalary !== undefined && (
+                            <div className="mb-6">
+                              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-500 dark:border-green-600">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <h4 className="text-lg font-semibold text-green-900 dark:text-green-100">
+                                      Net Salary
+                                    </h4>
+                                    <p className="text-sm text-green-700 dark:text-green-300">
+                                      Gross salary + allowances + deductions
+                                    </p>
+                                  </div>
+                                  <div className="text-3xl font-bold text-green-700 dark:text-green-400">
+                                    AED {formatNumber(payroll.netSalary)}
+                                  </div>
                                 </div>
                               </div>
                             </div>
+                          )}
 
-                            {payroll.netSalary !== null &&
-                              payroll.netSalary !== undefined && (
-                                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-500 dark:border-green-600">
-                                  <div className="flex justify-between items-center">
-                                    <div>
-                                      <h4 className="text-lg font-semibold text-green-900 dark:text-green-100">
-                                        Net Salary
-                                      </h4>
-                                      <p className="text-sm text-green-700 dark:text-green-300">
-                                        After allowances and deductions
-                                      </p>
-                                    </div>
-                                    <div className="text-3xl font-bold text-green-700 dark:text-green-400">
-                                      AED {formatNumber(payroll.netSalary)}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                          </div>
-                        )}
-
-                        {/* Detailed Hours Breakdown */}
+                        {/* Hours Breakdown - SECOND */}
                         {payroll.hoursBreakdown ? (
                           <div className="space-y-6">
-                            {/* Employee Salary Information */}
-                            {payroll.employee && (
-                              <div className="my-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
-                                <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-3">
-                                  Employee Fixed Salary
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                                  <div>
-                                    <span className="text-purple-700 dark:text-purple-300">
-                                      Basic Salary:
-                                    </span>
-                                    <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
-                                      AED{" "}
-                                      {payroll.employee.basic_salary
-                                        ? formatNumber(
-                                            payroll.employee.basic_salary
-                                          )
-                                        : "0.00"}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <span className="text-purple-700 dark:text-purple-300">
-                                      HRA:
-                                    </span>
-                                    <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
-                                      AED{" "}
-                                      {payroll.employee.hra
-                                        ? formatNumber(payroll.employee.hra)
-                                        : "0.00"}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <span className="text-purple-700 dark:text-purple-300">
-                                      Other Allowance:
-                                    </span>
-                                    <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
-                                      AED{" "}
-                                      {payroll.employee.other_allowance
-                                        ? formatNumber(
-                                            payroll.employee.other_allowance
-                                          )
-                                        : "0.00"}
-                                    </p>
-                                  </div>
-                                  <div className="border-l-2 border-purple-300 dark:border-purple-600 pl-4">
-                                    <span className="text-purple-700 dark:text-purple-300 font-semibold">
-                                      Monthly Total:
-                                    </span>
-                                    <p className="font-bold text-purple-900 dark:text-purple-100 mt-1">
-                                      AED{" "}
-                                      {formatNumber(
-                                        (Number(
-                                          payroll.employee.basic_salary
-                                        ) || 0) +
-                                          (Number(payroll.employee.hra) || 0) +
-                                          (Number(
-                                            payroll.employee.other_allowance
-                                          ) || 0)
-                                      )}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider border-b-2 border-gray-300 dark:border-gray-600 pb-2">
+                              Hours Breakdown
+                            </h3>
                             {/* Regular Hours with Rate Variants */}
                             {payroll.hoursBreakdown.regular.length > 0 && (
                               <div className="space-y-3">
@@ -792,9 +715,9 @@ export default function PayrollManagement() {
                           </div>
                         ) : (
                           <div className="space-y-3">
-                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                              Hours Summary (Legacy)
-                            </h4>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider border-b-2 border-gray-300 dark:border-gray-600 pb-2">
+                              Hours Breakdown
+                            </h3>
                             <div className="space-y-2">
                               <div className="flex justify-between text-sm">
                                 <span className="text-gray-600 dark:text-gray-400">
@@ -834,45 +757,137 @@ export default function PayrollManagement() {
                           </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                          {/* Allowances & Arrears */}
-                          <div className="space-y-3">
-                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                              Additions
-                            </h4>
-                            <div className="space-y-2">
+                        {/* Fixed Salary Breakdown - THIRD */}
+                        {payroll.employee && (
+                          <div className="my-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                            <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100 mb-3 uppercase tracking-wider">
+                              Fixed Salary Breakdown
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                               <div>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  Allowances:
+                                <span className="text-purple-700 dark:text-purple-300">
+                                  Basic Salary:
                                 </span>
-                                <p className="text-sm text-gray-900 dark:text-white mt-1">
-                                  {formatJsonDisplay(payroll.allowances)}
+                                <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
+                                  AED{" "}
+                                  {payroll.employee.basic_salary
+                                    ? formatNumber(
+                                        payroll.employee.basic_salary
+                                      )
+                                    : "0.00"}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-purple-700 dark:text-purple-300">
+                                  HRA:
+                                </span>
+                                <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
+                                  AED{" "}
+                                  {payroll.employee.hra
+                                    ? formatNumber(payroll.employee.hra)
+                                    : "0.00"}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-purple-700 dark:text-purple-300">
+                                  Other Allowance:
+                                </span>
+                                <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
+                                  AED{" "}
+                                  {payroll.employee.other_allowance
+                                    ? formatNumber(
+                                        payroll.employee.other_allowance
+                                      )
+                                    : "0.00"}
+                                </p>
+                              </div>
+                              <div className="border-l-2 border-purple-300 dark:border-purple-600 pl-4">
+                                <span className="text-purple-700 dark:text-purple-300 font-semibold">
+                                  Monthly Total:
+                                </span>
+                                <p className="font-bold text-purple-900 dark:text-purple-100 mt-1">
+                                  AED{" "}
+                                  {formatNumber(
+                                    (Number(payroll.employee.basic_salary) ||
+                                      0) +
+                                      (Number(payroll.employee.hra) || 0) +
+                                      (Number(
+                                        payroll.employee.other_allowance
+                                      ) || 0)
+                                  )}
                                 </p>
                               </div>
                             </div>
                           </div>
+                        )}
 
-                          {/* Deductions */}
-                          <div className="space-y-3">
-                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                              Deductions
-                            </h4>
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-600 dark:text-gray-400">
-                                  Absent Days:
-                                </span>
-                                <span className="font-medium text-gray-900 dark:text-white">
-                                  {formatNumber(payroll.absentDaysDeductible)}
-                                </span>
+                        {/* Additions/Deductions - FOURTH */}
+                        <div className="space-y-3 mb-6">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider border-b-2 border-gray-300 dark:border-gray-600 pb-2">
+                            Additions & Deductions
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Allowances & Arrears */}
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                                Additions
+                              </h4>
+                              <div className="space-y-2">
+                                <div>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    Allowances:
+                                  </span>
+                                  <p className="text-sm text-gray-900 dark:text-white mt-1">
+                                    {formatJsonDisplay(payroll.allowances)}
+                                  </p>
+                                </div>
                               </div>
+                            </div>
+
+                            {/* Deductions */}
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                                Deductions
+                              </h4>
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600 dark:text-gray-400">
+                                    Absent Days:
+                                  </span>
+                                  <span className="font-medium text-gray-900 dark:text-white">
+                                    {formatNumber(payroll.absentDaysDeductible)}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    Other Deductions:
+                                  </span>
+                                  <p className="text-sm text-gray-900 dark:text-white mt-1">
+                                    {formatJsonDisplay(payroll.otherDeductions)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Total Gross Salary - FIFTH */}
+                        <div className="mb-6">
+                          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-500 dark:border-blue-600">
+                            <div className="flex justify-between items-center">
                               <div>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  Other Deductions:
-                                </span>
-                                <p className="text-sm text-gray-900 dark:text-white mt-1">
-                                  {formatJsonDisplay(payroll.otherDeductions)}
+                                <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 uppercase tracking-wider">
+                                  Total Gross Salary
+                                </h3>
+                                <p className="text-sm text-blue-700 dark:text-blue-300">
+                                  Base Rate: AED{" "}
+                                  {formatNumber(payroll.baseHourlyRate || 0)}
+                                  /hr
                                 </p>
+                              </div>
+                              <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                                AED{" "}
+                                {formatNumber(payroll.totalGrossSalary || 0)}
                               </div>
                             </div>
                           </div>

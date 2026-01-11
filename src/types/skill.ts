@@ -17,7 +17,7 @@ export interface EmployeeSkill {
   employeeId: number;
   skillId: number;
   rating: number;
-  cost_price?: number;
+  cost_price?: number | null;
   skill: Skill;
   createdAt: string;
   updatedAt: string;

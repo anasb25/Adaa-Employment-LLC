@@ -310,7 +310,7 @@ export default function EmployeeList({
                   </div>
 
                   {/* Cards Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-3">
                     {/* Basic Information Card */}
                     <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
                       <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">
@@ -427,7 +427,7 @@ export default function EmployeeList({
                     {/* Skills Card */}
                     <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
                       <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">
-                        Skills
+                        Skills & Rates
                       </h4>
                       <div className="space-y-1.5">
                         {employee.employeeSkills &&
@@ -436,16 +436,33 @@ export default function EmployeeList({
                             {employee.employeeSkills.map((es) => (
                               <div
                                 key={es.id}
-                                className="flex items-center justify-between text-xs"
+                                className="text-xs space-y-1 pb-2 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0"
                               >
-                                <span className="text-gray-900 dark:text-white">
-                                  {es.skill.skill}
-                                </span>
-                                <StarRating
-                                  rating={es.rating}
-                                  maxRating={5}
-                                  size="sm"
-                                />
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-900 dark:text-white font-medium">
+                                    {es.skill.skill}
+                                  </span>
+                                  <StarRating
+                                    rating={es.rating}
+                                    maxRating={5}
+                                    size="sm"
+                                  />
+                                </div>
+                                <div className="text-gray-600 dark:text-gray-400">
+                                  {es.cost_price !== null &&
+                                  es.cost_price !== undefined ? (
+                                    <>
+                                      Rate:{" "}
+                                      <span className="font-semibold text-green-600 dark:text-green-400">
+                                        AED {Number(es.cost_price).toFixed(2)}/hr
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="italic text-gray-400 dark:text-gray-500">
+                                      Rate: Not set
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </>
@@ -454,6 +471,58 @@ export default function EmployeeList({
                             No skills assigned
                           </span>
                         )}
+                      </div>
+                    </div>
+
+                    {/* Salary Information Card */}
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                      <h4 className="text-xs font-semibold text-green-900 dark:text-green-100 mb-2">
+                        Salary Information
+                      </h4>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-green-700 dark:text-green-300">
+                            Basic Salary:
+                          </span>
+                          <span className="font-medium text-green-900 dark:text-green-100">
+                            {employee.basic_salary
+                              ? `AED ${Number(employee.basic_salary).toFixed(2)}`
+                              : "N/A"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-green-700 dark:text-green-300">
+                            HRA:
+                          </span>
+                          <span className="font-medium text-green-900 dark:text-green-100">
+                            {employee.hra
+                              ? `AED ${Number(employee.hra).toFixed(2)}`
+                              : "N/A"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-green-700 dark:text-green-300">
+                            Other Allowance:
+                          </span>
+                          <span className="font-medium text-green-900 dark:text-green-100">
+                            {employee.other_allowance
+                              ? `AED ${Number(employee.other_allowance).toFixed(2)}`
+                              : "N/A"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between pt-2 mt-2 border-t border-green-200 dark:border-green-700">
+                          <span className="font-semibold text-green-900 dark:text-green-100">
+                            Monthly Total:
+                          </span>
+                          <span className="font-bold text-green-900 dark:text-green-100">
+                            AED{" "}
+                            {(
+                              (Number(employee.basic_salary) || 0) +
+                              (Number(employee.hra) || 0) +
+                              (Number(employee.other_allowance) || 0)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
