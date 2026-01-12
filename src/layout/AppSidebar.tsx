@@ -34,7 +34,9 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Employment Overview", path: "/", pro: false }],
+    subItems: [
+      { name: "Document Expiry Alerts", path: "/expiry-alerts", pro: false },
+    ],
   },
   {
     name: "Employees",

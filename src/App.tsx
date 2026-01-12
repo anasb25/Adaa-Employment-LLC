@@ -55,6 +55,7 @@ export default function App() {
               </ProtectedRoute>
             }
           >
+            <Route path="/expiry-alerts" element={<Home />} />
             <Route index path="/" element={<Home />} />
 
             {/* Main Pages */}
