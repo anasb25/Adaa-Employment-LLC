@@ -15,6 +15,7 @@ const RateVariantsManagement = () => {
     isActive: true,
     color: "#3b82f6",
     employeeRateMultiplier: 1.0,
+    clientRateMultiplier: 1.0,
     minHours: null,
     maxHours: null,
   });
@@ -43,6 +44,7 @@ const RateVariantsManagement = () => {
       isActive: true,
       color: "#3b82f6",
       employeeRateMultiplier: 1.0,
+      clientRateMultiplier: 1.0,
       minHours: null,
       maxHours: null,
     });
@@ -58,6 +60,7 @@ const RateVariantsManagement = () => {
       isActive: variant.isActive,
       color: variant.color,
       employeeRateMultiplier: variant.employeeRateMultiplier,
+      clientRateMultiplier: variant.clientRateMultiplier || 1.0,
       minHours: variant.minHours ?? null,
       maxHours: variant.maxHours ?? null,
     });
@@ -271,7 +274,7 @@ const RateVariantsManagement = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Employee Rate Multiplier (e.g., 1.05 = 105%)
+                    Employee Rate Multiplier (Global)
                   </label>
                   <input
                     type="number"
@@ -287,6 +290,32 @@ const RateVariantsManagement = () => {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     required
                   />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    e.g., 1.05 = 105% (5% extra pay to employee)
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Client Rate Multiplier (Global Default)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.clientRateMultiplier ?? 1.0}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        clientRateMultiplier: parseFloat(e.target.value) || 1.0,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    required
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    e.g., 1.10 = 110% (10% extra on client billing). Can be overridden per project.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

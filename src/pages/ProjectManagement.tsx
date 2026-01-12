@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectsApi } from "../services/api/projectsApi";
 import { clientsApi } from "../services/api/clientsApi";
 import { specialDaysApi } from "../services/api/specialDaysApi";
+import { rateVariantsApi } from "../services/api/rateVariantsApi";
 import { QUERY_KEYS } from "../lib/constants";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
@@ -26,6 +27,7 @@ import {
   CreateProjectRequest,
   ProjectFAT,
   ProjectSpecialDayRateRequest,
+  ProjectRateVariantRateRequest,
 } from "../types/project";
 import ProjectSkillsModal from "../components/projects/ProjectSkillsModal";
 import { AlertIcon as SearchIcon, PlusIcon, TrashBinIcon } from "../icons";
@@ -44,6 +46,7 @@ export default function ProjectManagement() {
     offDays: [],
     offDayMultiplier: 1.0,
     specialDayRates: [],
+    rateVariantRates: [],
     clientId: 0,
   });
   const queryClient = useQueryClient();
@@ -64,6 +67,11 @@ export default function ProjectManagement() {
   const { data: specialDaysData } = useQuery({
     queryKey: ["specialDays", "all"],
     queryFn: () => specialDaysApi.getSpecialDays(),
+  });
+
+  const { data: rateVariantsData } = useQuery({
+    queryKey: ["rateVariants", "all"],
+    queryFn: () => rateVariantsApi.getRateVariants(),
   });
 
   // Filter projects based on search
@@ -142,6 +150,9 @@ export default function ProjectManagement() {
       notes: "",
       fat: undefined,
       offDays: [],
+      offDayMultiplier: 1.0,
+      specialDayRates: [],
+      rateVariantRates: [],
       clientId: 0,
     });
     setIsModalOpen(true);
@@ -159,6 +170,11 @@ export default function ProjectManagement() {
       specialDayRates:
         p.specialDayRates?.map((rate) => ({
           specialDayId: rate.specialDayId,
+          clientRateMultiplier: rate.clientRateMultiplier,
+        })) || [],
+      rateVariantRates:
+        p.rateVariantRates?.map((rate) => ({
+          rateVariantId: rate.rateVariantId,
           clientRateMultiplier: rate.clientRateMultiplier,
         })) || [],
       clientId: p.clientId,
@@ -227,6 +243,32 @@ export default function ProjectManagement() {
     const updated = [...(form.specialDayRates || [])];
     updated.splice(index, 1);
     setForm({ ...form, specialDayRates: updated });
+  };
+
+  const addRateVariantRate = () => {
+    setForm({
+      ...form,
+      rateVariantRates: [
+        ...(form.rateVariantRates || []),
+        { rateVariantId: 0, clientRateMultiplier: 1.0 },
+      ],
+    });
+  };
+
+  const updateRateVariantRate = (
+    index: number,
+    field: keyof ProjectRateVariantRateRequest,
+    value: any
+  ) => {
+    const updated = [...(form.rateVariantRates || [])];
+    updated[index] = { ...updated[index], [field]: value };
+    setForm({ ...form, rateVariantRates: updated });
+  };
+
+  const removeRateVariantRate = (index: number) => {
+    const updated = [...(form.rateVariantRates || [])];
+    updated.splice(index, 1);
+    setForm({ ...form, rateVariantRates: updated });
   };
 
   return (
@@ -582,6 +624,88 @@ export default function ProjectManagement() {
               form.specialDayRates.length === 0) && (
               <div className="text-sm text-gray-500 italic p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
                 No special day rates configured. Click "Add Rate" to add one.
+              </div>
+            )}
+          </div>
+          <div className="md:col-span-2">
+            <div className="flex items-center justify-between mb-2">
+              <Label>Rate Variant Rates (Client Multipliers)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addRateVariantRate}
+                startIcon={<PlusIcon />}
+              >
+                Add Rate
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">
+              Set project-specific client rate multipliers for rate variants.
+              Employee multipliers remain global.
+            </p>
+            {form.rateVariantRates && form.rateVariantRates.length > 0 && (
+              <div className="space-y-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                {form.rateVariantRates.map((rate, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end"
+                  >
+                    <div>
+                      <Label>Rate Variant</Label>
+                      <Select
+                        options={(rateVariantsData || []).map((rv) => ({
+                          value: String(rv.id),
+                          label: rv.name,
+                        }))}
+                        value={
+                          rate.rateVariantId ? String(rate.rateVariantId) : ""
+                        }
+                        onChange={(v) =>
+                          updateRateVariantRate(
+                            index,
+                            "rateVariantId",
+                            Number(v)
+                          )
+                        }
+                        placeholder="Select rate variant"
+                      />
+                    </div>
+                    <div>
+                      <Label>Client Multiplier</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={rate.clientRateMultiplier || 1.0}
+                        onChange={(e) =>
+                          updateRateVariantRate(
+                            index,
+                            "clientRateMultiplier",
+                            parseFloat(e.target.value) || 1.0
+                          )
+                        }
+                        placeholder="1.0"
+                      />
+                    </div>
+                    <div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => removeRateVariantRate(index)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <TrashBinIcon className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(!form.rateVariantRates ||
+              form.rateVariantRates.length === 0) && (
+              <div className="text-sm text-gray-500 italic p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                No rate variant rates configured. Click "Add Rate" to add one.
               </div>
             )}
           </div>

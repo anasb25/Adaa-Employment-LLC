@@ -17,6 +17,7 @@ export interface SpecialDay {
   color?: string;
   dayType: SpecialDayType;
   employeeRateMultiplier: number;
+  clientRateMultiplier: number;
   isDefaultOff: boolean;
   notes?: string;
   createdAt: string;
@@ -34,6 +35,7 @@ export interface CreateSpecialDayRequest {
   color?: string;
   dayType?: SpecialDayType;
   employeeRateMultiplier?: number;
+  clientRateMultiplier?: number;
   isDefaultOff?: boolean;
   notes?: string;
 }

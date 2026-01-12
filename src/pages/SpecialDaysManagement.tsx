@@ -27,6 +27,7 @@ export default function SpecialDaysManagement() {
     color: "#3b82f6",
     dayType: SpecialDayType.REGULAR,
     employeeRateMultiplier: 1.0,
+    clientRateMultiplier: 1.0,
     isDefaultOff: false,
     notes: "",
   });
@@ -93,6 +94,7 @@ export default function SpecialDaysManagement() {
       color: "#3b82f6",
       dayType: SpecialDayType.REGULAR,
       employeeRateMultiplier: 1.0,
+      clientRateMultiplier: 1.0,
       isDefaultOff: false,
       notes: "",
     });
@@ -112,6 +114,7 @@ export default function SpecialDaysManagement() {
       color: day.color || "#3b82f6",
       dayType: day.dayType || SpecialDayType.REGULAR,
       employeeRateMultiplier: day.employeeRateMultiplier || 1.0,
+      clientRateMultiplier: day.clientRateMultiplier || 1.0,
       isDefaultOff: day.isDefaultOff || false,
       notes: day.notes || "",
     });
@@ -491,7 +494,7 @@ export default function SpecialDaysManagement() {
                   </div>
 
                   <div>
-                    <Label htmlFor="employeeRateMultiplier">Employee Rate Multiplier</Label>
+                    <Label htmlFor="employeeRateMultiplier">Employee Rate Multiplier (Global)</Label>
                     <div className="mt-1 relative">
                       <input
                         id="employeeRateMultiplier"
@@ -512,6 +515,31 @@ export default function SpecialDaysManagement() {
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       e.g., 1.05 = 105% (5% extra pay to employee)
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="clientRateMultiplier">Client Rate Multiplier (Global Default)</Label>
+                    <div className="mt-1 relative">
+                      <input
+                        id="clientRateMultiplier"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="10"
+                        value={form.clientRateMultiplier}
+                        onChange={(e) => setForm({ ...form, clientRateMultiplier: parseFloat(e.target.value) || 1.0 })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                        disabled={form.dayType === SpecialDayType.MANDATORY_OFF || form.dayType === SpecialDayType.REGULAR}
+                      />
+                      <div className="absolute right-3 top-2 text-sm text-gray-500">
+                        {((form.clientRateMultiplier || 1) * 100).toFixed(0)}%
+                      </div>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      e.g., 1.10 = 110% (10% extra on client billing). Can be overridden per project.
                     </p>
                   </div>
 
