@@ -418,42 +418,66 @@ export default function SettlementView({
 
           {/* Payment Details Section */}
           <div className="text-center font-bold bg-gray-100 p-2 mb-2 text-xs border border-black">
-            PAYMENT DETAILS<br />
-            PARTICULAR
+            PAYMENT DETAILS
           </div>
 
           <table className="w-full mb-4 text-xs">
             <thead>
               <tr>
                 <th className="border border-black p-2 text-left">DESCRIPTION</th>
-                <th className="border border-black p-2 text-center w-24">FOR</th>
-                <th className="border border-black p-2 text-center w-32">OF SERVICE</th>
                 <th className="border border-black p-2 text-right w-32">AMOUNT</th>
               </tr>
             </thead>
             <tbody>
-              {settlement.paymentItems.map((item, index) => (
-                <tr key={index}>
-                  <td className="border border-black p-2">{item.description}</td>
-                  <td className="border border-black p-2 text-center">
-                    {item.forDays || "-"}
-                  </td>
-                  <td className="border border-black p-2 text-center">
-                    {item.fromDate && item.toDate
-                      ? `${formatDate(item.fromDate)} TO ${formatDate(
-                          item.toDate
-                        )}`
-                      : item.description.includes("PAID") || item.description.includes("SALARY")
-                      ? "PAID"
-                      : "OF SERVICE"}
-                  </td>
-                  <td className="border border-black p-2 text-right">
-                    {Number(item.amount).toFixed(2)}
-                  </td>
-                </tr>
-              ))}
+              {settlement.paymentItems.map((item, index) => {
+                // Check if this is last month salary that should show "PAID"
+                // Last month salary will have amount === 0 if paid, and won't have fromDate/toDate
+                const isLastMonthSalary = item.description.includes("SALARY") && 
+                  !item.fromDate && 
+                  settlement.lastMonthSalaryPaid && 
+                  item.amount === 0;
+                
+                // Check if this is current month salary (has fromDate/toDate)
+                const isCurrentMonthSalary = item.description.includes("SALARY") && 
+                  item.fromDate && 
+                  item.toDate;
+                
+                // Format particular text
+                let particularText = "";
+                if (item.description === "GRATUITY" && item.forDays) {
+                  particularText = `FOR ${item.forDays.toFixed(2)} DAYS OF SERVICE`;
+                } else if (item.description === "LEAVE SALARY" && item.forDays) {
+                  particularText = `FOR ${item.forDays.toFixed(2)} DAYS ANNUAL LEAVE BALANCE`;
+                } else if (isLastMonthSalary) {
+                  particularText = "FOR 0 PAID";
+                } else if (isCurrentMonthSalary) {
+                  const fromDateStr = formatDate(item.fromDate);
+                  const toDateStr = formatDate(item.toDate);
+                  particularText = `FOR ${item.forDays || 0} Hours From ${fromDateStr} TO ${toDateStr}`;
+                }
+                
+                return (
+                  <tr key={index}>
+                    <td className="border border-black p-2">
+                      {item.description}
+                      {particularText && (
+                        <div className="text-gray-600 text-xs mt-1">
+                          {particularText}
+                        </div>
+                      )}
+                    </td>
+                    <td className="border border-black p-2 text-right">
+                      {isLastMonthSalary ? (
+                        <span className="bg-yellow-200 px-2 py-0.5 rounded">PAID</span>
+                      ) : (
+                        Number(item.amount).toFixed(2)
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
               <tr className="bg-gray-100 font-bold">
-                <td className="border border-black p-2" colSpan={3}>
+                <td className="border border-black p-2">
                   TOTAL DUE:
                 </td>
                 <td className="border border-black p-2 text-right">
@@ -463,11 +487,19 @@ export default function SettlementView({
             </tbody>
           </table>
 
-          {/* Air Ticket Section */}
-          <div className="border-t-2 border-black pt-2 mb-4">
-            <div className="font-bold text-xs mb-2">AIR TICKET</div>
-            <div className="text-center text-xs mb-2">1</div>
-          </div>
+          {/* Air Ticket - Show below payment table aligned with AMOUNT column */}
+          {settlement.employee?.air_tickets && settlement.employee.air_tickets > 0 && (
+            <div className="flex justify-end mb-4 text-xs">
+              <table className="w-full">
+                <tbody>
+                  <tr>
+                    <td className="p-2 text-left font-bold">AIR TICKET</td>
+                    <td className="p-2 text-right w-32">{settlement.employee.air_tickets}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Deduction Details Section */}
           <div className="text-center font-bold bg-gray-100 p-2 mb-2 text-xs border border-black">
@@ -511,7 +543,7 @@ export default function SettlementView({
           <div className="bg-yellow-100 border-2 border-black p-3 mb-6">
             <div className="flex justify-between items-center">
               <span className="font-bold text-sm">
-                TOTAL AMOUNT DUE FOR FOBS:
+                TOTAL AMOUNT DUE FOR EOSB:
               </span>
               <span className="font-bold text-lg">
                 AED {Number(settlement.finalAmount).toFixed(2)}
@@ -548,11 +580,11 @@ export default function SettlementView({
             </div>
             <div className="p-4 text-xs leading-relaxed">
               <p className="mb-3">
-                This is to acknowledge that,{" "}
+                This is to acknowledge that I,{" "}
                 <span className="font-bold border-b border-black">
                   {settlement.empName}
                 </span>
-                , * passport holder{" "}
+                , passport holder{" "}
                 <span className="font-bold border-b border-black">
                   {settlement.passportNo || "_____________"}
                 </span>

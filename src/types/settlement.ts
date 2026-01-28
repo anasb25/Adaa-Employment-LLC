@@ -41,6 +41,7 @@ export interface Settlement {
   lastDateOfWork?: string;
   lastTotalSalary?: number;
   totalDaysAbsent?: number;
+  lastMonthSalaryPaid?: boolean;
   
   // Gratuity eligibility
   eligibleForGratuity: boolean;
@@ -94,6 +95,7 @@ export interface CreateSettlementRequest {
   lastDateOfWork?: string;
   lastTotalSalary?: number;
   totalDaysAbsent?: number;
+  lastMonthSalaryPaid?: boolean;
   
   // Gratuity eligibility
   eligibleForGratuity: boolean;

@@ -41,6 +41,9 @@ export default function SettlementForm({
   const [deductionItems, setDeductionItems] = useState<DeductionItem[]>(
     settlement?.deductionItems || []
   );
+  const [lastMonthSalaryPaid, setLastMonthSalaryPaid] = useState<boolean>(
+    settlement?.lastMonthSalaryPaid ?? false
+  );
   const [status, setStatus] = useState<SettlementStatus>(
     settlement?.status || SettlementStatus.DRAFT
   );
@@ -147,23 +150,82 @@ export default function SettlementForm({
 
   // Auto-calculate payment items from employee data and gratuity
   const generatePaymentItems = () => {
-    if (!selectedEmployee || !gratuityCalc) return [];
+    // In edit mode, use existing payment items if available
+    if (isEditMode && settlement?.paymentItems && settlement.paymentItems.length > 0) {
+      return settlement.paymentItems;
+    }
+    
+    if (!selectedEmployee) return [];
 
     const items = [];
+    const basicSalary = Number(selectedEmployee.basic_salary) || 0;
+    const hra = Number(selectedEmployee.hra) || 0;
+    const annualLeaveBalance = Number(selectedEmployee.annual_leave_balance) || 0;
 
-    // Add gratuity if eligible
-    if (eligibleForGratuity && gratuityCalc.gratuityAmount > 0) {
+    // 1. GRATUITY - Formula: basic salary / 30 * gratuity days per year (21 or 30) * total days from date of joining till last day / 365
+    if (eligibleForGratuity && gratuityCalc && gratuityCalc.gratuityAmount > 0) {
+      const totalDays = selectedEmployee.date_of_joining && lastDateOfWork
+        ? Math.floor((new Date(lastDateOfWork).getTime() - new Date(selectedEmployee.date_of_joining).getTime()) / (24 * 60 * 60 * 1000))
+        : 0;
       items.push({
         description: "GRATUITY",
-        forDays: Number(gratuityCalc.eligibleDays) || 0,
+        forDays: totalDays, // Store total days for display
         amount: Number(gratuityCalc.gratuityAmount) || 0,
       });
     }
 
-    // Add leave salary if there's a balance
-    // This would need to come from actual leave balance data
-    // For now, we can add a placeholder or fetch from employee data
+    // 2. LEAVE SALARY - Formula: ((basic salary + HRA)/30) * leave balance days
+    if (annualLeaveBalance > 0) {
+      const leaveSalaryAmount = ((basicSalary + hra) / 30) * annualLeaveBalance;
+      items.push({
+        description: "LEAVE SALARY",
+        forDays: annualLeaveBalance,
+        amount: leaveSalaryAmount,
+      });
+    }
 
+    // 3. Last Month Salary - Show "PAID" or net salary amount
+    // Always add this row, even if payroll doesn't exist (will show 0 or error)
+    const lastMonthName = new Date(`${lastMonth}-01`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+    const lastMonthNetSalary = lastMonthPayroll?.payroll 
+      ? Number(lastMonthPayroll.payroll.netSalary) || 0 
+      : 0;
+    items.push({
+      description: `${lastMonthName} SALARY`,
+      amount: lastMonthSalaryPaid ? 0 : lastMonthNetSalary,
+    });
+
+    // 4. Current Month Salary - Net salary from current month payroll
+    // Always add this row, even if payroll doesn't exist (will show 0 or error)
+    const currentMonthName = new Date(`${currentMonth}-01`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+    const currentMonthNetSalary = currentMonthPayroll?.payroll 
+      ? Number(currentMonthPayroll.payroll.netSalary) || 0 
+      : 0;
+    const lastDate = lastDateOfWork ? new Date(lastDateOfWork) : new Date();
+    const monthStart = new Date(lastDate.getFullYear(), lastDate.getMonth(), 1);
+    const fromDate = monthStart.toISOString().split('T')[0];
+    const toDate = lastDateOfWork || lastDate.toISOString().split('T')[0];
+    
+    // Get total hours from payroll
+    const totalHours = currentMonthPayroll?.payroll 
+      ? Number(currentMonthPayroll.payroll.totalHours) || 0 
+      : 0;
+    
+    items.push({
+      description: `${currentMonthName} SALARY`,
+      fromDate,
+      toDate,
+      forDays: totalHours, // Store hours as forDays for display
+      amount: currentMonthNetSalary,
+    });
+
+    // 5. EARLY TERMINATION COMPENSATION - Always 0
+    items.push({
+      description: "EARLY TERMINATION COMPENSATION",
+      amount: 0,
+    });
+
+    // Note: AIR TICKET is displayed separately, not in payment items total
     return items;
   };
 
@@ -221,6 +283,7 @@ export default function SettlementForm({
         totalDaysAbsent: currentMonthPayroll?.payroll?.absentDaysDeductible 
           ? Number(currentMonthPayroll.payroll.absentDaysDeductible) 
           : 0,
+        lastMonthSalaryPaid,
         eligibleForGratuity,
         gratuityDaysPerYear: gratuityCalc?.totalYearsOfService
           ? (gratuityCalc.totalYearsOfService < 5 ? 21 : 30)
@@ -479,6 +542,56 @@ export default function SettlementForm({
         />
       </div>
 
+      {/* Last Month Salary Paid */}
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="lastMonthSalaryPaid"
+          checked={lastMonthSalaryPaid}
+          onChange={(e) => setLastMonthSalaryPaid(e.target.checked)}
+          className="w-4 h-4"
+          disabled={!lastMonthPayroll?.payroll}
+        />
+        <Label htmlFor="lastMonthSalaryPaid">
+          Last Month Salary Already Paid
+          {!lastMonthPayroll?.payroll && (
+            <span className="text-gray-500 text-xs ml-2">(Requires last month payroll)</span>
+          )}
+        </Label>
+      </div>
+
+
+      {/* Payment Items Preview */}
+      {selectedEmployee && totals.paymentItems.length > 0 && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+          <h3 className="text-sm font-semibold mb-3 text-blue-800 dark:text-blue-300">
+            Payment Items Preview
+          </h3>
+          <div className="space-y-2 text-sm">
+            {totals.paymentItems.map((item, index) => (
+              <div key={index} className="flex justify-between items-center">
+                <span className="text-blue-700 dark:text-blue-400">
+                  {item.description}
+                  {item.description.includes("SALARY") && lastMonthSalaryPaid && item.amount === 0 && (
+                    <span className="ml-2 bg-yellow-200 px-2 py-0.5 rounded text-xs">PAID</span>
+                  )}
+                </span>
+                <span className="font-semibold text-blue-900 dark:text-blue-200">
+                  {item.description.includes("SALARY") && lastMonthSalaryPaid && item.amount === 0 
+                    ? "PAID" 
+                    : `AED ${Number(item.amount).toFixed(2)}`}
+                </span>
+              </div>
+            ))}
+            <div className="flex justify-between items-center pt-2 border-t border-blue-300 dark:border-blue-700 font-bold">
+              <span className="text-blue-900 dark:text-blue-200">Total Due:</span>
+              <span className="text-blue-900 dark:text-blue-200">
+                AED {totals.totalDue.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Gratuity Calculation Display */}
       {eligibleForGratuity && gratuityCalc && (
