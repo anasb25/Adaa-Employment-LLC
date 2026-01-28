@@ -1,7 +1,10 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { Settlement } from "../../types/settlement";
 import Button from "../ui/button/Button";
-import Logo from "../common/Logo";
+import { settlementsApi } from "../../services/api/settlementsApi";
+import { toast } from "sonner";
 
 interface SettlementViewProps {
   settlement: Settlement;
@@ -13,225 +16,157 @@ export default function SettlementView({
   onClose,
 }: SettlementViewProps) {
   const printRef = useRef<HTMLDivElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  const handlePrint = () => {
-    const printContent = printRef.current;
-    if (!printContent) return;
+  const handleDownloadPDF = async () => {
+    const element = printRef.current;
+    if (!element) {
+      toast.error("Content not available for PDF generation");
+      return;
+    }
 
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
+    try {
+      setIsDownloading(true);
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Final Settlement Computation - ${settlement.empCode}</title>
-          <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            body {
-              font-family: Arial, sans-serif;
-              padding: 20px;
-              background: white;
-            }
-            .container {
-              max-width: 800px;
-              margin: 0 auto;
-              border: 2px solid #000;
-              padding: 20px;
-            }
-            .header {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              border-bottom: 3px solid #000;
-              padding-bottom: 15px;
-              margin-bottom: 20px;
-            }
-            .header h1 {
-              color: #ff6600;
-              font-size: 18px;
-              font-weight: bold;
-            }
-            .logo {
-              width: 60px;
-              height: 60px;
-              background: #003366;
-              border-radius: 8px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-              font-weight: bold;
-            }
-            .info-grid {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 10px 30px;
-              margin-bottom: 20px;
-            }
-            .info-item {
-              display: flex;
-              font-size: 11px;
-            }
-            .info-label {
-              font-weight: bold;
-              min-width: 140px;
-            }
-            .info-value {
-              flex: 1;
-              border-bottom: 1px solid #000;
-              padding-left: 10px;
-            }
-            .gratuity-section {
-              border: 2px solid #000;
-              padding: 8px;
-              margin: 15px 0;
-            }
-            .gratuity-row {
-              display: flex;
-              align-items: center;
-              gap: 10px;
-              font-size: 11px;
-              font-weight: bold;
-            }
-            .checkbox {
-              width: 15px;
-              height: 15px;
-              border: 2px solid #000;
-              display: inline-block;
-              margin-right: 5px;
-            }
-            .checkbox.checked::after {
-              content: '✓';
-              display: block;
-              text-align: center;
-              line-height: 15px;
-            }
-            .section-title {
-              text-align: center;
-              font-weight: bold;
-              background: #f0f0f0;
-              padding: 8px;
-              margin: 15px 0;
-              font-size: 12px;
-              border: 1px solid #000;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 15px;
-              font-size: 11px;
-            }
-            table th, table td {
-              border: 1px solid #000;
-              padding: 6px;
-              text-align: left;
-            }
-            table th {
-              background: #f0f0f0;
-              font-weight: bold;
-            }
-            .amount-col {
-              text-align: right;
-              width: 120px;
-            }
-            .total-row {
-              background: #ffffcc;
-              font-weight: bold;
-              font-size: 13px;
-            }
-            .acknowledgment {
-              border: 2px solid #000;
-              padding: 15px;
-              margin: 20px 0;
-              background: #e8f4f8;
-            }
-            .acknowledgment-title {
-              background: #00cc00;
-              color: white;
-              text-align: center;
-              padding: 8px;
-              font-weight: bold;
-              margin: -15px -15px 15px -15px;
-            }
-            .acknowledgment-text {
-              font-size: 10px;
-              line-height: 1.6;
-              margin-bottom: 15px;
-            }
-            .signature-section {
-              display: grid;
-              grid-template-columns: 1fr 1fr 1fr;
-              gap: 20px;
-              margin-top: 20px;
-            }
-            .signature-box {
-              text-align: center;
-            }
-            .signature-line {
-              border-top: 1px solid #000;
-              margin-top: 40px;
-              padding-top: 5px;
-              font-size: 11px;
-              font-weight: bold;
-            }
-            .date-box {
-              margin-top: 20px;
-            }
-            .date-label {
-              font-size: 11px;
-              font-weight: bold;
-            }
-            .date-line {
-              border-bottom: 1px solid #000;
-              display: inline-block;
-              min-width: 150px;
-              margin-left: 10px;
-            }
-            .footer-note {
-              font-size: 9px;
-              font-style: italic;
-              margin-top: 15px;
-              color: #666;
-            }
-            @media print {
-              @page {
-                size: A4;
-                margin: 10mm;
-              }
-              body {
-                padding: 0;
-                margin: 0;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-              }
-              .container {
-                border: 2px solid #000;
-                max-width: 100%;
-                page-break-after: avoid;
-              }
-              * {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          ${printContent.innerHTML}
-        </body>
-      </html>
-    `);
+      const images = Array.from(
+        element.querySelectorAll("img")
+      ) as HTMLImageElement[];
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
+          return new Promise<void>((resolve) => {
+            const onLoad = () => {
+              cleanup();
+              resolve();
+            };
+            const onError = () => {
+              cleanup();
+              resolve();
+            };
+            const cleanup = () => {
+              img.removeEventListener("load", onLoad);
+              img.removeEventListener("error", onError);
+            };
+            img.addEventListener("load", onLoad);
+            img.addEventListener("error", onError);
+          });
+        })
+      );
 
-    printWindow.document.close();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
+        onclone: (doc) => {
+          const style = doc.createElement("style");
+          style.innerHTML = `
+            [data-pdf-root], [data-pdf-root] * {
+              color: #000 !important;
+              border-color: #000 !important;
+              background-color: transparent !important;
+              box-shadow: none !important;
+            }
+            [data-pdf-root] {
+              background-color: #fff !important;
+            }
+            [data-pdf-root] table th {
+              background-color: #f0f0f0 !important;
+            }
+            [data-pdf-root] [data-pdf-bg="gray"] {
+              background-color: #f0f0f0 !important;
+            }
+            [data-pdf-root] [data-pdf-bg="yellow"] {
+              background-color: #fff3cd !important;
+            }
+            [data-pdf-root] [data-pdf-bg="yellow-strong"] {
+              background-color: #facc15 !important;
+            }
+            [data-pdf-root] [data-pdf-bg="blue"] {
+              background-color: #e0f2fe !important;
+            }
+            [data-pdf-root] [data-pdf-bg="green"] {
+              background-color: #16a34a !important;
+              color: #fff !important;
+            }
+            [data-pdf-root] .border-b {
+              padding-bottom: 16px !important;
+              border-bottom-width: 1px !important;
+            }
+            [data-pdf-root] [data-pdf-section="employee-info"] .flex {
+              align-items: baseline !important;
+            }
+            [data-pdf-root] [data-pdf-section="employee-info"] .border-b {
+              display: inline-block !important;
+              width: 100% !important;
+              line-height: 1.3 !important;
+              min-height: 14px !important;
+              padding-bottom: 4px !important;
+              box-sizing: border-box !important;
+            }
+          `;
+          doc.head.appendChild(style);
+        },
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const margin = 10;
+      const pageWidth = pdf.internal.pageSize.getWidth() - margin * 2;
+      const pageHeight = pdf.internal.pageSize.getHeight() - margin * 2;
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = margin;
+
+      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        pdf.addPage();
+        position = heightLeft - imgHeight + margin;
+        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`Settlement-${settlement.empCode}-${settlement.id}.pdf`);
+      toast.success("PDF downloaded successfully");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast.error(`Failed to generate PDF: ${errorMessage}`);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadExcel = async () => {
+    try {
+      setIsDownloading(true);
+      const blob = await settlementsApi.exportSettlementExcel(settlement.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Settlement-${settlement.empCode}-${settlement.id}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Excel file downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading Excel:", error);
+      toast.error("Failed to download Excel file");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const formatDate = (dateString?: string) => {
@@ -245,29 +180,51 @@ export default function SettlementView({
 
   return (
     <div className="space-y-4">
-      {/* Print Controls */}
-      <div className="flex justify-end gap-3 print:hidden">
+      {/* Download Controls */}
+      <div className="flex justify-end gap-3">
         <Button variant="outline" onClick={onClose}>
           Close
         </Button>
-        <Button onClick={handlePrint}>Print Settlement</Button>
+        <Button 
+          onClick={handleDownloadPDF} 
+          disabled={isDownloading}
+          variant="primary"
+        >
+          {isDownloading ? "Downloading..." : "Download PDF"}
+        </Button>
+        <Button 
+          onClick={handleDownloadExcel} 
+          disabled={isDownloading}
+          variant="outline"
+        >
+          {isDownloading ? "Downloading..." : "Download Excel"}
+        </Button>
       </div>
 
       {/* Settlement Document */}
-      <div ref={printRef} className="bg-white text-black">
+      <div ref={printRef} className="bg-white text-black" data-pdf-root>
         <div className="max-w-4xl mx-auto border-2 border-black p-8 print:border-2">
           {/* Header */}
           <div className="flex justify-between items-center border-b-4 border-black pb-4 mb-6">
             <h1 className="text-xl font-bold text-orange-600">
               Final Settlement Computation
             </h1>
-            <div className="w-16 h-16 bg-blue-900 rounded-lg flex items-center justify-center">
-              <Logo />
+            <div className="flex items-center">
+              <img
+                src="/images/logo/logo-icon.png"
+                alt="ADAA Employment LLC Logo"
+                width={60}
+                height={60}
+                className="block"
+              />
             </div>
           </div>
 
           {/* Employee Information Grid - Two Column Layout */}
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3 mb-6 text-xs">
+          <div
+            className="grid grid-cols-2 gap-x-8 gap-y-3 mb-6 text-xs"
+            data-pdf-section="employee-info"
+          >
             {/* Left Column - Employee Details */}
             <div className="space-y-3">
               <div className="flex">
@@ -417,7 +374,10 @@ export default function SettlementView({
           </div>
 
           {/* Payment Details Section */}
-          <div className="text-center font-bold bg-gray-100 p-2 mb-2 text-xs border border-black">
+          <div
+            className="text-center font-bold bg-gray-100 p-2 mb-2 text-xs border border-black"
+            data-pdf-bg="gray"
+          >
             PAYMENT DETAILS
           </div>
 
@@ -468,7 +428,12 @@ export default function SettlementView({
                     </td>
                     <td className="border border-black p-2 text-right">
                       {isLastMonthSalary ? (
-                        <span className="bg-yellow-200 px-2 py-0.5 rounded">PAID</span>
+                        <span
+                          className="bg-yellow-200 px-2 py-0.5 rounded"
+                          data-pdf-bg="yellow-strong"
+                        >
+                          PAID
+                        </span>
                       ) : (
                         Number(item.amount).toFixed(2)
                       )}
@@ -476,7 +441,7 @@ export default function SettlementView({
                   </tr>
                 );
               })}
-              <tr className="bg-gray-100 font-bold">
+              <tr className="bg-gray-100 font-bold" data-pdf-bg="gray">
                 <td className="border border-black p-2">
                   TOTAL DUE:
                 </td>
@@ -502,7 +467,10 @@ export default function SettlementView({
           )}
 
           {/* Deduction Details Section */}
-          <div className="text-center font-bold bg-gray-100 p-2 mb-2 text-xs border border-black">
+          <div
+            className="text-center font-bold bg-gray-100 p-2 mb-2 text-xs border border-black"
+            data-pdf-bg="gray"
+          >
             DEDUCTION DETAILS<br />
             PARTICULAR
           </div>
@@ -530,7 +498,7 @@ export default function SettlementView({
                   <td className="border border-black p-2 text-right">0.00</td>
                 </tr>
               )}
-              <tr className="bg-gray-100 font-bold">
+              <tr className="bg-gray-100 font-bold" data-pdf-bg="gray">
                 <td className="border border-black p-2">TOTAL DEDUCTION:</td>
                 <td className="border border-black p-2 text-right">
                   {Number(settlement.totalDeduction).toFixed(2)}
@@ -540,7 +508,10 @@ export default function SettlementView({
           </table>
 
           {/* Total Amount Due */}
-          <div className="bg-yellow-100 border-2 border-black p-3 mb-6">
+          <div
+            className="bg-yellow-100 border-2 border-black p-3 mb-6"
+            data-pdf-bg="yellow"
+          >
             <div className="flex justify-between items-center">
               <span className="font-bold text-sm">
                 TOTAL AMOUNT DUE FOR EOSB:
@@ -574,8 +545,11 @@ export default function SettlementView({
           </div>
 
           {/* Acknowledgment Section */}
-          <div className="border-2 border-black bg-blue-50">
-            <div className="bg-green-600 text-white text-center p-2 font-bold text-sm">
+          <div className="border-2 border-black bg-blue-50" data-pdf-bg="blue">
+            <div
+              className="bg-green-600 text-white text-center p-2 font-bold text-sm"
+              data-pdf-bg="green"
+            >
               ACKNOWLEDGMENT AND QUIT CLAIM
             </div>
             <div className="p-4 text-xs leading-relaxed">

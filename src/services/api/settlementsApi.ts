@@ -91,10 +91,11 @@ export const settlementsApi = {
     return response.data;
   },
 
-  // Export settlement to PDF
-  exportSettlementPDF: async (id: number): Promise<Blob> => {
+
+  // Export settlement to Excel
+  exportSettlementExcel: async (id: number): Promise<Blob> => {
     const response = await axiosInstance.get(
-      `/settlements/${id}/export-pdf`,
+      `/settlements/${id}/excel`,
       {
         responseType: "blob",
       }
