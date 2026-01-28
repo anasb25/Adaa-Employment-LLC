@@ -29,7 +29,7 @@ export default memo(function EmployeeCard({
     employee.status === EmployeeStatus.ACTIVE ? "success" : "warning";
 
   const statusText =
-    employee.status === EmployeeStatus.ACTIVE ? "Active" : "On Vacation";
+    employee.status === EmployeeStatus.ACTIVE ? "Active" : "Annual Leave";
 
   // Memoize formatted dates
   const formattedDob = useMemo(() => formatDate(employee.dob), [employee.dob]);

@@ -136,4 +136,12 @@ export const employeesApi = {
     );
     return response.data;
   },
+
+  // Decrement air ticket count
+  decrementAirTicket: async (id: number): Promise<Employee> => {
+    const response = await axiosInstance.post<Employee>(
+      `/employees/${id}/actions/decrement-air-ticket`
+    );
+    return response.data;
+  },
 };

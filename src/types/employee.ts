@@ -2,7 +2,7 @@ import { EmployeeSkill } from "./skill";
 
 export enum EmployeeStatus {
   ACTIVE = "active",
-  ON_VACATION = "on_vacation",
+  ANNUAL_LEAVE = "annual_leave",
 }
 
 export interface Employee {
@@ -26,6 +26,8 @@ export interface Employee {
   basic_salary?: number | null;
   hra?: number | null;
   other_allowance?: number | null;
+  air_tickets?: number;
+  annual_leave_balance?: number;
   createdAt: string;
   updatedAt: string;
   createdBy?: number;
@@ -53,6 +55,8 @@ export interface CreateEmployeeRequest {
   basic_salary?: number;
   hra?: number;
   other_allowance?: number;
+  air_tickets?: number;
+  annual_leave_balance?: number;
 }
 
 export interface UpdateEmployeeRequest extends Partial<CreateEmployeeRequest> {}

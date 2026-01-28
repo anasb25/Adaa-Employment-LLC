@@ -62,6 +62,8 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     basic_salary: employee?.basic_salary || undefined,
     hra: employee?.hra || undefined,
     other_allowance: employee?.other_allowance || undefined,
+    air_tickets: employee?.air_tickets || undefined,
+    annual_leave_balance: employee?.annual_leave_balance || undefined,
   });
 
   const createMutation = useMutation({
@@ -409,7 +411,7 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
 
   const statusOptions = [
     { value: EmployeeStatus.ACTIVE, label: "Active" },
-    { value: EmployeeStatus.ON_VACATION, label: "On Vacation" },
+    { value: EmployeeStatus.ANNUAL_LEAVE, label: "Annual Leave" },
   ];
 
   return (
@@ -714,6 +716,54 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                 min="0"
                 step="0.01"
               />
+            </div>
+          </div>
+
+          {/* Air Tickets and Annual Leave Balance */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div>
+              <Label htmlFor="air_tickets">Air Tickets</Label>
+              <Input
+                type="number"
+                id="air_tickets"
+                value={formData.air_tickets || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    air_tickets: e.target.value
+                      ? parseInt(e.target.value)
+                      : undefined,
+                  }))
+                }
+                placeholder="Auto-calculated from date of joining"
+                min="0"
+                step="1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Auto-increments every year from date of joining
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="annual_leave_balance">Annual Leave Balance (Days)</Label>
+              <Input
+                type="number"
+                id="annual_leave_balance"
+                value={formData.annual_leave_balance || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    annual_leave_balance: e.target.value
+                      ? parseFloat(e.target.value)
+                      : undefined,
+                  }))
+                }
+                placeholder="Auto-calculated from date of joining"
+                min="0"
+                step="0.01"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Auto-adds 30 days every year from date of joining
+              </p>
             </div>
           </div>
 

@@ -179,10 +179,10 @@ export default function MonthlyProjectTimesheets() {
       abbr: "NP",
     },
     {
-      value: "on_vacation",
-      label: "On Vacation",
+      value: "annual_leave",
+      label: "Annual Leave",
       defaultHours: 0,
-      abbr: "Vac",
+      abbr: "AL",
     },
     { value: "absent", label: "Absent", defaultHours: 0, abbr: "A" },
     { value: "sick_leave", label: "Sick Leave", defaultHours: 0, abbr: "SL" },
@@ -191,6 +191,12 @@ export default function MonthlyProjectTimesheets() {
       label: "Casual Leave",
       defaultHours: 0,
       abbr: "CL",
+    },
+    {
+      value: "urgent_leave",
+      label: "Urgent Leave",
+      defaultHours: 0,
+      abbr: "UL",
     },
     { value: "off", label: "Off", defaultHours: 0, abbr: "Off" },
     { value: "cancelled", label: "Cancelled", defaultHours: 0, abbr: "Cnx" },
@@ -236,10 +242,7 @@ export default function MonthlyProjectTimesheets() {
     date: string,
     currentStatus: string | null
   ) => {
-    // Don't allow editing demobilized status
-    if (currentStatus === "demobilized") {
-      return;
-    }
+
 
     const key = `${projectId}-${employeeId}-${date}`;
     setEditingStatusCell(key);

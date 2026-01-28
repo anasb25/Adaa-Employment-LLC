@@ -65,6 +65,23 @@ export default function EmployeeList({
     },
   });
 
+  // Decrement air ticket mutation
+  const decrementAirTicketMutation = useMutation({
+    mutationFn: (id: number) => employeesApi.decrementAirTicket(id),
+    onSuccess: () => {
+      toast.success("Air ticket decremented successfully!");
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.employees.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.employees.search,
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to decrement air ticket");
+    },
+  });
+
   // Export employees mutation
   const exportMutation = useMutation({
     mutationFn: () => employeesApi.exportEmployees(),
@@ -284,7 +301,7 @@ export default function EmployeeList({
                       >
                         {employee.status === EmployeeStatus.ACTIVE
                           ? "Active"
-                          : "On Vacation"}
+                          : "Annual Leave"}
                       </Badge>
                       <Button
                         variant="outline"
@@ -294,6 +311,21 @@ export default function EmployeeList({
                       >
                         <PencilIcon className="w-4 h-4" />
                       </Button>
+                      {employee.air_tickets !== undefined && employee.air_tickets > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => decrementAirTicketMutation.mutate(employee.id)}
+                          disabled={
+                            decrementAirTicketMutation.isPending &&
+                            decrementAirTicketMutation.variables === employee.id
+                          }
+                          title={`Decrement air ticket (Current: ${employee.air_tickets})`}
+                          className="px-3 py-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20"
+                        >
+                          <span className="w-4 h-4 flex items-center justify-center font-bold">−</span>
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"

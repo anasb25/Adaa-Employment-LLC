@@ -104,6 +104,12 @@ const navItems: NavItem[] = [
     permission: "employee:read",
   },
   {
+    name: "Settlements",
+    icon: <TaskIcon />,
+    path: "/settlements",
+    permission: "settlement:read",
+  },
+  {
     name: "Admin",
     icon: <UserCircleIcon />,
     permission: {

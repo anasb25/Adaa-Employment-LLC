@@ -78,6 +78,13 @@ export const QUERY_KEYS = {
     byEmployee: (employeeId: number) =>
       ["payroll", "employee", employeeId] as const,
   },
+  settlements: {
+    all: ["settlements"] as const,
+    detail: (id: number) => ["settlements", id] as const,
+    search: ["settlements", "search"] as const,
+    byEmployee: (employeeId: number) =>
+      ["settlements", "employee", employeeId] as const,
+  },
 } as const;
 
 // Local Storage Keys

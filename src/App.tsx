@@ -37,6 +37,7 @@ import MonthlyProjectTimesheets from "./pages/MonthlyProjectTimesheets";
 import PayrollManagement from "./pages/PayrollManagement";
 import InvoiceManagement from "./pages/InvoiceManagement";
 import InvoiceDetail from "./pages/InvoiceDetail";
+import SettlementManagement from "./pages/SettlementManagement";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AuthGuard from "./components/auth/AuthGuard";
 import AppProviders from "./providers/AppProviders";
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="/payroll" element={<PayrollManagement />} />
             <Route path="/invoices" element={<InvoiceManagement />} />
             <Route path="/invoices/:id" element={<InvoiceDetail />} />
+            <Route path="/settlements" element={<SettlementManagement />} />
 
             {/* Admin Pages */}
             <Route

@@ -138,4 +138,17 @@ export const payrollApi = {
     );
     return response.data;
   },
+
+  /**
+   * Check if payroll exists for an employee and month
+   */
+  checkPayrollExists: async (
+    employeeId: number,
+    month: string
+  ): Promise<{ exists: boolean; payroll: Payroll | null }> => {
+    const response = await axiosInstance.get(
+      `/payroll/check/${employeeId}/${month}`
+    );
+    return response.data;
+  },
 };

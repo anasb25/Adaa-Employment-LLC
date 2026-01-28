@@ -4,13 +4,14 @@
  */
 export const JOB_STATUS_ABBREVIATIONS: Record<string, string> = {
   active: "ACT",
-  on_vacation: "VAC",
+  annual_leave: "AL",
   cancelled: "CAN",
   absconded: "ABS",
-  absent: "ABT",
-  sick_leave: "SIC",
-  casual_leave: "CAS",
-  notice_period: "NOT",
+  absent: "A",
+  sick_leave: "SL",
+  casual_leave: "CL",
+  urgent_leave: "UL",
+  notice_period: "NP",
   resigned: "RES",
   idle: "IDL",
 };
@@ -27,7 +28,7 @@ export const JOB_STATUS_COLORS: Record<
     text: "text-green-800 dark:text-green-300",
     border: "border-green-300 dark:border-green-700",
   },
-  on_vacation: {
+  annual_leave: {
     bg: "bg-blue-100 dark:bg-blue-900/30",
     text: "text-blue-800 dark:text-blue-300",
     border: "border-blue-300 dark:border-blue-700",
@@ -56,6 +57,11 @@ export const JOB_STATUS_COLORS: Record<
     bg: "bg-purple-100 dark:bg-purple-900/30",
     text: "text-purple-800 dark:text-purple-300",
     border: "border-purple-300 dark:border-purple-700",
+  },
+  urgent_leave: {
+    bg: "bg-teal-100 dark:bg-teal-900/30",
+    text: "text-teal-800 dark:text-teal-300",
+    border: "border-teal-300 dark:border-teal-700",
   },
   notice_period: {
     bg: "bg-gray-100 dark:bg-gray-900/30",
@@ -110,12 +116,13 @@ export function getStatusFullName(status: string | null): string {
 
   const statusNames: Record<string, string> = {
     active: "Active",
-    on_vacation: "On Vacation",
+    annual_leave: "Annual Leave",
     cancelled: "Cancelled",
     absconded: "Absconded",
     absent: "Absent",
     sick_leave: "Sick Leave",
     casual_leave: "Casual Leave",
+    urgent_leave: "Urgent Leave",
     notice_period: "Notice Period",
     resigned: "Resigned",
     idle: "Idle",

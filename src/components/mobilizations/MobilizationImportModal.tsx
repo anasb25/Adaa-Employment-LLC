@@ -114,7 +114,7 @@ export default function MobilizationImportModal({
             <li>SITE and CLIENT will be created if they don't exist</li>
             <li>Date format should be YYYY-MM-DD (e.g., 2024-01-15)</li>
             <li>MOB-DEM should be either "Mobilized" or "Demobilized"</li>
-            <li>STATUS maps to job status (Active, On Vacation, Cancelled, Absconded, Absent, Sick Leave, etc.)</li>
+            <li>STATUS maps to job status (Active, Annual Leave, Urgent Leave, Cancelled, Absconded, Absent, Sick Leave, etc.)</li>
           </ul>
         </div>
 

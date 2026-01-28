@@ -4,7 +4,11 @@ import { toast } from "sonner";
 import { invoicesApi } from "../services/api/invoicesApi";
 import { projectsApi } from "../services/api/projectsApi";
 import { QUERY_KEYS } from "../lib/constants";
-import { Invoice, InvoiceStatus, GenerateInvoiceRequest } from "../types/invoice";
+import {
+  Invoice,
+  InvoiceStatus,
+  GenerateInvoiceRequest,
+} from "../types/invoice";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import PermissionGuard from "../components/auth/PermissionGuard";
@@ -23,7 +27,8 @@ import {
 
 const STATUS_COLORS: Record<InvoiceStatus, string> = {
   draft: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
-  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+  pending:
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
   approved: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   sent: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
   paid: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
@@ -148,7 +153,10 @@ export default function InvoiceManagement() {
     }
   };
 
-  const handleDownloadPdf = async (invoiceNumber: string, invoiceId: number) => {
+  const handleDownloadPdf = async (
+    invoiceNumber: string,
+    invoiceId: number
+  ) => {
     try {
       const blob = await invoicesApi.downloadPdf(invoiceId);
       const url = window.URL.createObjectURL(blob);
@@ -329,7 +337,7 @@ export default function InvoiceManagement() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                    {invoicesData?.data?.map((invoice) => (
+                    {invoicesData?.data?.map((invoice: any) => (
                       <tr
                         key={invoice.id}
                         className="hover:bg-gray-50 dark:hover:bg-gray-900/30"
@@ -341,10 +349,13 @@ export default function InvoiceManagement() {
                           {invoice.project?.name || "-"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                          {new Date(invoice.month + "-01").toLocaleString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                          })}
+                          {new Date(invoice.month + "-01").toLocaleString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "long",
+                            }
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                           {formatDate(invoice.invoiceDate)}
@@ -372,7 +383,12 @@ export default function InvoiceManagement() {
 
                             <span className="text-gray-300">|</span>
                             <button
-                              onClick={() => handleDownloadPdf(invoice.invoiceNumber, invoice.id)}
+                              onClick={() =>
+                                handleDownloadPdf(
+                                  invoice.invoiceNumber,
+                                  invoice.id
+                                )
+                              }
                               className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
                               title="Download PDF"
                             >
@@ -444,7 +460,9 @@ export default function InvoiceManagement() {
                       label: p.name,
                     }))}
                     value={
-                      generateForm.projectId ? String(generateForm.projectId) : ""
+                      generateForm.projectId
+                        ? String(generateForm.projectId)
+                        : ""
                     }
                     onChange={(v) =>
                       setGenerateForm({ ...generateForm, projectId: Number(v) })
@@ -459,7 +477,10 @@ export default function InvoiceManagement() {
                     type="month"
                     value={generateForm.month}
                     onChange={(e) =>
-                      setGenerateForm({ ...generateForm, month: e.target.value })
+                      setGenerateForm({
+                        ...generateForm,
+                        month: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -490,4 +511,3 @@ export default function InvoiceManagement() {
     </>
   );
 }
-

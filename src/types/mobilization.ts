@@ -7,10 +7,11 @@ export enum JobStatus {
   ACTIVE = 'active',
   CANCELLED = 'cancelled',
   ABSCONDED = 'absconded',
-  ON_VACATION = 'on_vacation',
+  ANNUAL_LEAVE = 'annual_leave',
   ABSENT = 'absent',
   SICK_LEAVE = 'sick_leave',
   CASUAL_LEAVE = 'casual_leave',
+  URGENT_LEAVE = 'urgent_leave',
   NOTICE_PERIOD = 'notice_period',
   RESIGNED = 'resigned',
   IDLE = 'idle',
@@ -99,10 +100,11 @@ export interface MobilizationStatistics {
     active: number;
     cancelled: number;
     absconded: number;
-    on_vacation: number;
+    annual_leave: number;
     absent: number;
     sick_leave: number;
     casual_leave: number;
+    urgent_leave: number;
     notice_period: number;
     resigned: number;
     idle: number;
