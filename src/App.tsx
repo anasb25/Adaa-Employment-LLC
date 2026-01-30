@@ -34,6 +34,7 @@ import CreateMobilization from "./pages/CreateMobilization";
 import EditMobilization from "./pages/EditMobilization";
 import DailyMobilizationManagement from "./pages/DailyMobilizationManagement";
 import MonthlyProjectTimesheets from "./pages/MonthlyProjectTimesheets";
+import DailyUtilizationReport from "./pages/DailyUtilizationReport";
 import PayrollManagement from "./pages/PayrollManagement";
 import InvoiceManagement from "./pages/InvoiceManagement";
 import InvoiceDetail from "./pages/InvoiceDetail";
@@ -66,12 +67,28 @@ export default function App() {
             <Route path="/projects" element={<ProjectManagement />} />
             <Route path="/special-days" element={<SpecialDaysManagement />} />
             <Route path="/rate-variants" element={<RateVariantsManagement />} />
-            <Route path="/mobilizations" element={<DailyMobilizationManagement />} />
-            <Route path="/mobilizations/create" element={<CreateMobilization />} />
-            <Route path="/mobilizations/:id/edit" element={<EditMobilization />} />
-            <Route path="/mobilizations/daily" element={<DailyMobilizationManagement />} />
+            <Route
+              path="/mobilizations"
+              element={<DailyMobilizationManagement />}
+            />
+            <Route
+              path="/mobilizations/create"
+              element={<CreateMobilization />}
+            />
+            <Route
+              path="/mobilizations/:id/edit"
+              element={<EditMobilization />}
+            />
+            <Route
+              path="/mobilizations/daily"
+              element={<DailyMobilizationManagement />}
+            />
             <Route path="/timesheets" element={<MonthlyProjectTimesheets />} />
-            <Route path="/timesheets/monthly" element={<MonthlyProjectTimesheets />} />
+            <Route
+              path="/timesheets/monthly"
+              element={<MonthlyProjectTimesheets />}
+            />
+            <Route path="/daily-report" element={<DailyUtilizationReport />} />
             <Route path="/payroll" element={<PayrollManagement />} />
             <Route path="/invoices" element={<InvoiceManagement />} />
             <Route path="/invoices/:id" element={<InvoiceDetail />} />

@@ -1,4 +1,4 @@
-import { axiosInstance } from '../../lib/axios';
+import { axiosInstance } from "../../lib/axios";
 import {
   Timesheet,
   MonthlyProjectTimesheetData,
@@ -7,9 +7,23 @@ import {
   SubmitTimesheetRequest,
   ApproveTimesheetRequest,
   TimesheetFilters,
-} from '../../types/timesheet';
+  DailyUtilizationReport,
+} from "../../types/timesheet";
 
 export const timesheetsApi = {
+  /**
+   * Get daily utilization report
+   * @param date Format: YYYY-MM-DD
+   */
+  getDailyUtilizationReport: async (
+    date: string,
+  ): Promise<DailyUtilizationReport> => {
+    const response = await axiosInstance.get("/timesheets/daily-utilization", {
+      params: { date },
+    });
+    return response.data;
+  },
+
   /**
    * Get monthly project timesheet with data
    * @param projectId Project ID
@@ -19,15 +33,19 @@ export const timesheetsApi = {
     projectId: number,
     month: string,
   ): Promise<MonthlyProjectTimesheetData> => {
-    const response = await axiosInstance.get(`/timesheets/project/${projectId}/month/${month}`);
+    const response = await axiosInstance.get(
+      `/timesheets/project/${projectId}/month/${month}`,
+    );
     return response.data;
   },
 
   /**
    * Create or get timesheet
    */
-  createOrGetTimesheet: async (data: CreateTimesheetRequest): Promise<Timesheet> => {
-    const response = await axiosInstance.post('/timesheets', data);
+  createOrGetTimesheet: async (
+    data: CreateTimesheetRequest,
+  ): Promise<Timesheet> => {
+    const response = await axiosInstance.post("/timesheets", data);
     return response.data;
   },
 
@@ -38,7 +56,10 @@ export const timesheetsApi = {
     timesheetId: number,
     data: SaveTimesheetEntriesRequest,
   ): Promise<any> => {
-    const response = await axiosInstance.put(`/timesheets/${timesheetId}/entries`, data);
+    const response = await axiosInstance.put(
+      `/timesheets/${timesheetId}/entries`,
+      data,
+    );
     return response.data;
   },
 
@@ -49,7 +70,10 @@ export const timesheetsApi = {
     timesheetId: number,
     data: SubmitTimesheetRequest,
   ): Promise<Timesheet> => {
-    const response = await axiosInstance.post(`/timesheets/${timesheetId}/submit`, data);
+    const response = await axiosInstance.post(
+      `/timesheets/${timesheetId}/submit`,
+      data,
+    );
     return response.data;
   },
 
@@ -60,7 +84,10 @@ export const timesheetsApi = {
     timesheetId: number,
     data: ApproveTimesheetRequest,
   ): Promise<Timesheet> => {
-    const response = await axiosInstance.post(`/timesheets/${timesheetId}/approve`, data);
+    const response = await axiosInstance.post(
+      `/timesheets/${timesheetId}/approve`,
+      data,
+    );
     return response.data;
   },
 
@@ -68,7 +95,9 @@ export const timesheetsApi = {
    * Get all timesheets with filters
    */
   getTimesheets: async (filters?: TimesheetFilters): Promise<Timesheet[]> => {
-    const response = await axiosInstance.get('/timesheets', { params: filters });
+    const response = await axiosInstance.get("/timesheets", {
+      params: filters,
+    });
     return response.data;
   },
 

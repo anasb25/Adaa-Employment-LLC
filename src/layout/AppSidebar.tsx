@@ -92,6 +92,12 @@ const navItems: NavItem[] = [
     permission: "employee:read",
   },
   {
+    name: "Daily Report",
+    icon: <TaskIcon />,
+    path: "/daily-report",
+    permission: "employee:read",
+  },
+  {
     name: "Payroll",
     icon: <TaskIcon />,
     path: "/payroll",
@@ -108,6 +114,12 @@ const navItems: NavItem[] = [
     icon: <TaskIcon />,
     path: "/settlements",
     permission: "settlement:read",
+  },
+  {
+    name: "Daily Report",
+    icon: <TaskIcon />,
+    path: "/daily-report",
+    permission: "employee:read",
   },
   {
     name: "Admin",
@@ -211,14 +223,14 @@ const AppSidebar: React.FC = () => {
     index: number;
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
-    {}
+    {},
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // const isActive = (path: string) => location.pathname === path;
   const isActive = useCallback(
     (path: string) => location.pathname === path,
-    [location.pathname]
+    [location.pathname],
   );
 
   useEffect(() => {
@@ -273,7 +285,7 @@ const AppSidebar: React.FC = () => {
 
   // Helper function to check complex permissions
   const checkPermission = (
-    permission: string | { permissions: string[]; operator?: "any" | "all" }
+    permission: string | { permissions: string[]; operator?: "any" | "all" },
   ): boolean => {
     if (typeof permission === "string") {
       return hasPermission(permission);
@@ -461,8 +473,8 @@ const AppSidebar: React.FC = () => {
           isExpanded || isMobileOpen
             ? "w-[290px]"
             : isHovered
-            ? "w-[290px]"
-            : "w-[90px]"
+              ? "w-[290px]"
+              : "w-[90px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
