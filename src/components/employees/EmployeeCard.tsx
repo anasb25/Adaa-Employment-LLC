@@ -1,5 +1,10 @@
 import { memo, useMemo } from "react";
-import { Employee, EmployeeStatus } from "../../types/employee";
+import { Employee } from "../../types/employee";
+import {
+  JOB_STATUS_OPTIONS,
+  JOB_STATUS_COLORS,
+} from "../../lib/mobilizationConstants";
+import { JobStatus } from "../../types/mobilization";
 import Badge from "../ui/badge/Badge";
 import Button from "../ui/button/Button";
 
@@ -25,11 +30,16 @@ export default memo(function EmployeeCard({
     }
   };
 
-  const statusBadgeColor =
-    employee.status === EmployeeStatus.ACTIVE ? "success" : "warning";
+  const statusLabel = employee.latestMobilization
+    ? JOB_STATUS_OPTIONS.find(
+        (o) => o.value === employee.latestMobilization?.jobStatus
+      )?.label || employee.latestMobilization.jobStatus
+    : "Not Mobilized";
 
-  const statusText =
-    employee.status === EmployeeStatus.ACTIVE ? "Active" : "Annual Leave";
+  const statusColorClass = employee.latestMobilization
+    ? JOB_STATUS_COLORS[employee.latestMobilization.jobStatus as JobStatus] ||
+      "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
+    : "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300";
 
   // Memoize formatted dates
   const formattedDob = useMemo(() => formatDate(employee.dob), [employee.dob]);
@@ -62,9 +72,11 @@ export default memo(function EmployeeCard({
             </div>
           </div>
         </div>
-        <Badge color={statusBadgeColor} size="sm">
-          {statusText}
-        </Badge>
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColorClass}`}
+        >
+          {statusLabel}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">

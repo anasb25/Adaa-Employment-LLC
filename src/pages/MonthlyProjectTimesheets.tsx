@@ -1,13 +1,7 @@
-import { useState } from "react";
-import {
-  useQuery,
-  useQueries,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { timesheetsApi } from "../services/api/timesheetsApi";
-import { projectsApi } from "../services/api/projectsApi";
 import { QUERY_KEYS } from "../lib/constants";
 import { TimesheetStatus, DailyHours } from "../types/timesheet";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
@@ -65,28 +59,32 @@ export default function MonthlyProjectTimesheets() {
   );
   const [editingHoursCell, setEditingHoursCell] = useState<string | null>(null);
 
-  // Fetch projects
-  const { data: projectsData } = useQuery({
-    queryKey: QUERY_KEYS.projects.all,
-    queryFn: () => projectsApi.getProjects(),
+  // Fetch ALL project timesheets in a single API call
+  const { data: allTimesheetsData, isLoading: isTimesheetsLoading } = useQuery({
+    queryKey: [...QUERY_KEYS.timesheets.all, "all-projects", selectedMonth],
+    queryFn: () => timesheetsApi.getAllProjectTimesheets(selectedMonth),
+    enabled: !!selectedMonth,
   });
 
-  // Fetch timesheet data for all projects using useQueries
-  const projectIds = projectsData?.data?.map((p: any) => p.id) || [];
+  // Build a lookup map: projectId -> timesheetData
+  const timesheetsByProject = useMemo(() => {
+    const map = new Map<
+      number,
+      typeof allTimesheetsData extends (infer T)[] | undefined ? T : never
+    >();
+    if (allTimesheetsData) {
+      for (const data of allTimesheetsData) {
+        map.set(data.project.id, data);
+      }
+    }
+    return map;
+  }, [allTimesheetsData]);
 
-  const timesheetQueries = useQueries({
-    queries: projectIds.map((projectId: number) => ({
-      queryKey: [
-        ...QUERY_KEYS.timesheets.all,
-        "project",
-        projectId,
-        selectedMonth,
-      ],
-      queryFn: () =>
-        timesheetsApi.getMonthlyProjectTimesheet(projectId, selectedMonth),
-      enabled: !!projectId && !!selectedMonth,
-    })),
-  });
+  // Get project IDs from the response (ordered by backend)
+  const projectIds = useMemo(
+    () => allTimesheetsData?.map((d) => d.project.id) || [],
+    [allTimesheetsData]
+  );
 
   // Create timesheet mutation
   const createTimesheetMutation = useMutation({
@@ -106,11 +104,13 @@ export default function MonthlyProjectTimesheets() {
       setHasUnsavedChanges((prev) => {
         const newSet = new Set(prev);
         // Find project ID from timesheet
-        timesheetQueries.forEach((query, idx) => {
-          if (query.data?.timesheet?.id === variables.timesheetId) {
-            newSet.delete(projectIds[idx]);
+        if (allTimesheetsData) {
+          for (const data of allTimesheetsData) {
+            if (data.timesheet?.id === variables.timesheetId) {
+              newSet.delete(data.project.id);
+            }
           }
-        });
+        }
         return newSet;
       });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
@@ -242,8 +242,6 @@ export default function MonthlyProjectTimesheets() {
     date: string,
     currentStatus: string | null
   ) => {
-
-
     const key = `${projectId}-${employeeId}-${date}`;
     setEditingStatusCell(key);
 
@@ -442,7 +440,7 @@ export default function MonthlyProjectTimesheets() {
     }
   };
 
-  const isLoading = timesheetQueries.some((q) => q.isLoading);
+  const isLoading = isTimesheetsLoading;
 
   return (
     <PermissionGuard permissions={["view_timesheets"]}>
@@ -501,9 +499,8 @@ export default function MonthlyProjectTimesheets() {
         {/* Project Accordions */}
         {!isLoading && (
           <div className="space-y-4">
-            {timesheetQueries.map((query, index) => {
-              const projectId = projectIds[index];
-              const timesheetData = query.data;
+            {projectIds.map((projectId) => {
+              const timesheetData = timesheetsByProject.get(projectId);
 
               if (!timesheetData || timesheetData.employees.length === 0)
                 return null;
@@ -1089,9 +1086,7 @@ export default function MonthlyProjectTimesheets() {
       {/* Export Modal */}
       {exportProjectId !== null &&
         (() => {
-          const exportTimesheetData = timesheetQueries.find(
-            (_, idx) => projectIds[idx] === exportProjectId
-          )?.data;
+          const exportTimesheetData = timesheetsByProject.get(exportProjectId);
           if (!exportTimesheetData) return null;
 
           return (

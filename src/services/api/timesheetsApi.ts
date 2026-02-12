@@ -16,7 +16,7 @@ export const timesheetsApi = {
    * @param date Format: YYYY-MM-DD
    */
   getDailyUtilizationReport: async (
-    date: string,
+    date: string
   ): Promise<DailyUtilizationReport> => {
     const response = await axiosInstance.get("/timesheets/daily-utilization", {
       params: { date },
@@ -31,10 +31,23 @@ export const timesheetsApi = {
    */
   getMonthlyProjectTimesheet: async (
     projectId: number,
-    month: string,
+    month: string
   ): Promise<MonthlyProjectTimesheetData> => {
     const response = await axiosInstance.get(
-      `/timesheets/project/${projectId}/month/${month}`,
+      `/timesheets/project/${projectId}/month/${month}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get monthly timesheets for ALL projects in a single call
+   * @param month Format: YYYY-MM
+   */
+  getAllProjectTimesheets: async (
+    month: string
+  ): Promise<MonthlyProjectTimesheetData[]> => {
+    const response = await axiosInstance.get(
+      `/timesheets/all-projects/month/${month}`
     );
     return response.data;
   },
@@ -43,7 +56,7 @@ export const timesheetsApi = {
    * Create or get timesheet
    */
   createOrGetTimesheet: async (
-    data: CreateTimesheetRequest,
+    data: CreateTimesheetRequest
   ): Promise<Timesheet> => {
     const response = await axiosInstance.post("/timesheets", data);
     return response.data;
@@ -54,11 +67,11 @@ export const timesheetsApi = {
    */
   saveTimesheetEntries: async (
     timesheetId: number,
-    data: SaveTimesheetEntriesRequest,
+    data: SaveTimesheetEntriesRequest
   ): Promise<any> => {
     const response = await axiosInstance.put(
       `/timesheets/${timesheetId}/entries`,
-      data,
+      data
     );
     return response.data;
   },
@@ -68,11 +81,11 @@ export const timesheetsApi = {
    */
   submitTimesheet: async (
     timesheetId: number,
-    data: SubmitTimesheetRequest,
+    data: SubmitTimesheetRequest
   ): Promise<Timesheet> => {
     const response = await axiosInstance.post(
       `/timesheets/${timesheetId}/submit`,
-      data,
+      data
     );
     return response.data;
   },
@@ -82,11 +95,11 @@ export const timesheetsApi = {
    */
   approveTimesheet: async (
     timesheetId: number,
-    data: ApproveTimesheetRequest,
+    data: ApproveTimesheetRequest
   ): Promise<Timesheet> => {
     const response = await axiosInstance.post(
       `/timesheets/${timesheetId}/approve`,
-      data,
+      data
     );
     return response.data;
   },

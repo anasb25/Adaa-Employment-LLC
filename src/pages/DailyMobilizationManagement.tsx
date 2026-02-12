@@ -62,9 +62,11 @@ export default function DailyMobilizationManagement() {
     queryFn: async () => {
       if (showCarryForward) {
         // Carry-forward view: show effective status for all employees on this date
+        // includeDemobilized=true so we can see demobilization events on that day
         const effectiveStatus =
           await mobilizationsApi.getEffectiveStatusForAllEmployeesOnDate(
-            selectedDate
+            selectedDate,
+            true
           );
         return {
           data: effectiveStatus,

@@ -92,7 +92,7 @@ export default function SkillList({
         onEditSkill(skill);
       }
     },
-    [onEditSkill]
+    [onEditSkill],
   );
 
   const handleDelete = useCallback(
@@ -101,7 +101,7 @@ export default function SkillList({
         deleteMutation.mutate(skillId);
       }
     },
-    [deleteMutation]
+    [deleteMutation],
   );
 
   const handleClearSearch = useCallback(() => {

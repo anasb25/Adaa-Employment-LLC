@@ -4,11 +4,7 @@ import { toast } from "sonner";
 import { employeesApi } from "../../services/api/employeesApi";
 import { employeeSkillsApi } from "../../services/api/employeeSkillsApi";
 import { skillsApi } from "../../services/api/skillsApi";
-import {
-  Employee,
-  CreateEmployeeRequest,
-  EmployeeStatus,
-} from "../../types/employee";
+import { Employee, CreateEmployeeRequest } from "../../types/employee";
 import { Skill, EmployeeSkill } from "../../types/skill";
 import { QUERY_KEYS } from "../../lib/constants";
 import Input from "../form/input/InputField";
@@ -56,7 +52,6 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     work_permit_expiry: employee?.work_permit_expiry || "",
     personal_code: employee?.personal_code || "",
     contact_no: employee?.contact_no || "",
-    status: employee?.status || EmployeeStatus.ACTIVE,
     date_of_joining: employee?.date_of_joining || "",
     date_of_arrival: employee?.date_of_arrival || "",
     basic_salary: employee?.basic_salary || undefined,
@@ -409,11 +404,6 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  const statusOptions = [
-    { value: EmployeeStatus.ACTIVE, label: "Active" },
-    { value: EmployeeStatus.ANNUAL_LEAVE, label: "Annual Leave" },
-  ];
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
@@ -641,21 +631,6 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
           />
         </div>
 
-        {/* Status */}
-        <div>
-          <Label htmlFor="status">Status</Label>
-          <Select
-            options={statusOptions}
-            value={formData.status || EmployeeStatus.ACTIVE}
-            onChange={(value) =>
-              setFormData((prev) => ({
-                ...prev,
-                status: value as EmployeeStatus,
-              }))
-            }
-          />
-        </div>
-
         {/* Salary Information */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -690,7 +665,9 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    hra: e.target.value ? parseFloat(e.target.value) : undefined,
+                    hra: e.target.value
+                      ? parseFloat(e.target.value)
+                      : undefined,
                   }))
                 }
                 placeholder="Enter HRA"
@@ -744,7 +721,9 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
               </p>
             </div>
             <div>
-              <Label htmlFor="annual_leave_balance">Annual Leave Balance (Days)</Label>
+              <Label htmlFor="annual_leave_balance">
+                Annual Leave Balance (Days)
+              </Label>
               <Input
                 type="number"
                 id="annual_leave_balance"
@@ -768,7 +747,9 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
           </div>
 
           {/* Salary Summary Card */}
-          {(formData.basic_salary || formData.hra || formData.other_allowance) && (
+          {(formData.basic_salary ||
+            formData.hra ||
+            formData.other_allowance) && (
             <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-green-900 dark:text-green-100">
@@ -777,9 +758,11 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                 <span className="text-lg font-bold text-green-700 dark:text-green-400">
                   AED{" "}
                   {(
-                    (parseFloat(formData.basic_salary?.toString() || "0") || 0) +
+                    (parseFloat(formData.basic_salary?.toString() || "0") ||
+                      0) +
                     (parseFloat(formData.hra?.toString() || "0") || 0) +
-                    (parseFloat(formData.other_allowance?.toString() || "0") || 0)
+                    (parseFloat(formData.other_allowance?.toString() || "0") ||
+                      0)
                   ).toFixed(2)}
                 </span>
               </div>
@@ -1066,13 +1049,23 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                         Basic Salary:
                       </span>
                       <span className="font-medium text-blue-900 dark:text-blue-100">
-                        AED {employee.basic_salary ? parseFloat(employee.basic_salary.toString()).toFixed(2) : "0.00"}
+                        AED{" "}
+                        {employee.basic_salary
+                          ? parseFloat(
+                              employee.basic_salary.toString()
+                            ).toFixed(2)
+                          : "0.00"}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-800 dark:text-blue-200">HRA:</span>
+                      <span className="text-blue-800 dark:text-blue-200">
+                        HRA:
+                      </span>
                       <span className="font-medium text-blue-900 dark:text-blue-100">
-                        AED {employee.hra ? parseFloat(employee.hra.toString()).toFixed(2) : "0.00"}
+                        AED{" "}
+                        {employee.hra
+                          ? parseFloat(employee.hra.toString()).toFixed(2)
+                          : "0.00"}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -1080,7 +1073,12 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                         Other Allowance:
                       </span>
                       <span className="font-medium text-blue-900 dark:text-blue-100">
-                        AED {employee.other_allowance ? parseFloat(employee.other_allowance.toString()).toFixed(2) : "0.00"}
+                        AED{" "}
+                        {employee.other_allowance
+                          ? parseFloat(
+                              employee.other_allowance.toString()
+                            ).toFixed(2)
+                          : "0.00"}
                       </span>
                     </div>
                     <div className="flex justify-between pt-2 mt-2 border-t border-blue-200 dark:border-blue-700">
@@ -1090,9 +1088,13 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                       <span className="font-bold text-blue-900 dark:text-blue-100">
                         AED{" "}
                         {(
-                          (parseFloat(employee.basic_salary?.toString() || "0") || 0) +
+                          (parseFloat(
+                            employee.basic_salary?.toString() || "0"
+                          ) || 0) +
                           (parseFloat(employee.hra?.toString() || "0") || 0) +
-                          (parseFloat(employee.other_allowance?.toString() || "0") || 0)
+                          (parseFloat(
+                            employee.other_allowance?.toString() || "0"
+                          ) || 0)
                         ).toFixed(2)}
                       </span>
                     </div>
@@ -1111,7 +1113,9 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                           </span>
                           <span className="font-medium text-blue-900 dark:text-blue-100 ml-2">
                             {skill.cost_price
-                              ? `AED ${parseFloat(skill.cost_price.toString()).toFixed(2)}/hr`
+                              ? `AED ${parseFloat(
+                                  skill.cost_price.toString()
+                                ).toFixed(2)}/hr`
                               : "Not set"}
                           </span>
                         </div>

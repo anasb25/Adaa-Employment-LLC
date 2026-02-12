@@ -1,8 +1,9 @@
 import { EmployeeSkill } from "./skill";
 
-export enum EmployeeStatus {
-  ACTIVE = "active",
-  ANNUAL_LEAVE = "annual_leave",
+export interface LatestMobilization {
+  jobStatus: string;
+  mobStatus: string;
+  projectName: string | null;
 }
 
 export interface Employee {
@@ -20,7 +21,6 @@ export interface Employee {
   work_permit_expiry?: string;
   personal_code?: string;
   contact_no?: string;
-  status: EmployeeStatus;
   date_of_joining?: string;
   date_of_arrival?: string;
   basic_salary?: number | null;
@@ -33,6 +33,7 @@ export interface Employee {
   createdBy?: number;
   updatedBy?: number;
   employeeSkills?: EmployeeSkill[];
+  latestMobilization?: LatestMobilization | null;
 }
 
 export interface CreateEmployeeRequest {
@@ -49,7 +50,6 @@ export interface CreateEmployeeRequest {
   work_permit_expiry?: string;
   personal_code?: string;
   contact_no?: string;
-  status?: EmployeeStatus;
   date_of_joining?: string;
   date_of_arrival?: string;
   basic_salary?: number;

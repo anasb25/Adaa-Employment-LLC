@@ -17,7 +17,12 @@ import {
   DownloadIcon,
 } from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
-import { Employee, EmployeeStatus } from "../../types/employee";
+import { Employee } from "../../types/employee";
+import {
+  JOB_STATUS_OPTIONS,
+  JOB_STATUS_COLORS,
+} from "../../lib/mobilizationConstants";
+import { JobStatus } from "../../types/mobilization";
 import PermissionGuard from "../auth/PermissionGuard";
 import EmployeeImportModal from "./EmployeeImportModal";
 import { downloadFile } from "../../utils/excelValidator";
@@ -78,7 +83,9 @@ export default function EmployeeList({
       });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to decrement air ticket");
+      toast.error(
+        error.response?.data?.message || "Failed to decrement air ticket"
+      );
     },
   });
 
@@ -86,7 +93,10 @@ export default function EmployeeList({
   const exportMutation = useMutation({
     mutationFn: () => employeesApi.exportEmployees(),
     onSuccess: (blob) => {
-      downloadFile(blob, `employees_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      downloadFile(
+        blob,
+        `employees_export_${new Date().toISOString().split("T")[0]}.xlsx`
+      );
       toast.success("Employees exported successfully!");
     },
     onError: () => {
@@ -291,18 +301,25 @@ export default function EmployeeList({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge
-                        size="sm"
-                        color={
-                          employee.status === EmployeeStatus.ACTIVE
-                            ? "success"
-                            : "warning"
-                        }
-                      >
-                        {employee.status === EmployeeStatus.ACTIVE
-                          ? "Active"
-                          : "Annual Leave"}
-                      </Badge>
+                      {employee.latestMobilization ? (
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            JOB_STATUS_COLORS[
+                              employee.latestMobilization.jobStatus as JobStatus
+                            ] ||
+                            "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
+                          }`}
+                        >
+                          {JOB_STATUS_OPTIONS.find(
+                            (o) =>
+                              o.value === employee.latestMobilization?.jobStatus
+                          )?.label || employee.latestMobilization.jobStatus}
+                        </span>
+                      ) : (
+                        <Badge size="sm" color="light">
+                          Not Mobilized
+                        </Badge>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -311,21 +328,27 @@ export default function EmployeeList({
                       >
                         <PencilIcon className="w-4 h-4" />
                       </Button>
-                      {employee.air_tickets !== undefined && employee.air_tickets > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => decrementAirTicketMutation.mutate(employee.id)}
-                          disabled={
-                            decrementAirTicketMutation.isPending &&
-                            decrementAirTicketMutation.variables === employee.id
-                          }
-                          title={`Decrement air ticket (Current: ${employee.air_tickets})`}
-                          className="px-3 py-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20"
-                        >
-                          <span className="w-4 h-4 flex items-center justify-center font-bold">−</span>
-                        </Button>
-                      )}
+                      {employee.air_tickets !== undefined &&
+                        employee.air_tickets > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              decrementAirTicketMutation.mutate(employee.id)
+                            }
+                            disabled={
+                              decrementAirTicketMutation.isPending &&
+                              decrementAirTicketMutation.variables ===
+                                employee.id
+                            }
+                            title={`Decrement air ticket (Current: ${employee.air_tickets})`}
+                            className="px-3 py-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20"
+                          >
+                            <span className="w-4 h-4 flex items-center justify-center font-bold">
+                              −
+                            </span>
+                          </Button>
+                        )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -486,7 +509,8 @@ export default function EmployeeList({
                                     <>
                                       Rate:{" "}
                                       <span className="font-semibold text-green-600 dark:text-green-400">
-                                        AED {Number(es.cost_price).toFixed(2)}/hr
+                                        AED {Number(es.cost_price).toFixed(2)}
+                                        /hr
                                       </span>
                                     </>
                                   ) : (
@@ -518,7 +542,9 @@ export default function EmployeeList({
                           </span>
                           <span className="font-medium text-green-900 dark:text-green-100">
                             {employee.basic_salary
-                              ? `AED ${Number(employee.basic_salary).toFixed(2)}`
+                              ? `AED ${Number(employee.basic_salary).toFixed(
+                                  2
+                                )}`
                               : "N/A"}
                           </span>
                         </div>
@@ -538,7 +564,9 @@ export default function EmployeeList({
                           </span>
                           <span className="font-medium text-green-900 dark:text-green-100">
                             {employee.other_allowance
-                              ? `AED ${Number(employee.other_allowance).toFixed(2)}`
+                              ? `AED ${Number(employee.other_allowance).toFixed(
+                                  2
+                                )}`
                               : "N/A"}
                           </span>
                         </div>
