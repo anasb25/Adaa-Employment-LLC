@@ -69,6 +69,7 @@ export interface MonthlyProjectTimesheetData {
   project: {
     id: number;
     name: string;
+    fat?: string | null;
     client: {
       id: number;
       name: string;

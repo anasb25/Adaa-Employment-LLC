@@ -63,16 +63,18 @@ export default function TimesheetExportModal({
   };
 
   const getStatusAbbreviation = (status: string): string => {
-    return jobStatusAbbreviations[status] || status.substring(0, 3).toUpperCase();
+    return (
+      jobStatusAbbreviations[status] || status.substring(0, 3).toUpperCase()
+    );
   };
 
   const getDisplayValue = (employeeId: number, dailyHour: any): string => {
     if (!dailyHour || dailyHour.jobStatus === null) return "-";
     if (dailyHour.jobStatus === "demobilized") return "Dem";
-    
+
     const hours = Math.round(getHoursValue(employeeId, dailyHour));
     const status = getStatusValue(employeeId, dailyHour);
-    
+
     // If hours are 0, show abbreviation instead of 0
     return hours === 0 ? getStatusAbbreviation(status) : hours.toString();
   };
@@ -155,12 +157,14 @@ export default function TimesheetExportModal({
         <td style="text-align: center;">${employee.idNo}</td>
         <td style="text-align: left; padding-left: 4px;">${employee.name}</td>
         <td style="text-align: left; padding-left: 4px;">${employee.trade}</td>
-        <td></td>`;
+        <td style="text-align: center;">${
+          timesheetData.project.fat || "-"
+        }</td>`;
 
       days.forEach((day) => {
         const dailyHour = employee.dailyHours.find((dh: any) => dh.day === day);
         const displayValue = getDisplayValue(employee.employeeId, dailyHour);
-        
+
         if (displayValue === "-") {
           row += '<td style="text-align: center;">-</td>';
         } else if (displayValue === "Dem") {
@@ -169,7 +173,7 @@ export default function TimesheetExportModal({
           // Check if it's a number or abbreviation
           const isNumber = /^\d+$/.test(displayValue);
           let color = "#059669"; // Default green
-          
+
           if (!isNumber) {
             // It's an abbreviation (0 hours status)
             color = "#dc2626"; // Red for zero hours
@@ -184,7 +188,7 @@ export default function TimesheetExportModal({
               }
             }
           }
-          
+
           row += `<td style="text-align: center; color: ${color}; font-weight: bold;">${displayValue}</td>`;
         }
       });
@@ -438,7 +442,14 @@ export default function TimesheetExportModal({
             new TableCell({
               children: [new Paragraph({ text: employee.trade })],
             }),
-            new TableCell({ children: [new Paragraph({ text: "" })] }),
+            new TableCell({
+              children: [
+                new Paragraph({
+                  text: timesheetData.project.fat || "-",
+                  alignment: AlignmentType.CENTER,
+                }),
+              ],
+            }),
           ];
 
           // Add daily hours
@@ -634,7 +645,7 @@ export default function TimesheetExportModal({
       excelData.push([]);
 
       // Header row
-      const headerRow = ["Sr", "ID No", "Name", "Trade", ""];
+      const headerRow = ["Sr", "ID No", "Name", "Trade", "FAT"];
       days.forEach((day) => headerRow.push(day.toString()));
       headerRow.push("Total");
       excelData.push(headerRow);
@@ -646,12 +657,14 @@ export default function TimesheetExportModal({
           employee.idNo,
           employee.name,
           employee.trade,
-          "",
+          timesheetData.project.fat || "-",
         ];
 
         // Add daily values
         days.forEach((day) => {
-          const dailyHour = employee.dailyHours.find((dh: any) => dh.day === day);
+          const dailyHour = employee.dailyHours.find(
+            (dh: any) => dh.day === day
+          );
           const displayValue = getDisplayValue(employee.employeeId, dailyHour);
           row.push(displayValue);
         });
@@ -687,11 +700,11 @@ export default function TimesheetExportModal({
 
       // Set column widths
       const colWidths = [
-        { wch: 5 },  // Sr
+        { wch: 5 }, // Sr
         { wch: 12 }, // ID No
         { wch: 25 }, // Name
         { wch: 20 }, // Trade
-        { wch: 2 },  // Empty column
+        { wch: 8 }, // FAT column
       ];
       days.forEach(() => colWidths.push({ wch: 5 })); // Day columns
       colWidths.push({ wch: 8 }); // Total column

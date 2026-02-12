@@ -3,7 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { timesheetsApi } from "../services/api/timesheetsApi";
 import { QUERY_KEYS } from "../lib/constants";
-import { TimesheetStatus, DailyHours } from "../types/timesheet";
+import {
+  TimesheetStatus,
+  DailyHours,
+  MonthlyProjectTimesheetData,
+} from "../types/timesheet";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import PermissionGuard from "../components/auth/PermissionGuard";
@@ -68,10 +72,7 @@ export default function MonthlyProjectTimesheets() {
 
   // Build a lookup map: projectId -> timesheetData
   const timesheetsByProject = useMemo(() => {
-    const map = new Map<
-      number,
-      typeof allTimesheetsData extends (infer T)[] | undefined ? T : never
-    >();
+    const map = new Map<number, MonthlyProjectTimesheetData>();
     if (allTimesheetsData) {
       for (const data of allTimesheetsData) {
         map.set(data.project.id, data);
