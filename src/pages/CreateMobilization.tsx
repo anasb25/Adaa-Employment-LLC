@@ -3,13 +3,13 @@ import { useNavigate, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { mobilizationsApi } from "../services/api/mobilizationsApi";
-import { employeesApi } from "../services/api/employeesApi";
 import { projectsApi } from "../services/api/projectsApi";
 import { skillsApi } from "../services/api/skillsApi";
 import { MobStatus, JobStatus } from "../types/mobilization";
 import Button from "../components/ui/button/Button";
 import Select from "../components/form/Select";
 import SearchableSelect from "../components/form/SearchableSelect";
+import EmployeeSearchSelect from "../components/mobilizations/EmployeeSearchSelect";
 import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
 import { AngleLeftIcon, TrashBinIcon, PlusIcon } from "../icons";
@@ -76,12 +76,7 @@ export default function CreateMobilization() {
     }
   }, [dateFromUrl]);
 
-  // Fetch data for dropdowns
-  const { data: employees } = useQuery({
-    queryKey: ["employees", "all"],
-    queryFn: () => employeesApi.getEmployees(1, 1000),
-  });
-
+  // Fetch data for dropdowns (employees use search-on-type in EmployeeSearchSelect; no bulk fetch)
   const { data: projects } = useQuery({
     queryKey: ["projects", "all"],
     queryFn: () => projectsApi.getProjects(1, 1000),
@@ -309,13 +304,7 @@ export default function CreateMobilization() {
                     {bulkRows.map((row) => (
                       <tr key={row.id}>
                         <td className="px-3 py-2" style={{ minWidth: "200px" }}>
-                          <SearchableSelect
-                            options={
-                              employees?.data?.map((emp: any) => ({
-                                value: String(emp.id),
-                                label: `${emp.name} (${emp.adaa_emp_code})`,
-                              })) || []
-                            }
+                          <EmployeeSearchSelect
                             value={String(row.employeeId || "")}
                             onChange={(value) =>
                               handleBulkRowChange(
@@ -452,13 +441,7 @@ export default function CreateMobilization() {
               {/* Single Employee Form */}
               <div>
                 <Label>Employee *</Label>
-                <SearchableSelect
-                  options={
-                    employees?.data?.map((emp: any) => ({
-                      value: String(emp.id),
-                      label: `${emp.name} (${emp.adaa_emp_code})`,
-                    })) || []
-                  }
+                <EmployeeSearchSelect
                   value={String(formData.employeeId || "")}
                   onChange={(value) =>
                     handleChange(

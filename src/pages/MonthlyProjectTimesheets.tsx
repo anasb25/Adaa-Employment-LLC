@@ -7,6 +7,7 @@ import {
   TimesheetStatus,
   DailyHours,
   MonthlyProjectTimesheetData,
+  IDLE_PROJECT_ID,
 } from "../types/timesheet";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
@@ -23,6 +24,7 @@ import {
   CloseIcon,
   DownloadIcon,
   LockIcon,
+  AlertIcon,
 } from "../icons";
 
 interface DayEdit {
@@ -63,6 +65,7 @@ export default function MonthlyProjectTimesheets() {
   );
   const [editingHoursCell, setEditingHoursCell] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [discrepancyMenuCell, setDiscrepancyMenuCell] = useState<string | null>(null);
 
   // Fetch ALL project timesheets in a single API call
   const { data: allTimesheetsData, isLoading: isTimesheetsLoading } = useQuery({
@@ -137,6 +140,19 @@ export default function MonthlyProjectTimesheets() {
     }
   }, [matchingEmployeeIds.size, filteredProjectIds.join(",")]);
 
+  // Close discrepancy menu on click outside
+  useEffect(() => {
+    if (!discrepancyMenuCell) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-discrepancy-menu]") && !target.closest("[data-discrepancy-trigger]")) {
+        setDiscrepancyMenuCell(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [discrepancyMenuCell]);
+
   // Create timesheet mutation
   const createTimesheetMutation = useMutation({
     mutationFn: timesheetsApi.createOrGetTimesheet,
@@ -199,6 +215,36 @@ export default function MonthlyProjectTimesheets() {
         error.response?.data?.message || "Failed to update timesheet"
       );
     },
+  });
+
+  // Sync mobilization from timesheet entry (use timesheet as source of truth)
+  const syncMobilizationFromEntryMutation = useMutation({
+    mutationFn: (entryId: number) =>
+      timesheetsApi.syncMobilizationFromEntry(entryId),
+    onSuccess: () => {
+      toast.success("Mobilization updated to match timesheet.");
+      setDiscrepancyMenuCell(null);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
+    },
+    onError: (error: any) =>
+      toast.error(
+        error.response?.data?.message || "Failed to sync mobilization"
+      ),
+  });
+
+  // Remove entry so cell shows mobilization data (use mobilization as source of truth)
+  const removeEntryUseMobilizationMutation = useMutation({
+    mutationFn: (entryId: number) =>
+      timesheetsApi.removeEntryUseMobilization(entryId),
+    onSuccess: () => {
+      toast.success("Entry removed; cell will show mobilization data.");
+      setDiscrepancyMenuCell(null);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
+    },
+    onError: (error: any) =>
+      toast.error(
+        error.response?.data?.message || "Failed to sync timesheet"
+      ),
   });
 
   const getDaysInMonth = (month: string) => {
@@ -362,7 +408,7 @@ export default function MonthlyProjectTimesheets() {
       let timesheetId = timesheetData.timesheet?.id;
       if (!timesheetId) {
         const newTimesheet = await createTimesheetMutation.mutateAsync({
-          projectId,
+          projectId: projectId === IDLE_PROJECT_ID ? null : projectId,
           month: selectedMonth,
         });
         timesheetId = newTimesheet.id;
@@ -414,7 +460,7 @@ export default function MonthlyProjectTimesheets() {
 
       if (!timesheetId) {
         const newTimesheet = await createTimesheetMutation.mutateAsync({
-          projectId,
+          projectId: projectId === IDLE_PROJECT_ID ? null : projectId,
           month: selectedMonth,
         });
         timesheetId = newTimesheet.id;
@@ -568,8 +614,9 @@ export default function MonthlyProjectTimesheets() {
             {filteredProjectIds.map((projectId) => {
               const timesheetData = timesheetsByProject.get(projectId);
 
-              if (!timesheetData || timesheetData.employees.length === 0)
-                return null;
+              if (!timesheetData) return null;
+              const isIdle = projectId === IDLE_PROJECT_ID;
+              if (!isIdle && timesheetData.employees.length === 0) return null;
 
               // When search matched employees, show only those in this project; otherwise show all
               const employeesToShow =
@@ -579,7 +626,7 @@ export default function MonthlyProjectTimesheets() {
                     )
                   : timesheetData.employees;
 
-              if (employeesToShow.length === 0) return null;
+              if (!isIdle && employeesToShow.length === 0) return null;
 
               const isExpanded = expandedProjects.has(projectId);
               const hasChanges = hasUnsavedChanges.has(projectId);
@@ -617,7 +664,9 @@ export default function MonthlyProjectTimesheets() {
                           {timesheetData.project.name}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {timesheetData.project.client.name} •{" "}
+                          {isIdle
+                            ? ""
+                            : `${timesheetData.project.client.name} • `}
                           {employeesToShow.length} employee
                           {employeesToShow.length !== 1 ? "s" : ""}
                         </p>
@@ -913,6 +962,7 @@ export default function MonthlyProjectTimesheets() {
                                           )
                                         }
                                       >
+                                        <div className={dailyHour ? "relative" : ""}>
                                         {(() => {
                                           if (!dailyHour) {
                                             return (
@@ -1050,6 +1100,94 @@ export default function MonthlyProjectTimesheets() {
                                             />
                                           );
                                         })()}
+                                        {dailyHour &&
+                                          (dailyHour as any).discrepancyWithMobilization && (
+                                            <>
+                                              <button
+                                                type="button"
+                                                data-discrepancy-trigger
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  const key = `${projectId}-${employee.employeeId}-${dailyHour.date}`;
+                                                  setDiscrepancyMenuCell((prev) =>
+                                                    prev === key ? null : key
+                                                  );
+                                                }}
+                                                className="absolute top-0 right-0.5 p-0.5 text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300"
+                                                title="Differs from mobilization – click to sync"
+                                              >
+                                                <AlertIcon className="w-3.5 h-3.5" />
+                                              </button>
+                                              {discrepancyMenuCell ===
+                                                `${projectId}-${employee.employeeId}-${dailyHour.date}` && (
+                                                <div
+                                                  data-discrepancy-menu
+                                                  className="absolute right-0 top-full mt-0.5 z-[100] min-w-[240px] rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg p-2 text-left text-xs"
+                                                  onClick={(e) =>
+                                                    e.stopPropagation()
+                                                  }
+                                                >
+                                                  <p className="font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                    Differs from mobilization
+                                                  </p>
+                                                  {(dailyHour as any)
+                                                    .effectiveMobilizationSnapshot && (
+                                                    <p className="text-gray-600 dark:text-gray-400 mb-2">
+                                                      Mobilization:{" "}
+                                                      {(dailyHour as any)
+                                                        .effectiveMobilizationSnapshot
+                                                        .projectName || "Idle"}
+                                                      ,{" "}
+                                                      {(dailyHour as any)
+                                                        .effectiveMobilizationSnapshot
+                                                        .jobStatus}
+                                                      {(dailyHour as any)
+                                                        .effectiveMobilizationSnapshot
+                                                        .tradeName &&
+                                                        `, ${(dailyHour as any).effectiveMobilizationSnapshot.tradeName}`}
+                                                    </p>
+                                                  )}
+                                                  <div className="flex flex-col gap-1">
+                                                    <button
+                                                      type="button"
+                                                      disabled={
+                                                        !dailyHour.entryId ||
+                                                        removeEntryUseMobilizationMutation.isPending
+                                                      }
+                                                      onClick={() =>
+                                                        dailyHour.entryId &&
+                                                        removeEntryUseMobilizationMutation.mutate(
+                                                          dailyHour.entryId
+                                                        )
+                                                      }
+                                                      className="w-full px-2 py-1.5 text-left rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
+                                                    >
+                                                      Sync timesheet with
+                                                      mobilization
+                                                    </button>
+                                                    <button
+                                                      type="button"
+                                                      disabled={
+                                                        !dailyHour.entryId ||
+                                                        syncMobilizationFromEntryMutation.isPending
+                                                      }
+                                                      onClick={() =>
+                                                        dailyHour.entryId &&
+                                                        syncMobilizationFromEntryMutation.mutate(
+                                                          dailyHour.entryId
+                                                        )
+                                                      }
+                                                      className="w-full px-2 py-1.5 text-left rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
+                                                    >
+                                                      Sync mobilization with
+                                                      timesheet
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </>
+                                          )}
+                                        </div>
                                       </td>
                                     );
                                   })}

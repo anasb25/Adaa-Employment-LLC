@@ -46,6 +46,13 @@ export interface TimesheetEntry {
   };
 }
 
+export interface EffectiveMobilizationSnapshot {
+  projectId: number | null;
+  projectName: string | null;
+  jobStatus: string;
+  tradeName: string | null;
+}
+
 export interface DailyHours {
   date: string;
   day: number;
@@ -53,6 +60,10 @@ export interface DailyHours {
   jobStatus: string | null;
   notes: string | null;
   entryId: number | null;
+  /** True when saved entry differs from effective mobilization (project, status, or trade) */
+  discrepancyWithMobilization?: boolean;
+  /** Present when discrepancyWithMobilization is true; describes what mobilization says */
+  effectiveMobilizationSnapshot?: EffectiveMobilizationSnapshot;
 }
 
 export interface EmployeeTimesheet {
@@ -63,6 +74,9 @@ export interface EmployeeTimesheet {
   trade: string;
   dailyHours: DailyHours[];
 }
+
+/** project.id === 0 means "Idle Employees" (no real project) */
+export const IDLE_PROJECT_ID = 0;
 
 export interface MonthlyProjectTimesheetData {
   timesheet: Timesheet | null;
@@ -79,7 +93,7 @@ export interface MonthlyProjectTimesheetData {
 }
 
 export interface CreateTimesheetRequest {
-  projectId: number;
+  projectId?: number | null; // null = idle employees timesheet
   month: string;
   notes?: string;
 }
