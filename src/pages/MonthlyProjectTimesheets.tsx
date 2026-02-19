@@ -571,6 +571,16 @@ export default function MonthlyProjectTimesheets() {
               if (!timesheetData || timesheetData.employees.length === 0)
                 return null;
 
+              // When search matched employees, show only those in this project; otherwise show all
+              const employeesToShow =
+                matchingEmployeeIds.size > 0
+                  ? timesheetData.employees.filter((e: any) =>
+                      matchingEmployeeIds.has(e.employeeId)
+                    )
+                  : timesheetData.employees;
+
+              if (employeesToShow.length === 0) return null;
+
               const isExpanded = expandedProjects.has(projectId);
               const hasChanges = hasUnsavedChanges.has(projectId);
               const status =
@@ -608,7 +618,8 @@ export default function MonthlyProjectTimesheets() {
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           {timesheetData.project.client.name} •{" "}
-                          {timesheetData.employees.length} employees
+                          {employeesToShow.length} employee
+                          {employeesToShow.length !== 1 ? "s" : ""}
                         </p>
                       </div>
                     </div>
@@ -771,7 +782,7 @@ export default function MonthlyProjectTimesheets() {
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800">
-                            {timesheetData.employees.map((employee: any) => {
+                            {employeesToShow.map((employee: any) => {
                               // Calculate total hours for this employee
                               const employeeTotal = Math.round(
                                 employee.dailyHours.reduce(
@@ -794,44 +805,25 @@ export default function MonthlyProjectTimesheets() {
                                 )
                               );
 
-                              const isHighlighted =
-                                matchingEmployeeIds.size > 0 &&
-                                matchingEmployeeIds.has(employee.employeeId);
                               return (
                                 <tr
                                   key={employee.employeeId}
-                                  className={`border-b border-gray-200 dark:border-gray-700 ${
-                                    isHighlighted
-                                      ? "bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50"
-                                      : "hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                                  }`}
+                                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 border-b border-gray-200 dark:border-gray-700"
                                 >
                                   <td
-                                    className={`sticky left-0 z-10 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap ${
-                                      isHighlighted
-                                        ? "bg-amber-100 dark:bg-amber-900/30"
-                                        : "bg-white dark:bg-gray-800"
-                                    }`}
+                                    className="sticky left-0 z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap"
                                     style={{ minWidth: "40px", width: "40px" }}
                                   >
                                     {employee.srNo}
                                   </td>
                                   <td
-                                    className={`sticky left-[40px] z-10 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap ${
-                                      isHighlighted
-                                        ? "bg-amber-100 dark:bg-amber-900/30"
-                                        : "bg-white dark:bg-gray-800"
-                                    }`}
+                                    className="sticky left-[40px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap"
                                     style={{ minWidth: "90px", width: "90px" }}
                                   >
                                     {employee.idNo}
                                   </td>
                                   <td
-                                    className={`sticky left-[130px] z-10 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 ${
-                                      isHighlighted
-                                        ? "bg-amber-100 dark:bg-amber-900/30"
-                                        : "bg-white dark:bg-gray-800"
-                                    }`}
+                                    className="sticky left-[130px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
                                     style={{
                                       minWidth: "150px",
                                       width: "150px",
@@ -845,11 +837,7 @@ export default function MonthlyProjectTimesheets() {
                                     </div>
                                   </td>
                                   <td
-                                    className={`sticky left-[280px] z-10 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 ${
-                                      isHighlighted
-                                        ? "bg-amber-100 dark:bg-amber-900/30"
-                                        : "bg-white dark:bg-gray-800"
-                                    }`}
+                                    className="sticky left-[280px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
                                     style={{
                                       minWidth: "120px",
                                       width: "120px",
@@ -1066,11 +1054,7 @@ export default function MonthlyProjectTimesheets() {
                                     );
                                   })}
                                   <td
-                                    className={`px-2 py-2 text-center text-sm font-semibold text-gray-900 dark:text-white ${
-                                      isHighlighted
-                                        ? "bg-amber-200/50 dark:bg-amber-900/50"
-                                        : "bg-gray-50 dark:bg-gray-900/50"
-                                    }`}
+                                    className="px-2 py-2 text-center text-sm font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900/50"
                                     style={{ minWidth: "70px", width: "70px" }}
                                   >
                                     {employeeTotal}
@@ -1089,9 +1073,9 @@ export default function MonthlyProjectTimesheets() {
                                 Total Hrs
                               </td>
                               {days.map((day) => {
-                                // Calculate total for this day across all employees
+                                // Calculate total for this day across displayed employees
                                 const dayTotal = Math.round(
-                                  timesheetData.employees.reduce(
+                                  employeesToShow.reduce(
                                     (sum: number, employee: any) => {
                                       const dailyHour =
                                         employee.dailyHours.find(
@@ -1133,7 +1117,7 @@ export default function MonthlyProjectTimesheets() {
                                 style={{ minWidth: "70px", width: "70px" }}
                               >
                                 {Math.round(
-                                  timesheetData.employees.reduce(
+                                  employeesToShow.reduce(
                                     (grandTotal: number, employee: any) => {
                                       return (
                                         grandTotal +
