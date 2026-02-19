@@ -16,6 +16,7 @@ import { AngleLeftIcon, TrashBinIcon, PlusIcon } from "../icons";
 import {
   MOB_STATUS_OPTIONS,
   JOB_STATUS_OPTIONS,
+  getMobStatusFromJobStatus,
 } from "../lib/mobilizationConstants";
 import CarryForwardInfo from "../components/mobilizations/CarryForwardInfo";
 
@@ -40,12 +41,12 @@ export default function CreateMobilization() {
   const dateFromUrl =
     searchParams.get("date") || new Date().toISOString().split("T")[0];
 
-  // Single form state
+  // Single form state (mobStatus derived from jobStatus)
   const [formData, setFormData] = useState({
     employeeId: undefined as number | undefined,
     mobilizedTradeId: undefined as number | undefined,
     projectId: undefined as number | undefined,
-    mobStatus: MobStatus.DEMOBILIZED,
+    mobStatus: getMobStatusFromJobStatus(JobStatus.ACTIVE),
     jobStatus: JobStatus.ACTIVE,
     actionDate: dateFromUrl,
     notes: "",
@@ -58,8 +59,8 @@ export default function CreateMobilization() {
       employeeId: null,
       mobilizedTradeId: null,
       projectId: null,
-      mobStatus: "demobilized",
-      jobStatus: "on_job",
+      mobStatus: "mobilized",
+      jobStatus: "active",
       actionDate: dateFromUrl,
       notes: "",
     },
@@ -162,7 +163,11 @@ export default function CreateMobilization() {
   };
 
   const handleChange = (field: string, value: any) => {
-    setFormData({ ...formData, [field]: value });
+    const next = { ...formData, [field]: value };
+    if (field === "jobStatus" && value) {
+      next.mobStatus = getMobStatusFromJobStatus(value as JobStatus);
+    }
+    setFormData(next);
   };
 
   const handleBulkRowChange = (
@@ -171,7 +176,14 @@ export default function CreateMobilization() {
     value: any
   ) => {
     setBulkRows((rows) =>
-      rows.map((row) => (row.id === rowId ? { ...row, [field]: value } : row))
+      rows.map((row) => {
+        if (row.id !== rowId) return row;
+        const next = { ...row, [field]: value };
+        if (field === "jobStatus" && value) {
+          next.mobStatus = getMobStatusFromJobStatus(value as JobStatus);
+        }
+        return next;
+      })
     );
   };
 
@@ -181,8 +193,8 @@ export default function CreateMobilization() {
       employeeId: null,
       mobilizedTradeId: null,
       projectId: null,
-      mobStatus: "demobilized",
-      jobStatus: "on_job",
+      mobStatus: "mobilized",
+      jobStatus: "active",
       actionDate: dateFromUrl,
       notes: "",
     };
@@ -277,7 +289,7 @@ export default function CreateMobilization() {
                         Project
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Mob Status *
+                        Mob Status
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Job Status *
@@ -355,15 +367,10 @@ export default function CreateMobilization() {
                         </td>
                         <td className="px-3 py-2">
                           <select
-                            className="w-full min-w-[120px] appearance-none rounded-md border border-gray-300 bg-transparent px-2 py-1.5 text-sm focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                            className="w-full min-w-[120px] appearance-none rounded-md border border-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1.5 text-sm cursor-not-allowed opacity-90 dark:border-gray-700 dark:text-white"
                             value={row.mobStatus}
-                            onChange={(e) =>
-                              handleBulkRowChange(
-                                row.id,
-                                "mobStatus",
-                                e.target.value
-                              )
-                            }
+                            disabled
+                            title="Set automatically from Job Status"
                           >
                             {MOB_STATUS_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>
@@ -502,16 +509,6 @@ export default function CreateMobilization() {
                 />
               </div>
 
-              {/* Mob Status */}
-              <div>
-                <Label>Mobilization Status *</Label>
-                <Select
-                  options={MOB_STATUS_OPTIONS}
-                  value={formData.mobStatus}
-                  onChange={(value) => handleChange("mobStatus", value)}
-                />
-              </div>
-
               {/* Job Status */}
               <div>
                 <Label>Job Status *</Label>
@@ -520,6 +517,20 @@ export default function CreateMobilization() {
                   value={formData.jobStatus}
                   onChange={(value) => handleChange("jobStatus", value)}
                 />
+              </div>
+
+              {/* Mob Status (read-only, derived from Job Status) */}
+              <div>
+                <Label>Mobilization Status</Label>
+                <Select
+                  options={MOB_STATUS_OPTIONS}
+                  value={formData.mobStatus}
+                  onChange={() => {}}
+                  disabled={true}
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Set automatically from Job Status
+                </p>
               </div>
 
               {/* Action Date */}

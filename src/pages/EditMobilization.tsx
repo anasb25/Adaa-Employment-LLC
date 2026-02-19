@@ -15,6 +15,7 @@ import { AngleLeftIcon } from "../icons";
 import {
   MOB_STATUS_OPTIONS,
   JOB_STATUS_OPTIONS,
+  getMobStatusFromJobStatus,
 } from "../lib/mobilizationConstants";
 
 export default function EditMobilization() {
@@ -103,7 +104,11 @@ export default function EditMobilization() {
   };
 
   const handleChange = (field: string, value: any) => {
-    setFormData({ ...formData, [field]: value });
+    const next = { ...formData, [field]: value };
+    if (field === "jobStatus" && value) {
+      next.mobStatus = getMobStatusFromJobStatus(value as JobStatus);
+    }
+    setFormData(next);
   };
 
   if (isLoadingMobilization) {
@@ -204,16 +209,6 @@ export default function EditMobilization() {
             />
           </div>
 
-          {/* Mob Status */}
-          <div>
-            <Label>Mobilization Status *</Label>
-            <Select
-              options={MOB_STATUS_OPTIONS}
-              value={formData.mobStatus}
-              onChange={(value) => handleChange("mobStatus", value)}
-            />
-          </div>
-
           {/* Job Status */}
           <div>
             <Label>Job Status *</Label>
@@ -222,6 +217,20 @@ export default function EditMobilization() {
               value={formData.jobStatus}
               onChange={(value) => handleChange("jobStatus", value)}
             />
+          </div>
+
+          {/* Mob Status (read-only, derived from Job Status) */}
+          <div>
+            <Label>Mobilization Status</Label>
+            <Select
+              options={MOB_STATUS_OPTIONS}
+              value={formData.mobStatus}
+              onChange={() => {}}
+              disabled={true}
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Set automatically from Job Status
+            </p>
           </div>
 
           {/* Action Date */}

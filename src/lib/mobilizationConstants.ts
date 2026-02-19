@@ -1,5 +1,25 @@
 import { MobStatus, JobStatus } from '../types/mobilization';
 
+/** Job status -> Mobilization status: M = mobilized, D = demobilized */
+export const JOB_STATUS_TO_MOB_STATUS: Record<JobStatus, MobStatus> = {
+  [JobStatus.ACTIVE]: MobStatus.MOBILIZED,
+  [JobStatus.CANCELLED]: MobStatus.DEMOBILIZED,
+  [JobStatus.ABSCONDED]: MobStatus.DEMOBILIZED,
+  [JobStatus.ANNUAL_LEAVE]: MobStatus.DEMOBILIZED,
+  [JobStatus.ABSENT]: MobStatus.MOBILIZED,
+  [JobStatus.SICK_LEAVE]: MobStatus.MOBILIZED,
+  [JobStatus.CASUAL_LEAVE]: MobStatus.MOBILIZED,
+  [JobStatus.URGENT_LEAVE]: MobStatus.DEMOBILIZED,
+  [JobStatus.NOTICE_PERIOD]: MobStatus.MOBILIZED,
+  [JobStatus.RESIGNED]: MobStatus.DEMOBILIZED,
+  [JobStatus.IDLE]: MobStatus.DEMOBILIZED,
+  [JobStatus.OFF]: MobStatus.MOBILIZED,
+};
+
+export function getMobStatusFromJobStatus(jobStatus: JobStatus): MobStatus {
+  return JOB_STATUS_TO_MOB_STATUS[jobStatus] ?? MobStatus.DEMOBILIZED;
+}
+
 export const MOB_STATUS_OPTIONS = [
   { value: 'mobilized', label: 'Mobilized' },
   { value: 'demobilized', label: 'Demobilized' },
