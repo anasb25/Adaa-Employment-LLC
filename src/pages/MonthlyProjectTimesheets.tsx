@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { timesheetsApi } from "../services/api/timesheetsApi";
@@ -62,6 +62,7 @@ export default function MonthlyProjectTimesheets() {
     null
   );
   const [editingHoursCell, setEditingHoursCell] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch ALL project timesheets in a single API call
   const { data: allTimesheetsData, isLoading: isTimesheetsLoading } = useQuery({
@@ -86,6 +87,55 @@ export default function MonthlyProjectTimesheets() {
     () => allTimesheetsData?.map((d) => d.project.id) || [],
     [allTimesheetsData]
   );
+
+  // Search: match by employee id, name, or project name; compute highlight set
+  const { matchingEmployeeIds, filteredProjectIds } = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const matchingIds = new Set<number>();
+    if (!allTimesheetsData) {
+      return {
+        matchingEmployeeIds: matchingIds,
+        filteredProjectIds: projectIds,
+      };
+    }
+    if (!q) {
+      return {
+        matchingEmployeeIds: matchingIds,
+        filteredProjectIds: projectIds,
+      };
+    }
+    for (const data of allTimesheetsData) {
+      const projectNameMatches = data.project.name
+        .toLowerCase()
+        .includes(q);
+      for (const emp of data.employees) {
+        const idMatches =
+          (emp.idNo && emp.idNo.toString().toLowerCase().includes(q)) ?? false;
+        const nameMatches =
+          (emp.name && emp.name.toLowerCase().includes(q)) ?? false;
+        if (idMatches || nameMatches) {
+          matchingIds.add(emp.employeeId);
+        }
+      }
+    }
+    const filtered = allTimesheetsData.filter((data) => {
+      if (data.project.name.toLowerCase().includes(q)) return true;
+      return data.employees.some((emp) => matchingIds.has(emp.employeeId));
+    });
+    return {
+      matchingEmployeeIds: matchingIds,
+      filteredProjectIds: filtered.map((d) => d.project.id),
+    };
+  }, [allTimesheetsData, projectIds, searchQuery]);
+
+  // When search matches an employee, auto-expand those projects so the highlighted row is visible
+  useEffect(() => {
+    if (matchingEmployeeIds.size > 0 && filteredProjectIds.length > 0) {
+      setExpandedProjects(
+        (prev) => new Set([...prev, ...filteredProjectIds])
+      );
+    }
+  }, [matchingEmployeeIds.size, filteredProjectIds.join(",")]);
 
   // Create timesheet mutation
   const createTimesheetMutation = useMutation({
@@ -465,22 +515,37 @@ export default function MonthlyProjectTimesheets() {
               </p>
             </div>
 
-            <div className="w-64">
-              <Label htmlFor="month">Month</Label>
-              <input
-                id="month"
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => {
-                  setSelectedMonth(e.target.value);
-                  setProjectEdits({});
-                  setHasUnsavedChanges(new Set());
-                  setExpandedProjects(new Set());
-                }}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                         focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              />
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="w-64">
+                <Label htmlFor="month">Month</Label>
+                <input
+                  id="month"
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => {
+                    setSelectedMonth(e.target.value);
+                    setProjectEdits({});
+                    setHasUnsavedChanges(new Set());
+                    setExpandedProjects(new Set());
+                  }}
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                           focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex-1 min-w-[200px] max-w-md">
+                <Label htmlFor="timesheet-search">Search</Label>
+                <input
+                  id="timesheet-search"
+                  type="text"
+                  placeholder="Employee ID, name, or project..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400
+                           focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -500,7 +565,7 @@ export default function MonthlyProjectTimesheets() {
         {/* Project Accordions */}
         {!isLoading && (
           <div className="space-y-4">
-            {projectIds.map((projectId) => {
+            {filteredProjectIds.map((projectId) => {
               const timesheetData = timesheetsByProject.get(projectId);
 
               if (!timesheetData || timesheetData.employees.length === 0)
@@ -729,25 +794,44 @@ export default function MonthlyProjectTimesheets() {
                                 )
                               );
 
+                              const isHighlighted =
+                                matchingEmployeeIds.size > 0 &&
+                                matchingEmployeeIds.has(employee.employeeId);
                               return (
                                 <tr
                                   key={employee.employeeId}
-                                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 border-b border-gray-200 dark:border-gray-700"
+                                  className={`border-b border-gray-200 dark:border-gray-700 ${
+                                    isHighlighted
+                                      ? "bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50"
+                                      : "hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                                  }`}
                                 >
                                   <td
-                                    className="sticky left-0 z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                                    className={`sticky left-0 z-10 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap ${
+                                      isHighlighted
+                                        ? "bg-amber-100 dark:bg-amber-900/30"
+                                        : "bg-white dark:bg-gray-800"
+                                    }`}
                                     style={{ minWidth: "40px", width: "40px" }}
                                   >
                                     {employee.srNo}
                                   </td>
                                   <td
-                                    className="sticky left-[40px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                                    className={`sticky left-[40px] z-10 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 whitespace-nowrap ${
+                                      isHighlighted
+                                        ? "bg-amber-100 dark:bg-amber-900/30"
+                                        : "bg-white dark:bg-gray-800"
+                                    }`}
                                     style={{ minWidth: "90px", width: "90px" }}
                                   >
                                     {employee.idNo}
                                   </td>
                                   <td
-                                    className="sticky left-[130px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
+                                    className={`sticky left-[130px] z-10 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 ${
+                                      isHighlighted
+                                        ? "bg-amber-100 dark:bg-amber-900/30"
+                                        : "bg-white dark:bg-gray-800"
+                                    }`}
                                     style={{
                                       minWidth: "150px",
                                       width: "150px",
@@ -761,7 +845,11 @@ export default function MonthlyProjectTimesheets() {
                                     </div>
                                   </td>
                                   <td
-                                    className="sticky left-[280px] z-10 bg-white dark:bg-gray-800 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
+                                    className={`sticky left-[280px] z-10 px-2 py-2 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700 ${
+                                      isHighlighted
+                                        ? "bg-amber-100 dark:bg-amber-900/30"
+                                        : "bg-white dark:bg-gray-800"
+                                    }`}
                                     style={{
                                       minWidth: "120px",
                                       width: "120px",
@@ -978,7 +1066,11 @@ export default function MonthlyProjectTimesheets() {
                                     );
                                   })}
                                   <td
-                                    className="px-2 py-2 text-center text-sm font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900/50"
+                                    className={`px-2 py-2 text-center text-sm font-semibold text-gray-900 dark:text-white ${
+                                      isHighlighted
+                                        ? "bg-amber-200/50 dark:bg-amber-900/50"
+                                        : "bg-gray-50 dark:bg-gray-900/50"
+                                    }`}
                                     style={{ minWidth: "70px", width: "70px" }}
                                   >
                                     {employeeTotal}
