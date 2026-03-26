@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { invoicesApi } from "../services/api/invoicesApi";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
@@ -58,6 +59,7 @@ export default function InvoiceDetail() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Failed to download PDF:", error);
+      toast.error("Failed to download PDF");
     }
   };
 
@@ -259,6 +261,22 @@ export default function InvoiceDetail() {
           {/* Totals */}
           <div className="flex justify-end mb-8">
             <div className="w-full max-w-sm space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Total Hours:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {formatCurrency(
+                    invoice.lineItems.reduce(
+                      (sum, item) =>
+                        sum +
+                        item.rateVariants.reduce(
+                          (vs, v) => vs + Number(v.hours),
+                          0
+                        ),
+                      0
+                    )
+                  )}
+                </span>
+              </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
