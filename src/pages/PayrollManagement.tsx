@@ -115,10 +115,6 @@ export default function PayrollManagement() {
     }
 
     const employee = payroll.employee;
-    const employeeSalaryTotal =
-      (Number(employee?.basic_salary) || 0) +
-      (Number(employee?.hra) || 0) +
-      (Number(employee?.other_allowance) || 0);
 
     const html = `
       <!DOCTYPE html>
@@ -164,7 +160,7 @@ export default function PayrollManagement() {
 
         <div class="net-box">
           NET SALARY: AED ${formatNumber(payroll.netSalary || 0)}
-          <div style="font-size: 12px; font-weight: normal; margin-top: 5px;">Gross salary + allowances + deductions</div>
+          <div style="font-size: 12px; font-weight: normal; margin-top: 5px;">Hours-based gross + additional allowances − deductions</div>
         </div>
 
         <div class="section">
@@ -182,25 +178,6 @@ export default function PayrollManagement() {
             )}</td></tr>
             <tr><td>Idle Hours</td><td>${formatNumber(
               payroll.totalIdleDayHours
-            )}</td></tr>
-          </table>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Fixed Monthly Salary</div>
-          <table>
-            <tr><th>Component</th><th>Amount (AED)</th></tr>
-            <tr><td>Basic Salary</td><td>${formatNumber(
-              Number(employee?.basic_salary) || 0
-            )}</td></tr>
-            <tr><td>HRA</td><td>${formatNumber(
-              Number(employee?.hra) || 0
-            )}</td></tr>
-            <tr><td>Other Allowance</td><td>${formatNumber(
-              Number(employee?.other_allowance) || 0
-            )}</td></tr>
-            <tr class="total-row"><td>Monthly Salary Total</td><td>${formatNumber(
-              employeeSalaryTotal
             )}</td></tr>
           </table>
         </div>
@@ -315,16 +292,6 @@ export default function PayrollManagement() {
       "OT Hours": Number(payroll.totalOtHours || 0).toFixed(2),
       "Off-Days Hours": Number(payroll.totalOffdaysWorkedHours || 0).toFixed(2),
       "Idle Hours": Number(payroll.totalIdleDayHours || 0).toFixed(2),
-      "Basic Salary": Number(payroll.employee?.basic_salary || 0).toFixed(2),
-      HRA: Number(payroll.employee?.hra || 0).toFixed(2),
-      "Other Allowance": Number(payroll.employee?.other_allowance || 0).toFixed(
-        2
-      ),
-      "Fixed Monthly Salary": (
-        (Number(payroll.employee?.basic_salary) || 0) +
-        (Number(payroll.employee?.hra) || 0) +
-        (Number(payroll.employee?.other_allowance) || 0)
-      ).toFixed(2),
       "Additional Allowances": sumJsonValues(payroll.allowances).toFixed(2),
       "Allowances Detail": formatJsonDisplay(payroll.allowances),
       "Absent Days Deduction": Number(
@@ -350,10 +317,6 @@ export default function PayrollManagement() {
       { wch: 12 }, // OT Hours
       { wch: 14 }, // Off-Days Hours
       { wch: 12 }, // Idle Hours
-      { wch: 14 }, // Basic Salary
-      { wch: 12 }, // HRA
-      { wch: 16 }, // Other Allowance
-      { wch: 18 }, // Fixed Monthly Salary
       { wch: 20 }, // Additional Allowances
       { wch: 30 }, // Allowances Detail
       { wch: 20 }, // Absent Days Deduction
@@ -635,18 +598,6 @@ export default function PayrollManagement() {
                           Idle Hrs
                         </th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Basic Salary
-                        </th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          HRA
-                        </th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Other Allow
-                        </th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Fixed Monthly
-                        </th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Base Rate/Hr
                         </th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -689,10 +640,6 @@ export default function PayrollManagement() {
                         })
                         .map((payroll: Payroll) => {
                           const employee = payroll.employee;
-                          const employeeSalaryTotal =
-                            (Number(employee?.basic_salary) || 0) +
-                            (Number(employee?.hra) || 0) +
-                            (Number(employee?.other_allowance) || 0);
 
                           return (
                             <tr
@@ -729,30 +676,6 @@ export default function PayrollManagement() {
                               <td className="px-4 py-3 whitespace-nowrap text-right">
                                 <div className="text-sm text-gray-900 dark:text-white">
                                   {formatNumber(payroll.totalIdleDayHours)}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-right">
-                                <div className="text-sm text-gray-900 dark:text-white">
-                                  {formatNumber(
-                                    Number(employee?.basic_salary) || 0
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-right">
-                                <div className="text-sm text-gray-900 dark:text-white">
-                                  {formatNumber(Number(employee?.hra) || 0)}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-right">
-                                <div className="text-sm text-gray-900 dark:text-white">
-                                  {formatNumber(
-                                    Number(employee?.other_allowance) || 0
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-right">
-                                <div className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                                  {formatNumber(employeeSalaryTotal)}
                                 </div>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
@@ -897,7 +820,7 @@ export default function PayrollManagement() {
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
                               {formatNumber(totals.totalIdleDayHours)}
                             </td>
-                            <td className="px-4 py-3" colSpan={4}></td>
+                            <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-blue-600 dark:text-blue-400">
                               {formatNumber(totals.grossSalary)}
                             </td>
@@ -947,7 +870,7 @@ export default function PayrollManagement() {
                                     Net Salary
                                   </h4>
                                   <p className="text-sm text-green-700 dark:text-green-300">
-                                    Gross salary + allowances + deductions
+                                    Hours-based gross + additional allowances − deductions
                                   </p>
                                 </div>
                                 <div className="text-3xl font-bold text-green-700 dark:text-green-400">
@@ -1236,67 +1159,7 @@ export default function PayrollManagement() {
                         </div>
                       )}
 
-                      {/* Fixed Salary Breakdown - THIRD */}
-                      {payroll.employee && (
-                        <div className="my-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
-                          <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100 mb-3 uppercase tracking-wider">
-                            Fixed Salary Breakdown
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <span className="text-purple-700 dark:text-purple-300">
-                                Basic Salary:
-                              </span>
-                              <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
-                                AED{" "}
-                                {payroll.employee.basic_salary
-                                  ? formatNumber(payroll.employee.basic_salary)
-                                  : "0.00"}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-purple-700 dark:text-purple-300">
-                                HRA:
-                              </span>
-                              <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
-                                AED{" "}
-                                {payroll.employee.hra
-                                  ? formatNumber(payroll.employee.hra)
-                                  : "0.00"}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-purple-700 dark:text-purple-300">
-                                Other Allowance:
-                              </span>
-                              <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
-                                AED{" "}
-                                {payroll.employee.other_allowance
-                                  ? formatNumber(
-                                      payroll.employee.other_allowance
-                                    )
-                                  : "0.00"}
-                              </p>
-                            </div>
-                            <div className="border-l-2 border-purple-300 dark:border-purple-600 pl-4">
-                              <span className="text-purple-700 dark:text-purple-300 font-semibold">
-                                Monthly Total:
-                              </span>
-                              <p className="font-bold text-purple-900 dark:text-purple-100 mt-1">
-                                AED{" "}
-                                {formatNumber(
-                                  (Number(payroll.employee.basic_salary) || 0) +
-                                    (Number(payroll.employee.hra) || 0) +
-                                    (Number(payroll.employee.other_allowance) ||
-                                      0)
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Additions/Deductions - FOURTH */}
+                      {/* Additions/Deductions - THIRD */}
                       <div className="space-y-3 mb-6">
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider border-b-2 border-gray-300 dark:border-gray-600 pb-2">
                           Additions & Deductions
@@ -1346,7 +1209,7 @@ export default function PayrollManagement() {
                         </div>
                       </div>
 
-                      {/* Total Gross Salary - FIFTH */}
+                      {/* Total Gross Salary - FOURTH */}
                       <div className="mb-6">
                         <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-500 dark:border-blue-600">
                           <div className="flex justify-between items-center">
@@ -1458,7 +1321,7 @@ export default function PayrollManagement() {
                                           Net Salary
                                         </h4>
                                         <p className="text-sm text-green-700 dark:text-green-300">
-                                          Gross salary + allowances + deductions
+                                          Hours-based gross + additional allowances − deductions
                                         </p>
                                       </div>
                                       <div className="text-3xl font-bold text-green-700 dark:text-green-400">
@@ -1768,72 +1631,7 @@ export default function PayrollManagement() {
                               </div>
                             )}
 
-                            {/* Fixed Salary Breakdown - THIRD */}
-                            {payroll.employee && (
-                              <div className="my-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
-                                <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100 mb-3 uppercase tracking-wider">
-                                  Fixed Salary Breakdown
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                                  <div>
-                                    <span className="text-purple-700 dark:text-purple-300">
-                                      Basic Salary:
-                                    </span>
-                                    <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
-                                      AED{" "}
-                                      {payroll.employee.basic_salary
-                                        ? formatNumber(
-                                            payroll.employee.basic_salary
-                                          )
-                                        : "0.00"}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <span className="text-purple-700 dark:text-purple-300">
-                                      HRA:
-                                    </span>
-                                    <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
-                                      AED{" "}
-                                      {payroll.employee.hra
-                                        ? formatNumber(payroll.employee.hra)
-                                        : "0.00"}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <span className="text-purple-700 dark:text-purple-300">
-                                      Other Allowance:
-                                    </span>
-                                    <p className="font-medium text-purple-900 dark:text-purple-100 mt-1">
-                                      AED{" "}
-                                      {payroll.employee.other_allowance
-                                        ? formatNumber(
-                                            payroll.employee.other_allowance
-                                          )
-                                        : "0.00"}
-                                    </p>
-                                  </div>
-                                  <div className="border-l-2 border-purple-300 dark:border-purple-600 pl-4">
-                                    <span className="text-purple-700 dark:text-purple-300 font-semibold">
-                                      Monthly Total:
-                                    </span>
-                                    <p className="font-bold text-purple-900 dark:text-purple-100 mt-1">
-                                      AED{" "}
-                                      {formatNumber(
-                                        (Number(
-                                          payroll.employee.basic_salary
-                                        ) || 0) +
-                                          (Number(payroll.employee.hra) || 0) +
-                                          (Number(
-                                            payroll.employee.other_allowance
-                                          ) || 0)
-                                      )}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Additions/Deductions - FOURTH */}
+                            {/* Additions/Deductions - THIRD */}
                             <div className="space-y-3 mb-6">
                               <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider border-b-2 border-gray-300 dark:border-gray-600 pb-2">
                                 Additions & Deductions
@@ -1887,7 +1685,7 @@ export default function PayrollManagement() {
                               </div>
                             </div>
 
-                            {/* Total Gross Salary - FIFTH */}
+                            {/* Total Gross Salary - FOURTH */}
                             <div className="mb-6">
                               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-500 dark:border-blue-600">
                                 <div className="flex justify-between items-center">
