@@ -537,6 +537,21 @@ export default function MonthlyProjectTimesheets() {
     }
   };
 
+  const grandTotalHours = useMemo(() => {
+    if (!allTimesheetsData) return 0;
+    let total = 0;
+    for (const data of allTimesheetsData) {
+      for (const employee of data.employees) {
+        for (const dh of employee.dailyHours) {
+          if (dh.jobStatus && dh.jobStatus !== "demobilized" && dh.jobStatus !== null) {
+            total += getHoursValue(data.project.id, employee.employeeId, dh);
+          }
+        }
+      }
+    }
+    return Math.round(total);
+  }, [allTimesheetsData, projectEdits]);
+
   const isLoading = isTimesheetsLoading;
 
   return (
@@ -603,6 +618,20 @@ export default function MonthlyProjectTimesheets() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
               <span className="ml-3 text-gray-600 dark:text-gray-400">
                 Loading timesheets...
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Grand Total Hours */}
+        {!isLoading && allTimesheetsData && allTimesheetsData.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold text-gray-900 dark:text-white">
+                Grand Total Hours (All Projects)
+              </span>
+              <span className="text-2xl font-bold text-brand-600 dark:text-brand-400">
+                {grandTotalHours.toLocaleString()}
               </span>
             </div>
           </div>

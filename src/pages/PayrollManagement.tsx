@@ -550,6 +550,62 @@ export default function PayrollManagement() {
           </div>
         )}
 
+        {/* Grand Total Summary */}
+        {!isLoading && payrollData && payrollData.length > 0 && (() => {
+          const filtered = payrollData.filter((p: Payroll) => {
+            if (!searchQuery.trim()) return true;
+            const query = searchQuery.toLowerCase();
+            const name = p.employee?.name?.toLowerCase() || "";
+            const code = p.employee?.adaa_emp_code?.toLowerCase() || "";
+            return name.includes(query) || code.includes(query);
+          });
+          const totals = filtered.reduce(
+            (acc: any, p: Payroll) => {
+              acc.totalHours += Number(p.totalHours) || 0;
+              acc.totalOtHours += Number(p.totalOtHours) || 0;
+              acc.totalOffdaysWorkedHours += Number(p.totalOffdaysWorkedHours) || 0;
+              acc.totalIdleDayHours += Number(p.totalIdleDayHours) || 0;
+              acc.grossSalary += Number(p.totalGrossSalary) || 0;
+              acc.netSalary += Number(p.netSalary) || 0;
+              return acc;
+            },
+            { totalHours: 0, totalOtHours: 0, totalOffdaysWorkedHours: 0, totalIdleDayHours: 0, grossSalary: 0, netSalary: 0 }
+          );
+          return (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 border-brand-500 dark:border-brand-400 p-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                Grand Total ({filtered.length} employees)
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Total Hours</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(totals.totalHours)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">OT Hours</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(totals.totalOtHours)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Off-Day Hours</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(totals.totalOffdaysWorkedHours)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Idle Hours</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(totals.totalIdleDayHours)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Gross Salary</div>
+                  <div className="text-lg font-bold text-blue-600 dark:text-blue-400">AED {formatNumber(totals.grossSalary)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Net Salary</div>
+                  <div className="text-lg font-bold text-green-600 dark:text-green-400">AED {formatNumber(totals.netSalary)}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Payroll List */}
         {!isLoading && payrollData && payrollData.length > 0 && (
           <>
@@ -801,6 +857,63 @@ export default function PayrollManagement() {
                             </tr>
                           );
                         })}
+                      {/* Grand Total Row */}
+                      {(() => {
+                        const filtered = payrollData.filter((p: Payroll) => {
+                          if (!searchQuery.trim()) return true;
+                          const query = searchQuery.toLowerCase();
+                          const name = p.employee?.name?.toLowerCase() || "";
+                          const code = p.employee?.adaa_emp_code?.toLowerCase() || "";
+                          return name.includes(query) || code.includes(query);
+                        });
+                        const totals = filtered.reduce(
+                          (acc: any, p: Payroll) => {
+                            acc.totalHours += Number(p.totalHours) || 0;
+                            acc.totalOtHours += Number(p.totalOtHours) || 0;
+                            acc.totalOffdaysWorkedHours += Number(p.totalOffdaysWorkedHours) || 0;
+                            acc.totalIdleDayHours += Number(p.totalIdleDayHours) || 0;
+                            acc.grossSalary += Number(p.totalGrossSalary) || 0;
+                            acc.absentDeduct += Number(p.absentDaysDeductible) || 0;
+                            acc.netSalary += Number(p.netSalary) || 0;
+                            return acc;
+                          },
+                          { totalHours: 0, totalOtHours: 0, totalOffdaysWorkedHours: 0, totalIdleDayHours: 0, grossSalary: 0, absentDeduct: 0, netSalary: 0 }
+                        );
+                        return (
+                          <tr className="bg-gray-100 dark:bg-gray-900 font-bold border-t-2 border-gray-300 dark:border-gray-600">
+                            <td className="px-4 py-3 whitespace-nowrap sticky left-0 bg-gray-100 dark:bg-gray-900 z-10 text-sm font-bold text-gray-900 dark:text-white">
+                              Grand Total
+                            </td>
+                            <td className="px-4 py-3"></td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
+                              {formatNumber(totals.totalHours)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
+                              {formatNumber(totals.totalOtHours)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
+                              {formatNumber(totals.totalOffdaysWorkedHours)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
+                              {formatNumber(totals.totalIdleDayHours)}
+                            </td>
+                            <td className="px-4 py-3" colSpan={4}></td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-blue-600 dark:text-blue-400">
+                              {formatNumber(totals.grossSalary)}
+                            </td>
+                            <td className="px-4 py-3"></td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-red-600 dark:text-red-400">
+                              {formatNumber(totals.absentDeduct)}
+                            </td>
+                            <td className="px-4 py-3"></td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-green-600 dark:text-green-400">
+                              {formatNumber(totals.netSalary)}
+                            </td>
+                            <td className="px-4 py-3"></td>
+                            <td className="px-4 py-3 sticky right-0 bg-gray-100 dark:bg-gray-900 z-10"></td>
+                          </tr>
+                        );
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -1853,6 +1966,7 @@ export default function PayrollManagement() {
                       </div>
                     );
                   })}
+
               </div>
             )}
           </>
