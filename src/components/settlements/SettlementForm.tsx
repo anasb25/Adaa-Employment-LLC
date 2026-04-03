@@ -47,6 +47,11 @@ export default function SettlementForm({
   const [status, setStatus] = useState<SettlementStatus>(
     settlement?.status || SettlementStatus.DRAFT
   );
+  const [manualSalaryEntry, setManualSalaryEntry] = useState(false);
+  const [manualLastMonthSalary, setManualLastMonthSalary] = useState<number>(0);
+  const [manualCurrentMonthSalary, setManualCurrentMonthSalary] = useState<number>(0);
+  const [manualCurrentMonthHours, setManualCurrentMonthHours] = useState<number>(0);
+  const [manualAbsentDays, setManualAbsentDays] = useState<number>(0);
   const [isCalculating, setIsCalculating] = useState(false);
   const [employeeSearchQuery, setEmployeeSearchQuery] = useState("");
   const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
@@ -120,13 +125,14 @@ export default function SettlementForm({
 
   // Check if both payrolls exist (only when data is loaded and not in edit mode)
   const payrollsExist = 
-    isEditMode || // Skip validation in edit mode
+    isEditMode ||
+    manualSalaryEntry ||
     (!isLoadingPayrolls &&
     currentMonthPayroll?.exists === true && 
     lastMonthPayroll?.exists === true);
   
-  const missingPayrolls = [];
-  if (selectedEmployeeId > 0 && !isLoadingPayrolls) {
+  const missingPayrolls: string[] = [];
+  if (selectedEmployeeId > 0 && !isLoadingPayrolls && !manualSalaryEntry) {
     if (!currentMonthPayroll?.exists) {
       missingPayrolls.push(`Current month (${currentMonth})`);
     }
@@ -185,37 +191,34 @@ export default function SettlementForm({
     }
 
     // 3. Last Month Salary - Show "PAID" or net salary amount
-    // Always add this row, even if payroll doesn't exist (will show 0 or error)
     const lastMonthName = new Date(`${lastMonth}-01`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
-    const lastMonthNetSalary = lastMonthPayroll?.payroll 
-      ? Number(lastMonthPayroll.payroll.netSalary) || 0 
-      : 0;
+    const lastMonthNetSalary = manualSalaryEntry
+      ? manualLastMonthSalary
+      : (lastMonthPayroll?.payroll ? Number(lastMonthPayroll.payroll.netSalary) || 0 : 0);
     items.push({
       description: `${lastMonthName} SALARY`,
       amount: lastMonthSalaryPaid ? 0 : lastMonthNetSalary,
     });
 
-    // 4. Current Month Salary - Net salary from current month payroll
-    // Always add this row, even if payroll doesn't exist (will show 0 or error)
+    // 4. Current Month Salary - Net salary from current month payroll or manual entry
     const currentMonthName = new Date(`${currentMonth}-01`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
-    const currentMonthNetSalary = currentMonthPayroll?.payroll 
-      ? Number(currentMonthPayroll.payroll.netSalary) || 0 
-      : 0;
+    const currentMonthNetSalary = manualSalaryEntry
+      ? manualCurrentMonthSalary
+      : (currentMonthPayroll?.payroll ? Number(currentMonthPayroll.payroll.netSalary) || 0 : 0);
     const lastDate = lastDateOfWork ? new Date(lastDateOfWork) : new Date();
     const monthStart = new Date(lastDate.getFullYear(), lastDate.getMonth(), 1);
     const fromDate = monthStart.toISOString().split('T')[0];
     const toDate = lastDateOfWork || lastDate.toISOString().split('T')[0];
     
-    // Get total hours from payroll
-    const totalHours = currentMonthPayroll?.payroll 
-      ? Number(currentMonthPayroll.payroll.totalHours) || 0 
-      : 0;
+    const totalHours = manualSalaryEntry
+      ? manualCurrentMonthHours
+      : (currentMonthPayroll?.payroll ? Number(currentMonthPayroll.payroll.totalHours) || 0 : 0);
     
     items.push({
       description: `${currentMonthName} SALARY`,
       fromDate,
       toDate,
-      forDays: totalHours, // Store hours as forDays for display
+      forDays: totalHours,
       amount: currentMonthNetSalary,
     });
 
@@ -260,10 +263,10 @@ export default function SettlementForm({
         throw new Error("Please enter last date of work");
       }
 
-      // Check if payrolls exist for current and last month (only when creating new settlement)
-      if (!isEditMode && !payrollsExist) {
+      // Check if payrolls exist (only when creating new, not manual entry)
+      if (!isEditMode && !manualSalaryEntry && !payrollsExist) {
         throw new Error(
-          `Payroll entries are missing for: ${missingPayrolls.join(', ')}. Please create payroll first.`
+          `Payroll entries are missing for: ${missingPayrolls.join(', ')}. Please create payroll first or enable manual salary entry.`
         );
       }
 
@@ -271,6 +274,12 @@ export default function SettlementForm({
       const hra = Number(selectedEmployee.hra) || 0;
       const otherAllowance = Number(selectedEmployee.other_allowance) || 0;
       const totalSalary = basicSalary + hra + otherAllowance;
+
+      const absentDays = manualSalaryEntry
+        ? manualAbsentDays
+        : (currentMonthPayroll?.payroll?.absentDaysDeductible 
+            ? Number(currentMonthPayroll.payroll.absentDaysDeductible) 
+            : 0);
 
       const settlementData: CreateSettlementRequest = {
         employeeId: selectedEmployee.id,
@@ -280,9 +289,7 @@ export default function SettlementForm({
         dateOfJoin: selectedEmployee.date_of_joining || undefined,
         lastDateOfWork,
         lastTotalSalary: totalSalary,
-        totalDaysAbsent: currentMonthPayroll?.payroll?.absentDaysDeductible 
-          ? Number(currentMonthPayroll.payroll.absentDaysDeductible) 
-          : 0,
+        totalDaysAbsent: absentDays,
         lastMonthSalaryPaid,
         eligibleForGratuity,
         gratuityDaysPerYear: gratuityCalc?.totalYearsOfService
@@ -443,12 +450,12 @@ export default function SettlementForm({
             </div>
           )}
 
-          {/* Payroll Validation Warning */}
-          {!isEditMode && selectedEmployeeId > 0 && !isLoadingPayrolls && missingPayrolls.length > 0 && (
-            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+          {/* Payroll Validation Warning / Manual Entry Option */}
+          {!isEditMode && selectedEmployeeId > 0 && !isLoadingPayrolls && missingPayrolls.length > 0 && !manualSalaryEntry && (
+            <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
               <div className="flex items-start">
                 <svg
-                  className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 mr-2 flex-shrink-0"
+                  className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 mr-2 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -461,13 +468,104 @@ export default function SettlementForm({
                   />
                 </svg>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">
+                  <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-1">
                     Payroll Entries Missing
                   </h4>
-                  <p className="text-sm text-red-700 dark:text-red-300">
-                    Payroll entries are missing for: <strong>{missingPayrolls.join(', ')}</strong>.
-                    Please create payroll entries first before creating a settlement.
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mb-2">
+                    Missing for: <strong>{missingPayrolls.join(', ')}</strong>.
+                    You can create the payroll first, or enter salary amounts manually.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => setManualSalaryEntry(true)}
+                    className="text-sm font-medium text-amber-800 dark:text-amber-200 underline hover:no-underline"
+                  >
+                    Enter salary amounts manually
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Manual Salary Entry Toggle (always visible once enabled, or when payrolls exist but user wants override) */}
+          {!isEditMode && selectedEmployeeId > 0 && (
+            <div className="mt-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={manualSalaryEntry}
+                  onChange={(e) => setManualSalaryEntry(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Enter salary amounts manually (override payroll)
+                </span>
+              </label>
+            </div>
+          )}
+
+          {/* Manual Salary Inputs */}
+          {!isEditMode && manualSalaryEntry && selectedEmployeeId > 0 && (
+            <div className="mt-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-3">
+              <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                Manual Salary Entry
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                    Last Month Net Salary (AED)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={manualLastMonthSalary}
+                    onChange={(e) => setManualLastMonthSalary(parseFloat(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                    Current Month Net Salary (AED)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={manualCurrentMonthSalary}
+                    onChange={(e) => setManualCurrentMonthSalary(parseFloat(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                    Current Month Total Hours
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    value={manualCurrentMonthHours}
+                    onChange={(e) => setManualCurrentMonthHours(parseFloat(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                    Absent Days (Current Month)
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={manualAbsentDays}
+                    onChange={(e) => setManualAbsentDays(parseFloat(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    placeholder="0"
+                  />
                 </div>
               </div>
             </div>
@@ -496,11 +594,13 @@ export default function SettlementForm({
                 {selectedEmployee.adaa_emp_code}
               </span>
             </div>
-            {!isLoadingPayrolls && currentMonthPayroll?.payroll && (
+            {((!isLoadingPayrolls && currentMonthPayroll?.payroll) || manualSalaryEntry) && (
               <div>
                 <span className="text-gray-500 dark:text-gray-400">Total Days Absent (Current Month):</span>
                 <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                  {Number(currentMonthPayroll.payroll.absentDaysDeductible).toFixed(2)}
+                  {manualSalaryEntry
+                    ? manualAbsentDays.toFixed(2)
+                    : Number(currentMonthPayroll?.payroll?.absentDaysDeductible || 0).toFixed(2)}
                 </span>
               </div>
             )}
@@ -550,12 +650,12 @@ export default function SettlementForm({
           checked={lastMonthSalaryPaid}
           onChange={(e) => setLastMonthSalaryPaid(e.target.checked)}
           className="w-4 h-4"
-          disabled={!lastMonthPayroll?.payroll}
+          disabled={!lastMonthPayroll?.payroll && !manualSalaryEntry}
         />
         <Label htmlFor="lastMonthSalaryPaid">
           Last Month Salary Already Paid
-          {!lastMonthPayroll?.payroll && (
-            <span className="text-gray-500 text-xs ml-2">(Requires last month payroll)</span>
+          {!lastMonthPayroll?.payroll && !manualSalaryEntry && (
+            <span className="text-gray-500 text-xs ml-2">(Requires last month payroll or manual entry)</span>
           )}
         </Label>
       </div>

@@ -19,6 +19,9 @@ export interface SpecialDay {
   employeeAdditionalAmount: number;
   clientRateMultiplier: number;
   isDefaultOff: boolean;
+  minBillingHours?: number | null;
+  billingHoursThreshold?: number | null;
+  additionalHoursAboveThreshold?: number | null;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -37,6 +40,9 @@ export interface CreateSpecialDayRequest {
   employeeAdditionalAmount?: number;
   clientRateMultiplier?: number;
   isDefaultOff?: boolean;
+  minBillingHours?: number | null;
+  billingHoursThreshold?: number | null;
+  additionalHoursAboveThreshold?: number | null;
   notes?: string;
 }
 

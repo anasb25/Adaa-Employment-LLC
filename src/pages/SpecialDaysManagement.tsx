@@ -29,6 +29,9 @@ export default function SpecialDaysManagement() {
     employeeAdditionalAmount: 0,
     clientRateMultiplier: 1.0,
     isDefaultOff: false,
+    minBillingHours: null,
+    billingHoursThreshold: null,
+    additionalHoursAboveThreshold: null,
     notes: "",
   });
 
@@ -96,6 +99,9 @@ export default function SpecialDaysManagement() {
       employeeAdditionalAmount: 0,
       clientRateMultiplier: 1.0,
       isDefaultOff: false,
+      minBillingHours: null,
+      billingHoursThreshold: null,
+      additionalHoursAboveThreshold: null,
       notes: "",
     });
     setIsModalOpen(true);
@@ -116,6 +122,9 @@ export default function SpecialDaysManagement() {
       employeeAdditionalAmount: day.employeeAdditionalAmount ?? 0,
       clientRateMultiplier: day.clientRateMultiplier || 1.0,
       isDefaultOff: day.isDefaultOff || false,
+      minBillingHours: day.minBillingHours ?? null,
+      billingHoursThreshold: day.billingHoursThreshold ?? null,
+      additionalHoursAboveThreshold: day.additionalHoursAboveThreshold ?? null,
       notes: day.notes || "",
     });
     setIsModalOpen(true);
@@ -308,8 +317,13 @@ export default function SpecialDaysManagement() {
                           <div>
                             <div>Employee: {day.employeeAdditionalAmount === 0 ? "0" : `+${day.employeeAdditionalAmount}`} AED/hr</div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              Client rates set per project
+                              Client: {day.clientRateMultiplier}x multiplier
                             </div>
+                            {day.minBillingHours != null && (
+                              <div className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                                Bill: min {day.minBillingHours}h if &le;{day.billingHoursThreshold}h, else +{day.additionalHoursAboveThreshold}h
+                              </div>
+                            )}
                           </div>
                         )}
                       </td>
@@ -537,6 +551,85 @@ export default function SpecialDaysManagement() {
                       e.g., 1.10 = 110% (10% extra on client billing). Can be overridden per project.
                     </p>
                   </div>
+
+                  {/* Client Billing Hours Rules */}
+                  {(form.dayType === SpecialDayType.PREMIUM_RATE || form.dayType === SpecialDayType.OPTIONAL_OFF) && (
+                    <div className="md:col-span-2 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold">Client Billing Hours Rules</Label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.minBillingHours != null}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setForm({ ...form, minBillingHours: 8, billingHoursThreshold: 6, additionalHoursAboveThreshold: 2 });
+                              } else {
+                                setForm({ ...form, minBillingHours: null, billingHoursThreshold: null, additionalHoursAboveThreshold: null });
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 rounded"
+                          />
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Enable</span>
+                        </label>
+                      </div>
+                      {form.minBillingHours != null && (
+                        <>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                Threshold (hrs)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.5"
+                                min="0"
+                                value={form.billingHoursThreshold ?? ""}
+                                onChange={(e) => setForm({ ...form, billingHoursThreshold: e.target.value ? parseFloat(e.target.value) : null })}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                                placeholder="e.g. 6"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                Min Billing (hrs)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.5"
+                                min="0"
+                                value={form.minBillingHours ?? ""}
+                                onChange={(e) => setForm({ ...form, minBillingHours: e.target.value ? parseFloat(e.target.value) : null })}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                                placeholder="e.g. 8"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                Extra hrs above
+                              </label>
+                              <input
+                                type="number"
+                                step="0.5"
+                                min="0"
+                                value={form.additionalHoursAboveThreshold ?? ""}
+                                onChange={(e) => setForm({ ...form, additionalHoursAboveThreshold: e.target.value ? parseFloat(e.target.value) : null })}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                                placeholder="e.g. 2"
+                              />
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            If worker works <strong>&le; {form.billingHoursThreshold ?? "X"} hrs</strong>: bill <strong>{form.minBillingHours ?? "Y"} hrs</strong>.
+                            If worker works <strong>&gt; {form.billingHoursThreshold ?? "X"} hrs</strong>: bill <strong>actual + {form.additionalHoursAboveThreshold ?? "Z"} hrs</strong>.
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  )}
 
                   <div className="md:col-span-2">
                     <Label htmlFor="notes">Internal Notes</Label>
