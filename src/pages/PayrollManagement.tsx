@@ -917,13 +917,9 @@ export default function PayrollManagement() {
                                         <tr key={idx}>
                                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                             {item.rateVariantName}
-                                            {item.rateMultiplier !== 1 && (
+                                            {item.additionalAmount !== 0 && (
                                               <span className="ml-2 text-xs text-gray-500">
-                                                (
-                                                {(
-                                                  item.rateMultiplier * 100
-                                                ).toFixed(0)}
-                                                %)
+                                                (+{item.additionalAmount} AED/hr)
                                               </span>
                                             )}
                                           </td>
@@ -975,13 +971,11 @@ export default function PayrollManagement() {
                                         <tr key={idx}>
                                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                             {item.specialDayName}
-                                            <span className="ml-2 text-xs text-gray-500">
-                                              (
-                                              {(
-                                                item.rateMultiplier * 100
-                                              ).toFixed(0)}
-                                              %)
-                                            </span>
+                                            {item.additionalAmount !== 0 && (
+                                              <span className="ml-2 text-xs text-gray-500">
+                                                (+{item.additionalAmount} AED/hr)
+                                              </span>
+                                            )}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                             {formatNumber(item.hours)}
@@ -1033,13 +1027,11 @@ export default function PayrollManagement() {
                                             {new Date(
                                               item.date
                                             ).toLocaleDateString()}
-                                            <span className="ml-2 text-xs text-gray-500">
-                                              (
-                                              {(
-                                                item.rateMultiplier * 100
-                                              ).toFixed(0)}
-                                              %)
-                                            </span>
+                                            {item.additionalAmount !== 0 && (
+                                              <span className="ml-2 text-xs text-gray-500">
+                                                ({item.additionalAmount > 0 ? "+" : ""}{item.additionalAmount} AED/hr)
+                                              </span>
+                                            )}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                             {formatNumber(item.hours)}
@@ -1091,13 +1083,11 @@ export default function PayrollManagement() {
                                             {new Date(
                                               item.date
                                             ).toLocaleDateString()}
-                                            <span className="ml-2 text-xs text-gray-500">
-                                              (
-                                              {(
-                                                item.rateMultiplier * 100
-                                              ).toFixed(0)}
-                                              %)
-                                            </span>
+                                            {item.additionalAmount !== 0 && (
+                                              <span className="ml-2 text-xs text-gray-500">
+                                                ({item.additionalAmount > 0 ? "+" : ""}{item.additionalAmount} AED/hr)
+                                              </span>
+                                            )}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                             {formatNumber(item.hours)}
@@ -1368,15 +1358,10 @@ export default function PayrollManagement() {
                                               <tr key={idx}>
                                                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                                   {item.rateVariantName}
-                                                  {item.rateMultiplier !==
-                                                    1 && (
+                                                  {item.additionalAmount !==
+                                                    0 && (
                                                     <span className="ml-2 text-xs text-gray-500">
-                                                      (
-                                                      {(
-                                                        item.rateMultiplier *
-                                                        100
-                                                      ).toFixed(0)}
-                                                      %)
+                                                      (+{item.additionalAmount} AED/hr)
                                                     </span>
                                                   )}
                                                 </td>
@@ -1433,13 +1418,11 @@ export default function PayrollManagement() {
                                               <tr key={idx}>
                                                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                                   {item.specialDayName}
-                                                  <span className="ml-2 text-xs text-gray-500">
-                                                    (
-                                                    {(
-                                                      item.rateMultiplier * 100
-                                                    ).toFixed(0)}
-                                                    %)
-                                                  </span>
+                                                  {item.additionalAmount !== 0 && (
+                                                    <span className="ml-2 text-xs text-gray-500">
+                                                      (+{item.additionalAmount} AED/hr)
+                                                    </span>
+                                                  )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                                   {formatNumber(item.hours)}
@@ -1495,13 +1478,11 @@ export default function PayrollManagement() {
                                                   {new Date(
                                                     item.date
                                                   ).toLocaleDateString()}
-                                                  <span className="ml-2 text-xs text-gray-500">
-                                                    (
-                                                    {(
-                                                      item.rateMultiplier * 100
-                                                    ).toFixed(0)}
-                                                    %)
-                                                  </span>
+                                                  {item.additionalAmount !== 0 && (
+                                                    <span className="ml-2 text-xs text-gray-500">
+                                                      ({item.additionalAmount > 0 ? "+" : ""}{item.additionalAmount} AED/hr)
+                                                    </span>
+                                                  )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                                   {formatNumber(item.hours)}
@@ -1557,13 +1538,11 @@ export default function PayrollManagement() {
                                                   {new Date(
                                                     item.date
                                                   ).toLocaleDateString()}
-                                                  <span className="ml-2 text-xs text-gray-500">
-                                                    (
-                                                    {(
-                                                      item.rateMultiplier * 100
-                                                    ).toFixed(0)}
-                                                    %)
-                                                  </span>
+                                                  {item.additionalAmount !== 0 && (
+                                                    <span className="ml-2 text-xs text-gray-500">
+                                                      ({item.additionalAmount > 0 ? "+" : ""}{item.additionalAmount} AED/hr)
+                                                    </span>
+                                                  )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                                   {formatNumber(item.hours)}

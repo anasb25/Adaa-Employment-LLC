@@ -5,7 +5,7 @@ export interface RateVariant {
   displayOrder: number;
   isActive: boolean;
   color?: string;
-  employeeRateMultiplier: number;
+  employeeAdditionalAmount: number;
   clientRateMultiplier: number;
   minHours?: number | null;
   maxHours?: number | null;
@@ -19,7 +19,7 @@ export interface CreateRateVariantRequest {
   displayOrder?: number;
   isActive?: boolean;
   color?: string;
-  employeeRateMultiplier?: number;
+  employeeAdditionalAmount?: number;
   clientRateMultiplier?: number;
   minHours?: number | null;
   maxHours?: number | null;

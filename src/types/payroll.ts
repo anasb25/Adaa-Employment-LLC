@@ -2,28 +2,28 @@ export interface HoursBreakdown {
   regular: Array<{
     rateVariantName: string;
     hours: number;
-    rateMultiplier: number;
+    additionalAmount: number;
     hourlyRate: number;
     amount: number;
   }>;
   specialDays: Array<{
     specialDayName: string;
     hours: number;
-    rateMultiplier: number;
+    additionalAmount: number;
     hourlyRate: number;
     amount: number;
   }>;
   offDays: Array<{
     date: string;
     hours: number;
-    rateMultiplier: number;
+    additionalAmount: number;
     hourlyRate: number;
     amount: number;
   }>;
   idle: Array<{
     date: string;
     hours: number;
-    rateMultiplier: number;
+    additionalAmount: number;
     hourlyRate: number;
     amount: number;
   }>;

@@ -26,7 +26,7 @@ export default function SpecialDaysManagement() {
     isRecurring: false,
     color: "#3b82f6",
     dayType: SpecialDayType.REGULAR,
-    employeeRateMultiplier: 1.0,
+    employeeAdditionalAmount: 0,
     clientRateMultiplier: 1.0,
     isDefaultOff: false,
     notes: "",
@@ -93,7 +93,7 @@ export default function SpecialDaysManagement() {
       isRecurring: false,
       color: "#3b82f6",
       dayType: SpecialDayType.REGULAR,
-      employeeRateMultiplier: 1.0,
+      employeeAdditionalAmount: 0,
       clientRateMultiplier: 1.0,
       isDefaultOff: false,
       notes: "",
@@ -113,7 +113,7 @@ export default function SpecialDaysManagement() {
       isRecurring: day.isRecurring,
       color: day.color || "#3b82f6",
       dayType: day.dayType || SpecialDayType.REGULAR,
-      employeeRateMultiplier: day.employeeRateMultiplier || 1.0,
+      employeeAdditionalAmount: day.employeeAdditionalAmount ?? 0,
       clientRateMultiplier: day.clientRateMultiplier || 1.0,
       isDefaultOff: day.isDefaultOff || false,
       notes: day.notes || "",
@@ -306,7 +306,7 @@ export default function SpecialDaysManagement() {
                           "-"
                         ) : (
                           <div>
-                            <div>Employee: {(day.employeeRateMultiplier * 100).toFixed(0)}%</div>
+                            <div>Employee: {day.employeeAdditionalAmount === 0 ? "0" : `+${day.employeeAdditionalAmount}`} AED/hr</div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
                               Client rates set per project
                             </div>
@@ -494,27 +494,22 @@ export default function SpecialDaysManagement() {
                   </div>
 
                   <div>
-                    <Label htmlFor="employeeRateMultiplier">Employee Rate Multiplier (Global)</Label>
+                    <Label htmlFor="employeeAdditionalAmount">Employee Additional Amount (AED/hr)</Label>
                     <div className="mt-1 relative">
                       <input
-                        id="employeeRateMultiplier"
+                        id="employeeAdditionalAmount"
                         type="number"
                         step="0.01"
-                        min="0"
-                        max="10"
-                        value={form.employeeRateMultiplier}
-                        onChange={(e) => setForm({ ...form, employeeRateMultiplier: parseFloat(e.target.value) || 1.0 })}
+                        value={form.employeeAdditionalAmount}
+                        onChange={(e) => setForm({ ...form, employeeAdditionalAmount: parseFloat(e.target.value) || 0 })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                                  focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                         disabled={form.dayType === SpecialDayType.MANDATORY_OFF || form.dayType === SpecialDayType.REGULAR}
                       />
-                      <div className="absolute right-3 top-2 text-sm text-gray-500">
-                        {((form.employeeRateMultiplier || 1) * 100).toFixed(0)}%
-                      </div>
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      e.g., 1.05 = 105% (5% extra pay to employee)
+                      Flat amount added to employee's base rate per hour. e.g., 2 = base + 2 AED/hr
                     </p>
                   </div>
 

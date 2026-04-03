@@ -7,7 +7,6 @@ export interface Skill {
   updatedBy?: number;
   skillType?: SkillType;
   skillTypeId?: number;
-  cost_price?: number;
   sale_price?: number;
   employeeSkills?: EmployeeSkill[];
 }
@@ -26,7 +25,6 @@ export interface EmployeeSkill {
 export interface CreateSkillRequest {
   skillTypeId: number;
   skill: string;
-  cost_price?: number;
   sale_price?: number;
 }
 

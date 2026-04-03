@@ -22,7 +22,6 @@ export default function SkillForm({ skill, onClose }: SkillFormProps) {
   const [formData, setFormData] = useState<CreateSkillRequest>({
     skillTypeId: skill?.skillType?.id || (undefined as unknown as number),
     skill: skill?.skill || "",
-    cost_price: skill?.cost_price,
     sale_price: skill?.sale_price,
   });
 
@@ -125,38 +124,20 @@ export default function SkillForm({ skill, onClose }: SkillFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="cost_price">Cost Price (Optional)</Label>
-            <Input
-              type="number"
-              id="cost_price"
-              name="cost_price"
-              value={
-                formData.cost_price !== undefined
-                  ? String(formData.cost_price)
-                  : ""
-              }
-              onChange={handleChange}
-              placeholder="e.g., 100"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="sale_price">Sale Price (Optional)</Label>
-            <Input
-              type="number"
-              id="sale_price"
-              name="sale_price"
-              value={
-                formData.sale_price !== undefined
-                  ? String(formData.sale_price)
-                  : ""
-              }
-              onChange={handleChange}
-              placeholder="e.g., 150"
-            />
-          </div>
+        <div>
+          <Label htmlFor="sale_price">Sale Price (Optional)</Label>
+          <Input
+            type="number"
+            id="sale_price"
+            name="sale_price"
+            value={
+              formData.sale_price !== undefined
+                ? String(formData.sale_price)
+                : ""
+            }
+            onChange={handleChange}
+            placeholder="e.g., 150"
+          />
         </div>
       </div>
 

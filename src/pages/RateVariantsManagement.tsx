@@ -14,7 +14,7 @@ const RateVariantsManagement = () => {
     displayOrder: 0,
     isActive: true,
     color: "#3b82f6",
-    employeeRateMultiplier: 1.0,
+    employeeAdditionalAmount: 0,
     clientRateMultiplier: 1.0,
     minHours: null,
     maxHours: null,
@@ -43,7 +43,7 @@ const RateVariantsManagement = () => {
       displayOrder: rateVariants.length,
       isActive: true,
       color: "#3b82f6",
-      employeeRateMultiplier: 1.0,
+      employeeAdditionalAmount: 0,
       clientRateMultiplier: 1.0,
       minHours: null,
       maxHours: null,
@@ -59,7 +59,7 @@ const RateVariantsManagement = () => {
       displayOrder: variant.displayOrder,
       isActive: variant.isActive,
       color: variant.color,
-      employeeRateMultiplier: variant.employeeRateMultiplier,
+      employeeAdditionalAmount: variant.employeeAdditionalAmount ?? 0,
       clientRateMultiplier: variant.clientRateMultiplier || 1.0,
       minHours: variant.minHours ?? null,
       maxHours: variant.maxHours ?? null,
@@ -132,7 +132,7 @@ const RateVariantsManagement = () => {
                   Order
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Employee Multiplier
+                  Employee Additional (AED/hr)
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Hour Range
@@ -168,7 +168,7 @@ const RateVariantsManagement = () => {
                     {variant.displayOrder}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {variant.employeeRateMultiplier}x
+                    {variant.employeeAdditionalAmount === 0 ? "0" : `+${variant.employeeAdditionalAmount}`}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {variant.minHours !== null && variant.minHours !== undefined
@@ -213,24 +213,42 @@ const RateVariantsManagement = () => {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-              {editingRateVariant ? "Edit Rate Variant" : "Add Rate Variant"}
-            </h2>
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    required
-                  />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {editingRateVariant ? "Edit Rate Variant" : "Add Rate Variant"}
+              </h2>
+            </div>
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Order
+                    </label>
+                    <input
+                      type="number"
+                      value={form.displayOrder}
+                      onChange={(e) =>
+                        setForm({ ...form, displayOrder: parseInt(e.target.value) })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      min="0"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -241,87 +259,85 @@ const RateVariantsManagement = () => {
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    rows={3}
+                    rows={2}
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Display Order
-                  </label>
-                  <input
-                    type="number"
-                    value={form.displayOrder}
-                    onChange={(e) =>
-                      setForm({ ...form, displayOrder: parseInt(e.target.value) })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    min="0"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Color
-                  </label>
-                  <input
-                    type="color"
-                    value={form.color}
-                    onChange={(e) => setForm({ ...form, color: e.target.value })}
-                    className="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Employee Rate Multiplier (Global)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.employeeRateMultiplier ?? 1.0}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        employeeRateMultiplier: parseFloat(e.target.value) || 1.0,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    required
-                  />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    e.g., 1.05 = 105% (5% extra pay to employee)
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Client Rate Multiplier (Global Default)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.clientRateMultiplier ?? 1.0}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        clientRateMultiplier: parseFloat(e.target.value) || 1.0,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    required
-                  />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    e.g., 1.10 = 110% (10% extra on client billing). Can be overridden per project.
-                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Min Hours (leave empty for no minimum)
+                      Color
+                    </label>
+                    <input
+                      type="color"
+                      value={form.color}
+                      onChange={(e) => setForm({ ...form, color: e.target.value })}
+                      className="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex items-end pb-1">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.isActive}
+                        onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Active</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Employee Additional (AED/hr)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={form.employeeAdditionalAmount ?? 0}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          employeeAdditionalAmount: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Flat amount on top of base rate
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Client Rate Multiplier
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.clientRateMultiplier ?? 1.0}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          clientRateMultiplier: parseFloat(e.target.value) || 1.0,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      e.g., 1.10 = 110% on client billing
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Min Hours
                     </label>
                     <input
                       type="number"
@@ -334,13 +350,13 @@ const RateVariantsManagement = () => {
                           minHours: e.target.value ? parseFloat(e.target.value) : null,
                         })
                       }
-                      placeholder="e.g., 10 for >10 hours"
+                      placeholder="No minimum"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Max Hours (leave empty for no maximum)
+                      Max Hours
                     </label>
                     <input
                       type="number"
@@ -353,30 +369,14 @@ const RateVariantsManagement = () => {
                           maxHours: e.target.value ? parseFloat(e.target.value) : null,
                         })
                       }
-                      placeholder="e.g., 4 for <4 hours"
+                      placeholder="No maximum"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="isActive"
-                    checked={form.isActive}
-                    onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 rounded"
-                  />
-                  <label
-                    htmlFor="isActive"
-                    className="ml-2 text-sm text-gray-700 dark:text-gray-300"
-                  >
-                    Active
-                  </label>
-                </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-6">
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
