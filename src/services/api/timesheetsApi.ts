@@ -128,28 +128,4 @@ export const timesheetsApi = {
   deleteTimesheet: async (id: number): Promise<void> => {
     await axiosInstance.delete(`/timesheets/${id}`);
   },
-
-  /**
-   * Sync mobilization to match this timesheet entry (use timesheet as source of truth).
-   */
-  syncMobilizationFromEntry: async (
-    entryId: number
-  ): Promise<{ message: string }> => {
-    const response = await axiosInstance.post(
-      `/timesheets/entries/${entryId}/sync-to-mobilization`
-    );
-    return response.data;
-  },
-
-  /**
-   * Remove timesheet entry so cell shows mobilization data (use mobilization as source of truth).
-   */
-  removeEntryUseMobilization: async (
-    entryId: number
-  ): Promise<{ message: string }> => {
-    const response = await axiosInstance.post(
-      `/timesheets/entries/${entryId}/sync-from-mobilization`
-    );
-    return response.data;
-  },
 };

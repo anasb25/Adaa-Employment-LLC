@@ -46,13 +46,6 @@ export interface TimesheetEntry {
   };
 }
 
-export interface EffectiveMobilizationSnapshot {
-  projectId: number | null;
-  projectName: string | null;
-  jobStatus: string;
-  tradeName: string | null;
-}
-
 export interface DailyHours {
   date: string;
   day: number;
@@ -60,10 +53,6 @@ export interface DailyHours {
   jobStatus: string | null;
   notes: string | null;
   entryId: number | null;
-  /** True when saved entry differs from effective mobilization (project, status, or trade) */
-  discrepancyWithMobilization?: boolean;
-  /** Present when discrepancyWithMobilization is true; describes what mobilization says */
-  effectiveMobilizationSnapshot?: EffectiveMobilizationSnapshot;
 }
 
 export interface EmployeeTimesheet {
