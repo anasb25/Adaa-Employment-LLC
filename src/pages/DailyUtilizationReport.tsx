@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { timesheetsApi } from "../services/api/timesheetsApi";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
@@ -16,7 +16,6 @@ export default function DailyUtilizationReport() {
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [isDownloading, setIsDownloading] = useState(false);
-  const reportRef = useRef<HTMLDivElement>(null);
 
   const {
     data: reportData,
@@ -158,9 +157,8 @@ export default function DailyUtilizationReport() {
   };
 
   const handleDownloadPDF = async () => {
-    const element = reportRef.current;
-    if (!element) {
-      toast.error("Report content not available");
+    if (!reportData || reportData.clients.length === 0) {
+      toast.error("No report data available");
       return;
     }
 
@@ -168,56 +166,134 @@ export default function DailyUtilizationReport() {
       setIsDownloading(true);
       toast.loading("Generating PDF...");
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        onclone: (doc) => {
-          const clonedElement = doc.querySelector("[data-pdf-root]");
-          if (clonedElement) {
-            // Force light colors for PDF
-            const style = doc.createElement("style");
-            style.innerHTML = `
-              [data-pdf-root], [data-pdf-root] * {
-                color: #000 !important;
-                border-color: #9ca3af !important;
-              }
-              [data-pdf-root] .bg-yellow-100 {
-                background-color: #fef3c7 !important;
-              }
-              [data-pdf-root] .bg-blue-100 {
-                background-color: #dbeafe !important;
-              }
-              [data-pdf-root] .bg-green-100 {
-                background-color: #d1fae5 !important;
-              }
-              [data-pdf-root] .bg-gray-100 {
-                background-color: #f3f4f6 !important;
-              }
-            `;
-            doc.head.appendChild(style);
+      const pdf = new jsPDF("l", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+
+      pdf.setFontSize(16);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("DAILY UTILIZATION REPORT", pageWidth / 2, 15, { align: "center" });
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(formatDisplayDate(selectedDate), pageWidth / 2, 22, { align: "center" });
+
+      const headers = [["SR NO", "CLIENT NAME", "PROJECT NAME", "LOCATION", "FAT", "TRADE IN SITE", "HEAD COUNT", "TOTAL"]];
+
+      const body: any[][] = [];
+      const merges: { row: number; col: number; rowSpan: number }[] = [];
+      let rowIndex = 0;
+
+      reportData.clients.forEach((client, clientIndex) => {
+        const clientTotalRows = client.projects.reduce((sum, p) => sum + p.trades.length, 0);
+        const clientStartRow = rowIndex;
+
+        client.projects.forEach((project) => {
+          const projectStartRow = rowIndex;
+
+          project.trades.forEach((trade, tradeIndex) => {
+            const projectTotal = project.trades.reduce((sum, t) => sum + t.headCount, 0);
+            body.push([
+              tradeIndex === 0 && project === client.projects[0] ? String(clientIndex + 1) : "",
+              tradeIndex === 0 && project === client.projects[0] ? client.clientName.toUpperCase() : "",
+              tradeIndex === 0 ? project.projectName.toUpperCase() : "",
+              tradeIndex === 0 ? (project.location?.toUpperCase() || "-") : "",
+              tradeIndex === 0 ? (project.fat?.toUpperCase() || "-") : "",
+              trade.tradeInSite.toUpperCase(),
+              String(trade.headCount),
+              tradeIndex === 0 ? String(projectTotal) : "",
+            ]);
+            rowIndex++;
+          });
+
+          if (project.trades.length > 1) {
+            merges.push({ row: projectStartRow, col: 2, rowSpan: project.trades.length });
+            merges.push({ row: projectStartRow, col: 3, rowSpan: project.trades.length });
+            merges.push({ row: projectStartRow, col: 4, rowSpan: project.trades.length });
+            merges.push({ row: projectStartRow, col: 7, rowSpan: project.trades.length });
           }
-        },
+        });
+
+        if (clientTotalRows > 1) {
+          merges.push({ row: clientStartRow, col: 0, rowSpan: clientTotalRows });
+          merges.push({ row: clientStartRow, col: 1, rowSpan: clientTotalRows });
+        }
       });
 
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("l", "mm", "a4");
-      const imgWidth = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      body.push([
+        { content: "TOTAL MANPOWER", colSpan: 7, styles: { halign: "right", fontStyle: "bold", fillColor: [243, 244, 246] } },
+        { content: String(reportData.totalManpower), styles: { halign: "center", fontStyle: "bold", fillColor: [243, 244, 246] } },
+      ]);
 
-      let heightLeft = imgHeight;
-      let position = 0;
+      let projectColorIndex = 0;
+      const rowToColor: Record<number, number[]> = {};
+      let rIdx2 = 0;
+      reportData.clients.forEach((client) => {
+        client.projects.forEach((project) => {
+          const color = projectColorIndex % 2 === 0 ? [219, 234, 254] : [209, 250, 229];
+          project.trades.forEach(() => {
+            rowToColor[rIdx2] = color;
+            rIdx2++;
+          });
+          projectColorIndex++;
+        });
+      });
 
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= 210;
+      autoTable(pdf, {
+        startY: 28,
+        head: headers,
+        body,
+        theme: "grid",
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          lineColor: [156, 163, 175],
+          lineWidth: 0.3,
+          valign: "top",
+        },
+        headStyles: {
+          fillColor: [254, 243, 199],
+          textColor: [0, 0, 0],
+          fontStyle: "bold",
+          halign: "left",
+          fontSize: 8,
+        },
+        columnStyles: {
+          0: { cellWidth: 14, halign: "center", fontStyle: "bold" },
+          1: { cellWidth: 38, fontStyle: "bold" },
+          2: { cellWidth: 55 },
+          3: { cellWidth: 30 },
+          4: { cellWidth: 20, halign: "center" },
+          5: { cellWidth: 52 },
+          6: { cellWidth: 24, halign: "center", fontStyle: "bold" },
+          7: { cellWidth: 20, halign: "center", fontStyle: "bold" },
+        },
+        didParseCell: (data) => {
+          if (data.section !== "body") return;
+          if (data.row.index >= body.length - 1) return;
 
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= 210;
-      }
+          const color = rowToColor[data.row.index];
+          if (color && (data.column.index === 6 || data.column.index === 7)) {
+            data.cell.styles.fillColor = color as [number, number, number];
+          }
+
+          for (const m of merges) {
+            if (data.column.index === m.col && data.row.index > m.row && data.row.index < m.row + m.rowSpan) {
+              data.cell.text = [];
+              data.cell.styles.lineWidth = { top: 0, right: 0.3, bottom: 0, left: 0.3 };
+              data.cell.styles.fillColor = [255, 255, 255];
+            }
+            if (data.column.index === m.col && data.row.index === m.row) {
+              data.cell.styles.lineWidth = { top: 0.3, right: 0.3, bottom: 0, left: 0.3 };
+            }
+            if (data.column.index === m.col && data.row.index === m.row + m.rowSpan - 1) {
+              if (data.cell.text.length === 0 || (data.cell.text.length === 1 && data.cell.text[0] === "")) {
+                data.cell.styles.lineWidth = { top: 0, right: 0.3, bottom: 0.3, left: 0.3 };
+                data.cell.styles.fillColor = [255, 255, 255];
+              }
+            }
+          }
+        },
+        margin: { left: 12, right: 12 },
+      });
 
       pdf.save(`Daily_Utilization_Report_${selectedDate}.pdf`);
       toast.dismiss();
@@ -332,7 +408,7 @@ export default function DailyUtilizationReport() {
           </div>
 
           {/* Content */}
-          <div className="p-6" ref={reportRef} data-pdf-root>
+          <div className="p-4">
             {isLoading && (
               <div className="flex justify-center py-12">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
@@ -347,31 +423,41 @@ export default function DailyUtilizationReport() {
 
             {reportData && (
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-sm">
+                <table className="w-full border-collapse text-xs" style={{ tableLayout: "fixed" }}>
+                  <colgroup>
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "22%" }} />
+                    <col style={{ width: "12%" }} />
+                    <col style={{ width: "8%" }} />
+                    <col style={{ width: "21%" }} />
+                    <col style={{ width: "10%" }} />
+                    <col style={{ width: "8%" }} />
+                  </colgroup>
                   <thead>
                     <tr className="border-b-2 border-gray-900 bg-yellow-100 dark:border-gray-600 dark:bg-yellow-900">
-                      <th className="border border-gray-400 px-4 py-3 text-left font-bold dark:border-gray-600 dark:text-white">
+                      <th className="border border-gray-400 px-2 py-2 text-left font-bold dark:border-gray-600 dark:text-white">
                         SR NO
                       </th>
-                      <th className="border border-gray-400 px-4 py-3 text-left font-bold dark:border-gray-600 dark:text-white">
+                      <th className="border border-gray-400 px-2 py-2 text-left font-bold dark:border-gray-600 dark:text-white">
                         CLIENT NAME
                       </th>
-                      <th className="border border-gray-400 px-4 py-3 text-left font-bold dark:border-gray-600 dark:text-white">
+                      <th className="border border-gray-400 px-2 py-2 text-left font-bold dark:border-gray-600 dark:text-white">
                         PROJECT NAME
                       </th>
-                      <th className="border border-gray-400 px-4 py-3 text-left font-bold dark:border-gray-600 dark:text-white">
+                      <th className="border border-gray-400 px-2 py-2 text-left font-bold dark:border-gray-600 dark:text-white">
                         LOCATION
                       </th>
-                      <th className="border border-gray-400 px-4 py-3 text-left font-bold dark:border-gray-600 dark:text-white">
+                      <th className="border border-gray-400 px-2 py-2 text-left font-bold dark:border-gray-600 dark:text-white">
                         FAT
                       </th>
-                      <th className="border border-gray-400 px-4 py-3 text-left font-bold dark:border-gray-600 dark:text-white">
+                      <th className="border border-gray-400 px-2 py-2 text-left font-bold dark:border-gray-600 dark:text-white">
                         TRADE IN SITE
                       </th>
-                      <th className="border border-gray-400 px-4 py-3 text-center font-bold dark:border-gray-600 dark:text-white">
+                      <th className="border border-gray-400 px-2 py-2 text-center font-bold dark:border-gray-600 dark:text-white">
                         HEAD COUNT
                       </th>
-                      <th className="border border-gray-400 px-4 py-3 text-center font-bold dark:border-gray-600 dark:text-white">
+                      <th className="border border-gray-400 px-2 py-2 text-center font-bold dark:border-gray-600 dark:text-white">
                         TOTAL
                       </th>
                     </tr>
@@ -381,7 +467,7 @@ export default function DailyUtilizationReport() {
                       <tr>
                         <td
                           colSpan={8}
-                          className="border border-gray-400 px-4 py-8 text-center text-gray-500 dark:border-gray-600 dark:text-gray-400"
+                          className="border border-gray-400 px-2 py-6 text-center text-gray-500 dark:border-gray-600 dark:text-gray-400"
                         >
                           No mobilized employees found for this date.
                         </td>
@@ -410,10 +496,9 @@ export default function DailyUtilizationReport() {
                                 <tr
                                   key={`${client.clientId}-${project.projectId}-${trade.tradeInSite}`}
                                 >
-                                  {/* SR NO - show only on first row of client */}
                                   {isFirstRowOfClient && (
                                     <td
-                                      className="border border-gray-400 px-4 py-2 text-center font-bold align-top dark:border-gray-600 dark:text-white"
+                                      className="border border-gray-400 px-2 py-1.5 text-center font-bold align-top dark:border-gray-600 dark:text-white"
                                       rowSpan={client.projects.reduce(
                                         (sum, p) => sum + p.trades.length,
                                         0,
@@ -423,10 +508,9 @@ export default function DailyUtilizationReport() {
                                     </td>
                                   )}
 
-                                  {/* CLIENT NAME - show only on first row of client */}
                                   {isFirstRowOfClient && (
                                     <td
-                                      className="border border-gray-400 px-4 py-2 font-semibold align-top dark:border-gray-600 dark:text-white"
+                                      className="border border-gray-400 px-2 py-1.5 font-semibold align-top dark:border-gray-600 dark:text-white"
                                       rowSpan={client.projects.reduce(
                                         (sum, p) => sum + p.trades.length,
                                         0,
@@ -436,52 +520,46 @@ export default function DailyUtilizationReport() {
                                     </td>
                                   )}
 
-                                  {/* PROJECT NAME - show only on first row of project */}
                                   {isFirstRowOfProject && (
                                     <td
-                                      className="border border-gray-400 px-4 py-2 align-top dark:border-gray-600 dark:text-white"
+                                      className="border border-gray-400 px-2 py-1.5 align-top dark:border-gray-600 dark:text-white"
                                       rowSpan={project.trades.length}
                                     >
                                       {project.projectName.toUpperCase()}
                                     </td>
                                   )}
 
-                                  {/* LOCATION - show only on first row of project */}
                                   {isFirstRowOfProject && (
                                     <td
-                                      className="border border-gray-400 px-4 py-2 align-top dark:border-gray-600 dark:text-white"
+                                      className="border border-gray-400 px-2 py-1.5 align-top dark:border-gray-600 dark:text-white"
                                       rowSpan={project.trades.length}
                                     >
                                       {project.location?.toUpperCase() || "-"}
                                     </td>
                                   )}
 
-                                  {/* FAT - show only on first row of project */}
                                   {isFirstRowOfProject && (
                                     <td
-                                      className="border border-gray-400 px-4 py-2 text-center align-top dark:border-gray-600 dark:text-white"
+                                      className="border border-gray-400 px-2 py-1.5 text-center align-top dark:border-gray-600 dark:text-white"
                                       rowSpan={project.trades.length}
                                     >
                                       {project.fat?.toUpperCase() || "-"}
                                     </td>
                                   )}
 
-                                  {/* TRADE IN SITE */}
-                                  <td className="border border-gray-400 px-4 py-2 dark:border-gray-600 dark:text-white">
+                                  <td className="border border-gray-400 px-2 py-1.5 dark:border-gray-600 dark:text-white">
                                     {trade.tradeInSite.toUpperCase()}
                                   </td>
 
-                                  {/* HEAD COUNT */}
                                   <td
-                                    className={`border border-gray-400 px-4 py-2 text-center font-semibold ${projectBgColor}`}
+                                    className={`border border-gray-400 px-2 py-1.5 text-center font-semibold ${projectBgColor}`}
                                   >
                                     {trade.headCount}
                                   </td>
 
-                                  {/* TOTAL - show only on first row of each project */}
                                   {isFirstRowOfProject && (
                                     <td
-                                      className={`border border-gray-400 px-4 py-2 text-center font-bold align-middle ${projectBgColor}`}
+                                      className={`border border-gray-400 px-2 py-1.5 text-center font-bold align-middle ${projectBgColor}`}
                                       rowSpan={project.trades.length}
                                     >
                                       {project.trades.reduce(
@@ -505,11 +583,11 @@ export default function DailyUtilizationReport() {
                       <tr className="bg-gray-100 dark:bg-gray-800">
                         <td
                           colSpan={7}
-                          className="border border-gray-400 px-4 py-3 text-right font-bold dark:border-gray-600 dark:text-white"
+                          className="border border-gray-400 px-2 py-2 text-right font-bold dark:border-gray-600 dark:text-white"
                         >
                           TOTAL MANPOWER
                         </td>
-                        <td className="border border-gray-400 px-4 py-3 text-center font-bold text-lg dark:border-gray-600 dark:text-white">
+                        <td className="border border-gray-400 px-2 py-2 text-center font-bold text-sm dark:border-gray-600 dark:text-white">
                           {reportData.totalManpower}
                         </td>
                       </tr>

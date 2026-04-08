@@ -339,7 +339,7 @@ export default function ProjectSkillsModal({
                           {ps.sale_price !== undefined &&
                             ps.sale_price !== null && (
                               <Badge size="sm" color="success">
-                                ${Number(ps.sale_price).toFixed(2)}
+                                AED {Number(ps.sale_price).toFixed(2)}
                               </Badge>
                             )}
                         </div>

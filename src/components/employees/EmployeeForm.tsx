@@ -933,7 +933,7 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                           {displaySkill.cost_price !== undefined &&
                             displaySkill.cost_price !== null && (
                               <Badge size="sm" color="success">
-                                ${Number(displaySkill.cost_price).toFixed(2)}
+                                AED {Number(displaySkill.cost_price).toFixed(2)}
                               </Badge>
                             )}
                           {displaySkill.isPending && (

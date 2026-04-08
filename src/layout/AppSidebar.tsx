@@ -11,6 +11,11 @@ import {
   TaskIcon,
   UserCircleIcon,
   BuildingIcon,
+  CalenderIcon,
+  PieChartIcon,
+  DollarLineIcon,
+  DocsIcon,
+  ListIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import UserDropdown from "../components/header/UserDropdown";
@@ -87,39 +92,33 @@ const navItems: NavItem[] = [
   },
   {
     name: "Timesheets",
-    icon: <TaskIcon />,
+    icon: <CalenderIcon />,
     path: "/timesheets/monthly",
     permission: "employee:read",
   },
   {
     name: "Daily Report",
-    icon: <TaskIcon />,
+    icon: <PieChartIcon />,
     path: "/daily-report",
     permission: "employee:read",
   },
   {
     name: "Payroll",
-    icon: <TaskIcon />,
+    icon: <DollarLineIcon />,
     path: "/payroll",
     permission: "employee:read",
   },
   {
     name: "Invoices",
-    icon: <TaskIcon />,
+    icon: <DocsIcon />,
     path: "/invoices",
     permission: "employee:read",
   },
   {
     name: "Settlements",
-    icon: <TaskIcon />,
+    icon: <ListIcon />,
     path: "/settlements",
     permission: "settlement:read",
-  },
-  {
-    name: "Daily Report",
-    icon: <TaskIcon />,
-    path: "/daily-report",
-    permission: "employee:read",
   },
   {
     name: "Admin",

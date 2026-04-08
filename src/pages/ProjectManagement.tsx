@@ -411,7 +411,7 @@ export default function ProjectManagement() {
                                 {ps.skill?.skill}
                                 {ps.sale_price && (
                                   <span className="ml-1">
-                                    (${Number(ps.sale_price).toFixed(2)})
+                                    (AED {Number(ps.sale_price).toFixed(2)})
                                   </span>
                                 )}
                               </Badge>
