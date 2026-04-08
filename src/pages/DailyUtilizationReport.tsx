@@ -164,7 +164,7 @@ export default function DailyUtilizationReport() {
 
     try {
       setIsDownloading(true);
-      toast.loading("Generating PDF...");
+      const toastId = toast.loading("Generating PDF...");
 
       const pdf = new jsPDF("l", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -296,12 +296,10 @@ export default function DailyUtilizationReport() {
       });
 
       pdf.save(`Daily_Utilization_Report_${selectedDate}.pdf`);
-      toast.dismiss();
-      toast.success("PDF downloaded successfully");
+      toast.success("PDF downloaded successfully", { id: toastId });
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.dismiss();
-      toast.error("Failed to generate PDF");
+      toast.error("Failed to generate PDF", { id: toastId });
     } finally {
       setIsDownloading(false);
     }
