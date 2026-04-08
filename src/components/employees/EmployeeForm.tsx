@@ -835,7 +835,7 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                 No skills assigned yet. Assign skills using the form above.
               </p>
             ) : (
-              displaySkills.map((displaySkill: any) => {
+              displaySkills.filter((ds: any) => ds?.skill).map((displaySkill: any) => {
                 const isCurrentlyEditing =
                   editingSkillId === displaySkill.skillId;
 
@@ -855,10 +855,10 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                       <div className="space-y-3">
                         <div className="flex items-center gap-3 mb-3">
                           <Badge size="sm" color="info">
-                            {displaySkill.skill.skillType?.type || "N/A"}
+                            {displaySkill.skill?.skillType?.type || "N/A"}
                           </Badge>
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {displaySkill.skill.skill}
+                            {displaySkill.skill?.skill ?? "Unknown Skill"}
                           </span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -922,10 +922,10 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 flex-1">
                           <Badge size="sm" color="info">
-                            {displaySkill.skill.skillType?.type || "N/A"}
+                            {displaySkill.skill?.skillType?.type || "N/A"}
                           </Badge>
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {displaySkill.skill.skill}
+                            {displaySkill.skill?.skill ?? "Unknown Skill"}
                           </span>
                           <Badge size="sm" color="primary">
                             Rating: {displaySkill.rating}/5
@@ -1106,10 +1106,10 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
                   </p>
                   <div className="space-y-1 text-sm">
                     {displaySkills.length > 0 ? (
-                      displaySkills.map((skill: any) => (
+                      displaySkills.filter((s: any) => s?.skill).map((skill: any) => (
                         <div key={skill.id} className="flex justify-between">
                           <span className="text-blue-800 dark:text-blue-200 truncate">
-                            {skill.skill.skill}:
+                            {skill.skill?.skill ?? "Unknown"}:
                           </span>
                           <span className="font-medium text-blue-900 dark:text-blue-100 ml-2">
                             {skill.cost_price

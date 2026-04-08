@@ -488,14 +488,14 @@ export default function EmployeeList({
                         {employee.employeeSkills &&
                         employee.employeeSkills.length > 0 ? (
                           <>
-                            {employee.employeeSkills.map((es) => (
+                            {employee.employeeSkills.filter((es) => es?.skill).map((es) => (
                               <div
                                 key={es.id}
                                 className="text-xs space-y-1 pb-2 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0"
                               >
                                 <div className="flex items-center justify-between">
                                   <span className="text-gray-900 dark:text-white font-medium">
-                                    {es.skill.skill}
+                                    {es.skill?.skill ?? "Unknown Skill"}
                                   </span>
                                   <StarRating
                                     rating={es.rating}

@@ -191,17 +191,17 @@ export default function EmployeeSkillManager({
               No skills assigned yet. Assign skills using the form above.
             </p>
           ) : (
-            employeeSkills.map((employeeSkill) => (
+            employeeSkills.filter((es) => es?.skill).map((employeeSkill) => (
               <div
                 key={employeeSkill.id}
                 className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
               >
                 <div className="flex items-center gap-3 flex-1">
                   <Badge size="sm" color="info">
-                    {employeeSkill.skill.type}
+                    {employeeSkill.skill?.type ?? "N/A"}
                   </Badge>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {employeeSkill.skill.skill}
+                    {employeeSkill.skill?.skill ?? "Unknown Skill"}
                   </span>
                   <Badge size="sm" color="primary">
                     Rating: {employeeSkill.rating}/10
@@ -228,7 +228,7 @@ export default function EmployeeSkillManager({
                     onClick={() =>
                       handleRemoveSkill(
                         employeeSkill.skillId,
-                        `${employeeSkill.skill.type} - ${employeeSkill.skill.skill}`
+                        `${employeeSkill.skill?.type ?? "N/A"} - ${employeeSkill.skill?.skill ?? "Unknown"}`
                       )
                     }
                     disabled={
