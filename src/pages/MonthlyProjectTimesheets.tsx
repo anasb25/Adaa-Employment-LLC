@@ -14,6 +14,8 @@ import PageMeta from "../components/common/PageMeta";
 import PermissionGuard from "../components/auth/PermissionGuard";
 import Button from "../components/ui/button/Button";
 import Label from "../components/form/Label";
+import HoursInput from "../components/form/HoursInput";
+import { decimalToHM } from "../utils/timeUtils";
 import TimesheetExportModal from "../components/timesheets/TimesheetExportModal";
 import {
   ChevronDownIcon,
@@ -504,7 +506,7 @@ export default function MonthlyProjectTimesheets() {
         }
       }
     }
-    return Math.round(total);
+    return Math.round(total * 100) / 100;
   }, [allTimesheetsData, projectEdits]);
 
   const isLoading = isTimesheetsLoading;
@@ -586,7 +588,7 @@ export default function MonthlyProjectTimesheets() {
                 Grand Total Hours (All Projects)
               </span>
               <span className="text-2xl font-bold text-brand-600 dark:text-brand-400">
-                {grandTotalHours.toLocaleString()}
+                {decimalToHM(grandTotalHours)}
               </span>
             </div>
           </div>
@@ -835,8 +837,8 @@ export default function MonthlyProjectTimesheets() {
                                     return sum;
                                   },
                                   0
-                                )
-                              );
+                                ) * 100
+                              ) / 100;
 
                               return (
                                 <tr
@@ -889,13 +891,11 @@ export default function MonthlyProjectTimesheets() {
                                       (dh: any) => dh.day === day
                                     );
                                     const hoursValue = dailyHour
-                                      ? Math.round(
-                                          getHoursValue(
+                                      ? getHoursValue(
                                             projectId,
                                             employee.employeeId,
                                             dailyHour
                                           )
-                                        )
                                       : 0;
                                     const statusValue = dailyHour
                                       ? getStatusValue(
@@ -1050,21 +1050,15 @@ export default function MonthlyProjectTimesheets() {
 
                                           // Show normal hours input (or when editing 0 hours)
                                           return (
-                                            <input
-                                              type="number"
-                                              min="0"
-                                              max="24"
-                                              step="1"
+                                            <HoursInput
                                               value={hoursValue}
                                               autoFocus={isEditingHours}
-                                              onChange={(e) =>
+                                              onChange={(val) =>
                                                 handleHoursChange(
                                                   projectId,
                                                   employee.employeeId,
                                                   dailyHour.date,
-                                                  Math.round(
-                                                    Number(e.target.value)
-                                                  ),
+                                                  val,
                                                   statusValue
                                                 )
                                               }
@@ -1079,7 +1073,6 @@ export default function MonthlyProjectTimesheets() {
                                                      bg-white dark:bg-gray-700 font-medium
                                                      focus:ring-1 focus:ring-brand-500 focus:border-brand-500
                                                      disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed
-                                                     [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
                                                      ${colorClass}`}
                                             />
                                           );
@@ -1092,7 +1085,7 @@ export default function MonthlyProjectTimesheets() {
                                     className="px-2 py-2 text-center text-sm font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900/50"
                                     style={{ minWidth: "70px", width: "70px" }}
                                   >
-                                    {employeeTotal}
+                                    {decimalToHM(employeeTotal)}
                                   </td>
                                 </tr>
                               );
@@ -1134,8 +1127,8 @@ export default function MonthlyProjectTimesheets() {
                                       return sum;
                                     },
                                     0
-                                  )
-                                );
+                                  ) * 100
+                                ) / 100;
 
                                 return (
                                   <td
@@ -1143,7 +1136,7 @@ export default function MonthlyProjectTimesheets() {
                                     className="px-0.5 py-3 text-center text-xs font-bold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
                                     style={{ minWidth: "45px", width: "45px" }}
                                   >
-                                    {dayTotal > 0 ? dayTotal : "-"}
+                                    {dayTotal > 0 ? decimalToHM(dayTotal) : "-"}
                                   </td>
                                 );
                               })}
@@ -1151,7 +1144,7 @@ export default function MonthlyProjectTimesheets() {
                                 className="px-2 py-3 text-center text-sm font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-800"
                                 style={{ minWidth: "70px", width: "70px" }}
                               >
-                                {Math.round(
+                                {decimalToHM(Math.round(
                                   employeesToShow.reduce(
                                     (grandTotal: number, employee: any) => {
                                       return (
@@ -1179,8 +1172,8 @@ export default function MonthlyProjectTimesheets() {
                                       );
                                     },
                                     0
-                                  )
-                                )}
+                                  ) * 100
+                                ) / 100)}
                               </td>
                             </tr>
                           </tbody>

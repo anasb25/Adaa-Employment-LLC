@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Settlement } from "../../types/settlement";
+import { decimalToHM } from "../../utils/timeUtils";
 import Button from "../ui/button/Button";
 import { settlementsApi } from "../../services/api/settlementsApi";
 import { toast } from "sonner";
@@ -413,7 +414,7 @@ export default function SettlementView({
                 } else if (isCurrentMonthSalary) {
                   const fromDateStr = formatDate(item.fromDate);
                   const toDateStr = formatDate(item.toDate);
-                  particularText = `FOR ${item.forDays || 0} Hours From ${fromDateStr} TO ${toDateStr}`;
+                  particularText = `FOR ${decimalToHM(item.forDays || 0)} Hours From ${fromDateStr} TO ${toDateStr}`;
                 }
                 
                 return (

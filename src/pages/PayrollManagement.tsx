@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { payrollApi } from "../services/api/payrollApi";
+import { decimalToHM } from "../utils/timeUtils";
 import { QUERY_KEYS } from "../lib/constants";
 import { Payroll } from "../types/payroll";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
@@ -254,6 +255,10 @@ export default function PayrollManagement() {
     return Number(value).toFixed(2);
   };
 
+  const formatHours = (value: number): string => {
+    return decimalToHM(Number(value) || 0);
+  };
+
   const formatJsonDisplay = (data: Record<string, any> | null): string => {
     if (!data) return "N/A";
     const entries = Object.entries(data);
@@ -288,10 +293,10 @@ export default function PayrollManagement() {
       "Employee Name": payroll.employee?.name || "N/A",
       "Employee Code": payroll.employee?.adaa_emp_code || "N/A",
       Month: payroll.month,
-      "Regular Hours": Number(payroll.totalHours || 0).toFixed(2),
-      "OT Hours": Number(payroll.totalOtHours || 0).toFixed(2),
-      "Off-Days Hours": Number(payroll.totalOffdaysWorkedHours || 0).toFixed(2),
-      "Idle Hours": Number(payroll.totalIdleDayHours || 0).toFixed(2),
+      "Regular Hours": formatHours(payroll.totalHours || 0),
+      "OT Hours": formatHours(payroll.totalOtHours || 0),
+      "Off-Days Hours": formatHours(payroll.totalOffdaysWorkedHours || 0),
+      "Idle Hours": formatHours(payroll.totalIdleDayHours || 0),
       "Additional Allowances": sumJsonValues(payroll.allowances).toFixed(2),
       "Allowances Detail": formatJsonDisplay(payroll.allowances),
       "Absent Days Deduction": Number(
@@ -542,19 +547,19 @@ export default function PayrollManagement() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Total Hours</div>
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(totals.totalHours)}</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatHours(totals.totalHours)}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">OT Hours</div>
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(totals.totalOtHours)}</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatHours(totals.totalOtHours)}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Off-Day Hours</div>
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(totals.totalOffdaysWorkedHours)}</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatHours(totals.totalOffdaysWorkedHours)}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Idle Hours</div>
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(totals.totalIdleDayHours)}</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatHours(totals.totalIdleDayHours)}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Gross Salary</div>
@@ -658,24 +663,24 @@ export default function PayrollManagement() {
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
                                 <div className="text-sm text-gray-900 dark:text-white">
-                                  {formatNumber(payroll.totalHours)}
+                                  {formatHours(payroll.totalHours)}
                                 </div>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
                                 <div className="text-sm text-gray-900 dark:text-white">
-                                  {formatNumber(payroll.totalOtHours)}
+                                  {formatHours(payroll.totalOtHours)}
                                 </div>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
                                 <div className="text-sm text-gray-900 dark:text-white">
-                                  {formatNumber(
+                                  {formatHours(
                                     payroll.totalOffdaysWorkedHours
                                   )}
                                 </div>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
                                 <div className="text-sm text-gray-900 dark:text-white">
-                                  {formatNumber(payroll.totalIdleDayHours)}
+                                  {formatHours(payroll.totalIdleDayHours)}
                                 </div>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
@@ -809,16 +814,16 @@ export default function PayrollManagement() {
                             </td>
                             <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
-                              {formatNumber(totals.totalHours)}
+                              {formatHours(totals.totalHours)}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
-                              {formatNumber(totals.totalOtHours)}
+                              {formatHours(totals.totalOtHours)}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
-                              {formatNumber(totals.totalOffdaysWorkedHours)}
+                              {formatHours(totals.totalOffdaysWorkedHours)}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
-                              {formatNumber(totals.totalIdleDayHours)}
+                              {formatHours(totals.totalIdleDayHours)}
                             </td>
                             <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-blue-600 dark:text-blue-400">
@@ -924,7 +929,7 @@ export default function PayrollManagement() {
                                             )}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                            {formatNumber(item.hours)}
+                                            {formatHours(item.hours)}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                             AED {formatNumber(item.hourlyRate)}
@@ -978,7 +983,7 @@ export default function PayrollManagement() {
                                             )}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                            {formatNumber(item.hours)}
+                                            {formatHours(item.hours)}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                             AED {formatNumber(item.hourlyRate)}
@@ -1034,7 +1039,7 @@ export default function PayrollManagement() {
                                             )}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                            {formatNumber(item.hours)}
+                                            {formatHours(item.hours)}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                             AED {formatNumber(item.hourlyRate)}
@@ -1090,7 +1095,7 @@ export default function PayrollManagement() {
                                             )}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                            {formatNumber(item.hours)}
+                                            {formatHours(item.hours)}
                                           </td>
                                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                             AED {formatNumber(item.hourlyRate)}
@@ -1118,7 +1123,7 @@ export default function PayrollManagement() {
                                 Regular Hours:
                               </span>
                               <span className="font-medium text-gray-900 dark:text-white">
-                                {formatNumber(payroll.totalHours)}
+                                {formatHours(payroll.totalHours)}
                               </span>
                             </div>
                             <div className="flex justify-between text-sm">
@@ -1126,7 +1131,7 @@ export default function PayrollManagement() {
                                 OT Hours:
                               </span>
                               <span className="font-medium text-gray-900 dark:text-white">
-                                {formatNumber(payroll.totalOtHours)}
+                                {formatHours(payroll.totalOtHours)}
                               </span>
                             </div>
                             <div className="flex justify-between text-sm">
@@ -1134,7 +1139,7 @@ export default function PayrollManagement() {
                                 Off-days Hours:
                               </span>
                               <span className="font-medium text-gray-900 dark:text-white">
-                                {formatNumber(payroll.totalOffdaysWorkedHours)}
+                                {formatHours(payroll.totalOffdaysWorkedHours)}
                               </span>
                             </div>
                             <div className="flex justify-between text-sm">
@@ -1142,7 +1147,7 @@ export default function PayrollManagement() {
                                 Idle Hours:
                               </span>
                               <span className="font-medium text-gray-900 dark:text-white">
-                                {formatNumber(payroll.totalIdleDayHours)}
+                                {formatHours(payroll.totalIdleDayHours)}
                               </span>
                             </div>
                           </div>
@@ -1291,7 +1296,7 @@ export default function PayrollManagement() {
                           >
                             <div className="text-right">
                               <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                Total Hours: {formatNumber(payroll.totalHours)}
+                                Total Hours: {formatHours(payroll.totalHours)}
                               </div>
                             </div>
                           </div>
@@ -1366,7 +1371,7 @@ export default function PayrollManagement() {
                                                   )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                                  {formatNumber(item.hours)}
+                                                  {formatHours(item.hours)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                                   AED{" "}
@@ -1425,7 +1430,7 @@ export default function PayrollManagement() {
                                                   )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                                  {formatNumber(item.hours)}
+                                                  {formatHours(item.hours)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                                   AED{" "}
@@ -1485,7 +1490,7 @@ export default function PayrollManagement() {
                                                   )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                                  {formatNumber(item.hours)}
+                                                  {formatHours(item.hours)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                                   AED{" "}
@@ -1545,7 +1550,7 @@ export default function PayrollManagement() {
                                                   )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                                  {formatNumber(item.hours)}
+                                                  {formatHours(item.hours)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                                   AED{" "}
@@ -1577,7 +1582,7 @@ export default function PayrollManagement() {
                                       Regular Hours:
                                     </span>
                                     <span className="font-medium text-gray-900 dark:text-white">
-                                      {formatNumber(payroll.totalHours)}
+                                      {formatHours(payroll.totalHours)}
                                     </span>
                                   </div>
                                   <div className="flex justify-between text-sm">
@@ -1585,7 +1590,7 @@ export default function PayrollManagement() {
                                       OT Hours:
                                     </span>
                                     <span className="font-medium text-gray-900 dark:text-white">
-                                      {formatNumber(payroll.totalOtHours)}
+                                      {formatHours(payroll.totalOtHours)}
                                     </span>
                                   </div>
                                   <div className="flex justify-between text-sm">
@@ -1603,7 +1608,7 @@ export default function PayrollManagement() {
                                       Idle Hours:
                                     </span>
                                     <span className="font-medium text-gray-900 dark:text-white">
-                                      {formatNumber(payroll.totalIdleDayHours)}
+                                      {formatHours(payroll.totalIdleDayHours)}
                                     </span>
                                   </div>
                                 </div>

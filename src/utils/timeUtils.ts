@@ -1,4 +1,40 @@
 /**
+ * Convert a decimal hours value (e.g. 10.5) to "H:MM" display string (e.g. "10:30").
+ * Whole hours omit the minutes part (e.g. 10 → "10").
+ */
+export function decimalToHM(decimal: number): string {
+  if (decimal == null || isNaN(decimal)) return "0";
+  const totalMinutes = Math.round(decimal * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (m === 0) return h.toString();
+  return `${h}:${m.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Parse a user-entered time string into decimal hours.
+ * Accepts: "10" → 10, "10:30" → 10.5, "10:05" → 10.0833, "0:45" → 0.75
+ * Also accepts plain decimals like "10.5" as a fallback.
+ * Returns null if the input is invalid.
+ */
+export function parseTimeInput(input: string): number | null {
+  const trimmed = input.trim();
+  if (trimmed === "") return null;
+
+  if (trimmed.includes(":")) {
+    const [hPart, mPart] = trimmed.split(":");
+    const h = parseInt(hPart || "0", 10);
+    const m = parseInt(mPart || "0", 10);
+    if (isNaN(h) || isNaN(m) || h < 0 || m < 0 || m > 59) return null;
+    return Math.round((h + m / 60) * 100) / 100;
+  }
+
+  const num = parseFloat(trimmed);
+  if (isNaN(num) || num < 0) return null;
+  return Math.round(num * 100) / 100;
+}
+
+/**
  * Formats a date string to show relative time (e.g., "5 mins ago", "2 hours ago")
  * @param dateString - The date string to format
  * @param options - Formatting options
