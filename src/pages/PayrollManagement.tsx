@@ -31,16 +31,18 @@ export default function PayrollManagement() {
   // Get current month as default
   const currentDate = new Date();
   const currentMonth = `${currentDate.getFullYear()}-${String(
-    currentDate.getMonth() + 1
+    currentDate.getMonth() + 1,
   ).padStart(2, "0")}`;
 
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
   const [expandedEmployees, setExpandedEmployees] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [viewMode, setViewMode] = useState<"card" | "table">("card");
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   // Fetch payroll data for selected month
   const { data: payrollData, isLoading } = useQuery({
@@ -58,7 +60,7 @@ export default function PayrollManagement() {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.message || "Failed to delete payroll entry"
+        error.response?.data?.message || "Failed to delete payroll entry",
       );
     },
   });
@@ -72,7 +74,7 @@ export default function PayrollManagement() {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.message || "Failed to calculate payroll"
+        error.response?.data?.message || "Failed to calculate payroll",
       );
     },
   });
@@ -90,17 +92,50 @@ export default function PayrollManagement() {
   const handleDelete = async (payrollId: number) => {
     if (
       window.confirm(
-        "Are you sure you want to delete this payroll entry? This action cannot be undone."
+        "Are you sure you want to delete this payroll entry? This action cannot be undone.",
       )
     ) {
       await deletePayrollMutation.mutateAsync(payrollId);
     }
   };
 
+  const deleteManyMutation = useMutation({
+    mutationFn: (ids: number[]) => payrollApi.deleteMany(ids),
+    onSuccess: (data) => {
+      toast.success(`${data.deleted} payroll(s) deleted successfully!`);
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.payroll.all });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete payrolls");
+    },
+  });
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.size === 0) return;
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${selectedIds.size} payroll(s)?`,
+      )
+    ) {
+      deleteManyMutation.mutate(Array.from(selectedIds));
+    }
+  };
+
   const handleCalculatePayroll = async () => {
     if (
       window.confirm(
-        `Calculate payroll for ${selectedMonth}? This will process all approved timesheets and create/update payroll entries.`
+        `Calculate payroll for ${selectedMonth}? This will process all approved timesheets and create/update payroll entries.`,
       )
     ) {
       await calculatePayrollMutation.mutateAsync(selectedMonth);
@@ -169,16 +204,16 @@ export default function PayrollManagement() {
           <table>
             <tr><th>Type</th><th>Hours</th></tr>
             <tr><td>Regular Hours</td><td>${formatNumber(
-              payroll.totalHours
+              payroll.totalHours,
             )}</td></tr>
             <tr><td>Overtime Hours</td><td>${formatNumber(
-              payroll.totalOtHours
+              payroll.totalOtHours,
             )}</td></tr>
             <tr><td>Off Days Worked Hours</td><td>${formatNumber(
-              payroll.totalOffdaysWorkedHours
+              payroll.totalOffdaysWorkedHours,
             )}</td></tr>
             <tr><td>Idle Hours</td><td>${formatNumber(
-              payroll.totalIdleDayHours
+              payroll.totalIdleDayHours,
             )}</td></tr>
           </table>
         </div>
@@ -193,8 +228,8 @@ export default function PayrollManagement() {
                     .map(
                       ([key, value]) =>
                         `<tr><td>${key}</td><td>${formatNumber(
-                          Number(value)
-                        )}</td></tr>`
+                          Number(value),
+                        )}</td></tr>`,
                     )
                     .join("")}
                 </table>`
@@ -207,7 +242,7 @@ export default function PayrollManagement() {
           <table>
             <tr><th>Description</th><th>Amount (AED)</th></tr>
             <tr><td>Absent Days Deductible</td><td>${formatNumber(
-              payroll.absentDaysDeductible
+              payroll.absentDaysDeductible,
             )}</td></tr>
             ${
               payroll.otherDeductions &&
@@ -216,8 +251,8 @@ export default function PayrollManagement() {
                     .map(
                       ([key, value]) =>
                         `<tr><td>${key}</td><td>${formatNumber(
-                          Number(value)
-                        )}</td></tr>`
+                          Number(value),
+                        )}</td></tr>`,
                     )
                     .join("")
                 : ""
@@ -227,10 +262,10 @@ export default function PayrollManagement() {
 
         <div class="gross-box">
           <strong>TOTAL GROSS SALARY:</strong> AED ${formatNumber(
-            payroll.totalGrossSalary || 0
+            payroll.totalGrossSalary || 0,
           )}
           <div style="font-size: 12px; margin-top: 5px;">Base Rate: AED ${formatNumber(
-            payroll.baseHourlyRate || 0
+            payroll.baseHourlyRate || 0,
           )}/hr</div>
         </div>
 
@@ -270,7 +305,7 @@ export default function PayrollManagement() {
     if (!data) return 0;
     return Object.values(data).reduce(
       (sum, val) => sum + (Number(val) || 0),
-      0
+      0,
     );
   };
 
@@ -300,7 +335,7 @@ export default function PayrollManagement() {
       "Additional Allowances": sumJsonValues(payroll.allowances).toFixed(2),
       "Allowances Detail": formatJsonDisplay(payroll.allowances),
       "Absent Days Deduction": Number(
-        payroll.absentDaysDeductible || 0
+        payroll.absentDaysDeductible || 0,
       ).toFixed(2),
       "Other Deductions": sumJsonValues(payroll.otherDeductions).toFixed(2),
       "Deductions Detail": formatJsonDisplay(payroll.otherDeductions),
@@ -371,16 +406,7 @@ export default function PayrollManagement() {
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Payroll Management
-                </h1>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  View and manage employee payroll for the selected month
-                </p>
-              </div>
-            </div>
+            <div className="flex items-center justify-between"></div>
 
             <div className="flex items-end gap-4">
               <div className="w-64">
@@ -430,6 +456,45 @@ export default function PayrollManagement() {
               >
                 Export to Excel
               </Button>
+
+              <PermissionGuard permissions={["payroll:delete"]}>
+                {!isSelectMode ? (
+                  <Button
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                    onClick={() => setIsSelectMode(true)}
+                  >
+                    Delete Multiple
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {selectedIds.size} selected
+                    </span>
+                    <Button
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                      onClick={handleDeleteSelected}
+                      disabled={
+                        selectedIds.size === 0 || deleteManyMutation.isPending
+                      }
+                    >
+                      {deleteManyMutation.isPending
+                        ? "Deleting..."
+                        : "Confirm Delete"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsSelectMode(false);
+                        setSelectedIds(new Set());
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </PermissionGuard>
             </div>
           </div>
 
@@ -519,60 +584,95 @@ export default function PayrollManagement() {
         )}
 
         {/* Grand Total Summary */}
-        {!isLoading && payrollData && payrollData.length > 0 && (() => {
-          const filtered = payrollData.filter((p: Payroll) => {
-            if (!searchQuery.trim()) return true;
-            const query = searchQuery.toLowerCase();
-            const name = p.employee?.name?.toLowerCase() || "";
-            const code = p.employee?.adaa_emp_code?.toLowerCase() || "";
-            return name.includes(query) || code.includes(query);
-          });
-          const totals = filtered.reduce(
-            (acc: any, p: Payroll) => {
-              acc.totalHours += Number(p.totalHours) || 0;
-              acc.totalOtHours += Number(p.totalOtHours) || 0;
-              acc.totalOffdaysWorkedHours += Number(p.totalOffdaysWorkedHours) || 0;
-              acc.totalIdleDayHours += Number(p.totalIdleDayHours) || 0;
-              acc.grossSalary += Number(p.totalGrossSalary) || 0;
-              acc.netSalary += Number(p.netSalary) || 0;
-              return acc;
-            },
-            { totalHours: 0, totalOtHours: 0, totalOffdaysWorkedHours: 0, totalIdleDayHours: 0, grossSalary: 0, netSalary: 0 }
-          );
-          return (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 border-brand-500 dark:border-brand-400 p-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                Grand Total ({filtered.length} employees)
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Total Hours</div>
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatHours(totals.totalHours)}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">OT Hours</div>
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatHours(totals.totalOtHours)}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Off-Day Hours</div>
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatHours(totals.totalOffdaysWorkedHours)}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Idle Hours</div>
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatHours(totals.totalIdleDayHours)}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Gross Salary</div>
-                  <div className="text-lg font-bold text-blue-600 dark:text-blue-400">AED {formatNumber(totals.grossSalary)}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">Net Salary</div>
-                  <div className="text-lg font-bold text-green-600 dark:text-green-400">AED {formatNumber(totals.netSalary)}</div>
+        {!isLoading &&
+          payrollData &&
+          payrollData.length > 0 &&
+          (() => {
+            const filtered = payrollData.filter((p: Payroll) => {
+              if (!searchQuery.trim()) return true;
+              const query = searchQuery.toLowerCase();
+              const name = p.employee?.name?.toLowerCase() || "";
+              const code = p.employee?.adaa_emp_code?.toLowerCase() || "";
+              return name.includes(query) || code.includes(query);
+            });
+            const totals = filtered.reduce(
+              (acc: any, p: Payroll) => {
+                acc.totalHours += Number(p.totalHours) || 0;
+                acc.totalOtHours += Number(p.totalOtHours) || 0;
+                acc.totalOffdaysWorkedHours +=
+                  Number(p.totalOffdaysWorkedHours) || 0;
+                acc.totalIdleDayHours += Number(p.totalIdleDayHours) || 0;
+                acc.grossSalary += Number(p.totalGrossSalary) || 0;
+                acc.netSalary += Number(p.netSalary) || 0;
+                return acc;
+              },
+              {
+                totalHours: 0,
+                totalOtHours: 0,
+                totalOffdaysWorkedHours: 0,
+                totalIdleDayHours: 0,
+                grossSalary: 0,
+                netSalary: 0,
+              },
+            );
+            return (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 border-brand-500 dark:border-brand-400 p-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                  Grand Total ({filtered.length} employees)
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  <div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                      Total Hours
+                    </div>
+                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                      {formatHours(totals.totalHours)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                      OT Hours
+                    </div>
+                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                      {formatHours(totals.totalOtHours)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                      Off-Day Hours
+                    </div>
+                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                      {formatHours(totals.totalOffdaysWorkedHours)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                      Idle Hours
+                    </div>
+                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                      {formatHours(totals.totalIdleDayHours)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                      Gross Salary
+                    </div>
+                    <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      AED {formatNumber(totals.grossSalary)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                      Net Salary
+                    </div>
+                    <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                      AED {formatNumber(totals.netSalary)}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
 
         {/* Payroll List */}
         {!isLoading && payrollData && payrollData.length > 0 && (
@@ -584,6 +684,34 @@ export default function PayrollManagement() {
                   <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-900">
                       <tr>
+                        {isSelectMode && (
+                          <th className="px-4 py-3 w-10 bg-gray-50 dark:bg-gray-900">
+                            <input
+                              type="checkbox"
+                              checked={
+                                (payrollData || []).length > 0 &&
+                                (payrollData || []).every((p: Payroll) =>
+                                  selectedIds.has(p.id),
+                                )
+                              }
+                              onChange={() => {
+                                const allIds = (payrollData || []).map(
+                                  (p: Payroll) => p.id,
+                                );
+                                if (
+                                  allIds.every((id: number) =>
+                                    selectedIds.has(id),
+                                  )
+                                ) {
+                                  setSelectedIds(new Set());
+                                } else {
+                                  setSelectedIds(new Set(allIds));
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                            />
+                          </th>
+                        )}
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-900 z-10">
                           Employee
                         </th>
@@ -649,8 +777,22 @@ export default function PayrollManagement() {
                           return (
                             <tr
                               key={payroll.id}
-                              className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                              className={`transition-colors ${
+                                isSelectMode && selectedIds.has(payroll.id)
+                                  ? "bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20"
+                                  : "hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                              }`}
                             >
+                              {isSelectMode && (
+                                <td className="px-4 py-3 w-10">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedIds.has(payroll.id)}
+                                    onChange={() => toggleSelect(payroll.id)}
+                                    className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                  />
+                                </td>
+                              )}
                               <td className="px-4 py-3 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10">
                                 <div className="text-sm font-medium text-gray-900 dark:text-white">
                                   {employee?.name || "Unknown"}
@@ -673,9 +815,7 @@ export default function PayrollManagement() {
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
                                 <div className="text-sm text-gray-900 dark:text-white">
-                                  {formatHours(
-                                    payroll.totalOffdaysWorkedHours
-                                  )}
+                                  {formatHours(payroll.totalOffdaysWorkedHours)}
                                 </div>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
@@ -710,7 +850,7 @@ export default function PayrollManagement() {
                                 <div
                                   className="text-sm text-gray-900 dark:text-white truncate"
                                   title={formatJsonDisplay(
-                                    payroll.otherDeductions
+                                    payroll.otherDeductions,
                                   )}
                                 >
                                   {formatJsonDisplay(payroll.otherDeductions)}
@@ -739,7 +879,7 @@ export default function PayrollManagement() {
                                     title="View Details"
                                   >
                                     {expandedEmployees.has(
-                                      payroll.employeeId
+                                      payroll.employeeId,
                                     ) ? (
                                       <ChevronUpIcon className="w-5 h-5" />
                                     ) : (
@@ -759,7 +899,7 @@ export default function PayrollManagement() {
                                     <button
                                       onClick={() => {
                                         toast.info(
-                                          "Edit functionality - calculations will be implemented as per your requirements"
+                                          "Edit functionality - calculations will be implemented as per your requirements",
                                         );
                                       }}
                                       className="text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
@@ -791,21 +931,33 @@ export default function PayrollManagement() {
                           if (!searchQuery.trim()) return true;
                           const query = searchQuery.toLowerCase();
                           const name = p.employee?.name?.toLowerCase() || "";
-                          const code = p.employee?.adaa_emp_code?.toLowerCase() || "";
+                          const code =
+                            p.employee?.adaa_emp_code?.toLowerCase() || "";
                           return name.includes(query) || code.includes(query);
                         });
                         const totals = filtered.reduce(
                           (acc: any, p: Payroll) => {
                             acc.totalHours += Number(p.totalHours) || 0;
                             acc.totalOtHours += Number(p.totalOtHours) || 0;
-                            acc.totalOffdaysWorkedHours += Number(p.totalOffdaysWorkedHours) || 0;
-                            acc.totalIdleDayHours += Number(p.totalIdleDayHours) || 0;
+                            acc.totalOffdaysWorkedHours +=
+                              Number(p.totalOffdaysWorkedHours) || 0;
+                            acc.totalIdleDayHours +=
+                              Number(p.totalIdleDayHours) || 0;
                             acc.grossSalary += Number(p.totalGrossSalary) || 0;
-                            acc.absentDeduct += Number(p.absentDaysDeductible) || 0;
+                            acc.absentDeduct +=
+                              Number(p.absentDaysDeductible) || 0;
                             acc.netSalary += Number(p.netSalary) || 0;
                             return acc;
                           },
-                          { totalHours: 0, totalOtHours: 0, totalOffdaysWorkedHours: 0, totalIdleDayHours: 0, grossSalary: 0, absentDeduct: 0, netSalary: 0 }
+                          {
+                            totalHours: 0,
+                            totalOtHours: 0,
+                            totalOffdaysWorkedHours: 0,
+                            totalIdleDayHours: 0,
+                            grossSalary: 0,
+                            absentDeduct: 0,
+                            netSalary: 0,
+                          },
                         );
                         return (
                           <tr className="bg-gray-100 dark:bg-gray-900 font-bold border-t-2 border-gray-300 dark:border-gray-600">
@@ -849,7 +1001,7 @@ export default function PayrollManagement() {
                 {/* Expanded Details in Table View */}
                 {payrollData
                   .filter((payroll: Payroll) =>
-                    expandedEmployees.has(payroll.employeeId)
+                    expandedEmployees.has(payroll.employeeId),
                   )
                   .map((payroll: Payroll) => (
                     <div
@@ -875,7 +1027,8 @@ export default function PayrollManagement() {
                                     Net Salary
                                   </h4>
                                   <p className="text-sm text-green-700 dark:text-green-300">
-                                    Hours-based gross + additional allowances − deductions
+                                    Hours-based gross + additional allowances −
+                                    deductions
                                   </p>
                                 </div>
                                 <div className="text-3xl font-bold text-green-700 dark:text-green-400">
@@ -924,7 +1077,8 @@ export default function PayrollManagement() {
                                             {item.rateVariantName}
                                             {item.additionalAmount !== 0 && (
                                               <span className="ml-2 text-xs text-gray-500">
-                                                (+{item.additionalAmount} AED/hr)
+                                                (+{item.additionalAmount}{" "}
+                                                AED/hr)
                                               </span>
                                             )}
                                           </td>
@@ -938,7 +1092,7 @@ export default function PayrollManagement() {
                                             AED {formatNumber(item.amount)}
                                           </td>
                                         </tr>
-                                      )
+                                      ),
                                     )}
                                   </tbody>
                                 </table>
@@ -978,7 +1132,8 @@ export default function PayrollManagement() {
                                             {item.specialDayName}
                                             {item.additionalAmount !== 0 && (
                                               <span className="ml-2 text-xs text-gray-500">
-                                                (+{item.additionalAmount} AED/hr)
+                                                (+{item.additionalAmount}{" "}
+                                                AED/hr)
                                               </span>
                                             )}
                                           </td>
@@ -992,7 +1147,7 @@ export default function PayrollManagement() {
                                             AED {formatNumber(item.amount)}
                                           </td>
                                         </tr>
-                                      )
+                                      ),
                                     )}
                                   </tbody>
                                 </table>
@@ -1030,11 +1185,15 @@ export default function PayrollManagement() {
                                         <tr key={idx}>
                                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                             {new Date(
-                                              item.date
+                                              item.date,
                                             ).toLocaleDateString()}
                                             {item.additionalAmount !== 0 && (
                                               <span className="ml-2 text-xs text-gray-500">
-                                                ({item.additionalAmount > 0 ? "+" : ""}{item.additionalAmount} AED/hr)
+                                                (
+                                                {item.additionalAmount > 0
+                                                  ? "+"
+                                                  : ""}
+                                                {item.additionalAmount} AED/hr)
                                               </span>
                                             )}
                                           </td>
@@ -1048,7 +1207,7 @@ export default function PayrollManagement() {
                                             AED {formatNumber(item.amount)}
                                           </td>
                                         </tr>
-                                      )
+                                      ),
                                     )}
                                   </tbody>
                                 </table>
@@ -1086,11 +1245,15 @@ export default function PayrollManagement() {
                                         <tr key={idx}>
                                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                             {new Date(
-                                              item.date
+                                              item.date,
                                             ).toLocaleDateString()}
                                             {item.additionalAmount !== 0 && (
                                               <span className="ml-2 text-xs text-gray-500">
-                                                ({item.additionalAmount > 0 ? "+" : ""}{item.additionalAmount} AED/hr)
+                                                (
+                                                {item.additionalAmount > 0
+                                                  ? "+"
+                                                  : ""}
+                                                {item.additionalAmount} AED/hr)
                                               </span>
                                             )}
                                           </td>
@@ -1104,7 +1267,7 @@ export default function PayrollManagement() {
                                             AED {formatNumber(item.amount)}
                                           </td>
                                         </tr>
-                                      )
+                                      ),
                                     )}
                                   </tbody>
                                 </table>
@@ -1259,48 +1422,64 @@ export default function PayrollManagement() {
                   })
                   .map((payroll: Payroll) => {
                     const isExpanded = expandedEmployees.has(
-                      payroll.employeeId
+                      payroll.employeeId,
                     );
 
                     return (
                       <div
                         key={payroll.id}
-                        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+                        className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border overflow-hidden ${
+                          isSelectMode && selectedIds.has(payroll.id)
+                            ? "border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/10"
+                            : "border-gray-200 dark:border-gray-700"
+                        }`}
                       >
                         {/* Employee Header */}
-                        <button
-                          onClick={() => toggleEmployee(payroll.employeeId)}
-                          className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="flex-shrink-0">
-                              {isExpanded ? (
-                                <ChevronUpIcon className="w-5 h-5 text-gray-400" />
-                              ) : (
-                                <ChevronDownIcon className="w-5 h-5 text-gray-400" />
-                              )}
+                        <div className="flex items-center">
+                          {isSelectMode && (
+                            <div className="pl-4 flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(payroll.id)}
+                                onChange={() => toggleSelect(payroll.id)}
+                                className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                              />
                             </div>
-                            <div className="text-left">
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                {payroll.employee?.name || "Unknown Employee"}
-                              </h3>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                ID: {payroll.employee?.adaa_emp_code || "N/A"}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div
-                            className="flex items-center gap-4"
-                            onClick={(e) => e.stopPropagation()}
+                          )}
+                          <button
+                            onClick={() => toggleEmployee(payroll.employeeId)}
+                            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                           >
-                            <div className="text-right">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                Total Hours: {formatHours(payroll.totalHours)}
+                            <div className="flex items-center gap-4">
+                              <div className="flex-shrink-0">
+                                {isExpanded ? (
+                                  <ChevronUpIcon className="w-5 h-5 text-gray-400" />
+                                ) : (
+                                  <ChevronDownIcon className="w-5 h-5 text-gray-400" />
+                                )}
+                              </div>
+                              <div className="text-left">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                  {payroll.employee?.name || "Unknown Employee"}
+                                </h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  ID: {payroll.employee?.adaa_emp_code || "N/A"}
+                                </p>
                               </div>
                             </div>
-                          </div>
-                        </button>
+
+                            <div
+                              className="flex items-center gap-4"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="text-right">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  Total Hours: {formatHours(payroll.totalHours)}
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        </div>
 
                         {/* Employee Details */}
                         {isExpanded && (
@@ -1316,7 +1495,8 @@ export default function PayrollManagement() {
                                           Net Salary
                                         </h4>
                                         <p className="text-sm text-green-700 dark:text-green-300">
-                                          Hours-based gross + additional allowances − deductions
+                                          Hours-based gross + additional
+                                          allowances − deductions
                                         </p>
                                       </div>
                                       <div className="text-3xl font-bold text-green-700 dark:text-green-400">
@@ -1366,7 +1546,8 @@ export default function PayrollManagement() {
                                                   {item.additionalAmount !==
                                                     0 && (
                                                     <span className="ml-2 text-xs text-gray-500">
-                                                      (+{item.additionalAmount} AED/hr)
+                                                      (+{item.additionalAmount}{" "}
+                                                      AED/hr)
                                                     </span>
                                                   )}
                                                 </td>
@@ -1376,7 +1557,7 @@ export default function PayrollManagement() {
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                                   AED{" "}
                                                   {formatNumber(
-                                                    item.hourlyRate
+                                                    item.hourlyRate,
                                                   )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
@@ -1384,7 +1565,7 @@ export default function PayrollManagement() {
                                                   {formatNumber(item.amount)}
                                                 </td>
                                               </tr>
-                                            )
+                                            ),
                                           )}
                                         </tbody>
                                       </table>
@@ -1423,9 +1604,11 @@ export default function PayrollManagement() {
                                               <tr key={idx}>
                                                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                                   {item.specialDayName}
-                                                  {item.additionalAmount !== 0 && (
+                                                  {item.additionalAmount !==
+                                                    0 && (
                                                     <span className="ml-2 text-xs text-gray-500">
-                                                      (+{item.additionalAmount} AED/hr)
+                                                      (+{item.additionalAmount}{" "}
+                                                      AED/hr)
                                                     </span>
                                                   )}
                                                 </td>
@@ -1435,7 +1618,7 @@ export default function PayrollManagement() {
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                                   AED{" "}
                                                   {formatNumber(
-                                                    item.hourlyRate
+                                                    item.hourlyRate,
                                                   )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
@@ -1443,7 +1626,7 @@ export default function PayrollManagement() {
                                                   {formatNumber(item.amount)}
                                                 </td>
                                               </tr>
-                                            )
+                                            ),
                                           )}
                                         </tbody>
                                       </table>
@@ -1481,11 +1664,17 @@ export default function PayrollManagement() {
                                               <tr key={idx}>
                                                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                                   {new Date(
-                                                    item.date
+                                                    item.date,
                                                   ).toLocaleDateString()}
-                                                  {item.additionalAmount !== 0 && (
+                                                  {item.additionalAmount !==
+                                                    0 && (
                                                     <span className="ml-2 text-xs text-gray-500">
-                                                      ({item.additionalAmount > 0 ? "+" : ""}{item.additionalAmount} AED/hr)
+                                                      (
+                                                      {item.additionalAmount > 0
+                                                        ? "+"
+                                                        : ""}
+                                                      {item.additionalAmount}{" "}
+                                                      AED/hr)
                                                     </span>
                                                   )}
                                                 </td>
@@ -1495,7 +1684,7 @@ export default function PayrollManagement() {
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                                   AED{" "}
                                                   {formatNumber(
-                                                    item.hourlyRate
+                                                    item.hourlyRate,
                                                   )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
@@ -1503,7 +1692,7 @@ export default function PayrollManagement() {
                                                   {formatNumber(item.amount)}
                                                 </td>
                                               </tr>
-                                            )
+                                            ),
                                           )}
                                         </tbody>
                                       </table>
@@ -1541,11 +1730,17 @@ export default function PayrollManagement() {
                                               <tr key={idx}>
                                                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                                   {new Date(
-                                                    item.date
+                                                    item.date,
                                                   ).toLocaleDateString()}
-                                                  {item.additionalAmount !== 0 && (
+                                                  {item.additionalAmount !==
+                                                    0 && (
                                                     <span className="ml-2 text-xs text-gray-500">
-                                                      ({item.additionalAmount > 0 ? "+" : ""}{item.additionalAmount} AED/hr)
+                                                      (
+                                                      {item.additionalAmount > 0
+                                                        ? "+"
+                                                        : ""}
+                                                      {item.additionalAmount}{" "}
+                                                      AED/hr)
                                                     </span>
                                                   )}
                                                 </td>
@@ -1555,7 +1750,7 @@ export default function PayrollManagement() {
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                                   AED{" "}
                                                   {formatNumber(
-                                                    item.hourlyRate
+                                                    item.hourlyRate,
                                                   )}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
@@ -1563,7 +1758,7 @@ export default function PayrollManagement() {
                                                   {formatNumber(item.amount)}
                                                 </td>
                                               </tr>
-                                            )
+                                            ),
                                           )}
                                         </tbody>
                                       </table>
@@ -1599,7 +1794,7 @@ export default function PayrollManagement() {
                                     </span>
                                     <span className="font-medium text-gray-900 dark:text-white">
                                       {formatNumber(
-                                        payroll.totalOffdaysWorkedHours
+                                        payroll.totalOffdaysWorkedHours,
                                       )}
                                     </span>
                                   </div>
@@ -1650,7 +1845,7 @@ export default function PayrollManagement() {
                                       </span>
                                       <span className="font-medium text-gray-900 dark:text-white">
                                         {formatNumber(
-                                          payroll.absentDaysDeductible
+                                          payroll.absentDaysDeductible,
                                         )}
                                       </span>
                                     </div>
@@ -1660,7 +1855,7 @@ export default function PayrollManagement() {
                                       </span>
                                       <p className="text-sm text-gray-900 dark:text-white mt-1">
                                         {formatJsonDisplay(
-                                          payroll.otherDeductions
+                                          payroll.otherDeductions,
                                         )}
                                       </p>
                                     </div>
@@ -1680,7 +1875,7 @@ export default function PayrollManagement() {
                                     <p className="text-sm text-blue-700 dark:text-blue-300">
                                       Base Rate: AED{" "}
                                       {formatNumber(
-                                        payroll.baseHourlyRate || 0
+                                        payroll.baseHourlyRate || 0,
                                       )}
                                       /hr
                                     </p>
@@ -1688,7 +1883,7 @@ export default function PayrollManagement() {
                                   <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
                                     AED{" "}
                                     {formatNumber(
-                                      payroll.totalGrossSalary || 0
+                                      payroll.totalGrossSalary || 0,
                                     )}
                                   </div>
                                 </div>
@@ -1724,7 +1919,7 @@ export default function PayrollManagement() {
                                   startIcon={<PencilIcon />}
                                   onClick={() => {
                                     toast.info(
-                                      "Edit functionality - calculations will be implemented as per your requirements"
+                                      "Edit functionality - calculations will be implemented as per your requirements",
                                     );
                                   }}
                                 >
@@ -1748,7 +1943,6 @@ export default function PayrollManagement() {
                       </div>
                     );
                   })}
-
               </div>
             )}
           </>

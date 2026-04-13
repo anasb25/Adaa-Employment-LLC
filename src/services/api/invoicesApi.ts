@@ -69,6 +69,14 @@ export const invoicesApi = {
     await axiosInstance.delete(`${API_BASE_URL}/invoices/${id}`);
   },
 
+  deleteMany: async (ids: number[]): Promise<{ deleted: number; skipped: number }> => {
+    const response = await axiosInstance.post<{ deleted: number; skipped: number }>(
+      `${API_BASE_URL}/invoices/actions/delete-many`,
+      { ids }
+    );
+    return response.data;
+  },
+
   downloadPdf: async (id: number) => {
     const response = await axiosInstance.get(
       `${API_BASE_URL}/invoices/${id}/pdf`,

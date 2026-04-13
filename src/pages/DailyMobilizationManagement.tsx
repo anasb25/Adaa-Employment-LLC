@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -36,6 +36,137 @@ interface ProjectGroup {
   mobilizations: Mobilization[];
 }
 
+const getMobStatusBadge = (status: string) => {
+  const colorClass =
+    MOB_STATUS_COLORS[status as keyof typeof MOB_STATUS_COLORS] ||
+    "bg-gray-100 text-gray-800";
+  return (
+    <span
+      className={`px-2 py-1 text-xs font-medium rounded-full ${colorClass}`}
+    >
+      {status.replace("_", " ").toUpperCase()}
+    </span>
+  );
+};
+
+const getJobStatusBadge = (status: string) => {
+  const colorClass =
+    JOB_STATUS_COLORS[status as keyof typeof JOB_STATUS_COLORS] ||
+    "bg-gray-100 text-gray-800";
+  return (
+    <span
+      className={`px-2 py-1 text-xs font-medium rounded-full ${colorClass}`}
+    >
+      {status.replace("_", " ").toUpperCase()}
+    </span>
+  );
+};
+
+interface MobRowProps {
+  mobilization: Mobilization;
+  isSelectMode: boolean;
+  isSelected: boolean;
+  isOffDay: boolean;
+  showCarryForward: boolean;
+  onToggleSelect: (id: number) => void;
+  onShowHistory: (employeeId: number, employeeName: string) => void;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
+}
+
+const MobilizationRow = memo(function MobilizationRow({
+  mobilization,
+  isSelectMode,
+  isSelected,
+  isOffDay,
+  showCarryForward,
+  onToggleSelect,
+  onShowHistory,
+  onEdit,
+  onDelete,
+}: MobRowProps) {
+  return (
+    <tr
+      className={
+        isOffDay
+          ? "bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30"
+          : isSelected
+          ? "bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20"
+          : "hover:bg-gray-50 dark:hover:bg-gray-900/30"
+      }
+    >
+      {isSelectMode && (
+        <td className="px-4 py-3 w-10">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelect(mobilization.id)}
+            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+          />
+        </td>
+      )}
+      <td className="px-4 py-3 whitespace-nowrap">
+        <div>
+          <div className="text-sm font-medium text-gray-900 dark:text-white">
+            {mobilization.employee?.name}
+          </div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {mobilization.employee?.adaa_emp_code}
+          </div>
+        </div>
+      </td>
+      {showCarryForward && (
+        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+          {new Date(mobilization.actionDate).toLocaleDateString()}
+        </td>
+      )}
+      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+        {mobilization.mobilizedTrade?.skill || "-"}
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap">
+        {getMobStatusBadge(mobilization.mobStatus)}
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap">
+        {getJobStatusBadge(mobilization.jobStatus)}
+      </td>
+      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
+        {mobilization.notes || "-"}
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap text-center">
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() =>
+              onShowHistory(
+                mobilization.employeeId,
+                mobilization.employee?.name || "Unknown"
+              )
+            }
+            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
+            title="View History"
+          >
+            <TimeIcon className="h-4 w-4 inline mr-1" />
+            History
+          </button>
+          <span className="text-gray-300 dark:text-gray-700">|</span>
+          <button
+            onClick={() => onEdit(mobilization.id)}
+            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium"
+          >
+            Edit
+          </button>
+          <span className="text-gray-300 dark:text-gray-700">|</span>
+          <button
+            onClick={() => onDelete(mobilization.id)}
+            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
+          >
+            Delete
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+});
+
 export default function DailyMobilizationManagement() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -43,9 +174,11 @@ export default function DailyMobilizationManagement() {
     getTodayDateString()
   );
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [showCarryForward, setShowCarryForward] = useState(false); // Default to false (real records only)
+  const [showCarryForward, setShowCarryForward] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterMobStatus, setFilterMobStatus] = useState<string | null>(null); // null = all, 'mobilized', 'demobilized'
+  const [filterMobStatus, setFilterMobStatus] = useState<string | null>(null);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [historyModal, setHistoryModal] = useState<{
     isOpen: boolean;
     employeeId: number;
@@ -114,20 +247,60 @@ export default function DailyMobilizationManagement() {
     },
   });
 
-  const handleDelete = (id: number) => {
+  const deleteManyMutation = useMutation({
+    mutationFn: (ids: number[]) => mobilizationsApi.deleteMany(ids),
+    onSuccess: (data) => {
+      toast.success(`${data.deleted} mobilization(s) deleted successfully!`);
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      queryClient.invalidateQueries({
+        queryKey: ["daily-mobilizations", selectedDate],
+      });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error.response?.data?.message || "Failed to delete mobilizations"
+      );
+    },
+  });
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.size === 0) return;
     if (
       window.confirm(
-        "Are you sure you want to delete this mobilization record?"
+        `Are you sure you want to delete ${selectedIds.size} mobilization(s)?`
       )
     ) {
-      deleteMutation.mutate(id);
+      deleteManyMutation.mutate(Array.from(selectedIds));
     }
   };
 
   const handleCreateManual = () => {
-    // Navigate to create page with the selected date pre-filled
     navigate(`/mobilizations/create?date=${selectedDate}`);
   };
+
+  const handleShowHistory = useCallback(
+    (employeeId: number, employeeName: string) => {
+      setHistoryModal({ isOpen: true, employeeId, employeeName });
+    },
+    []
+  );
+
+  const handleEditRow = useCallback(
+    (id: number) => {
+      navigate(`/mobilizations/${id}/edit`);
+    },
+    [navigate]
+  );
 
   // Filter and group mobilizations by project
   const groupedMobilizations: ProjectGroup[] = (() => {
@@ -176,31 +349,30 @@ export default function DailyMobilizationManagement() {
     });
   })();
 
-  const getMobStatusBadge = (status: string) => {
-    const colorClass =
-      MOB_STATUS_COLORS[status as keyof typeof MOB_STATUS_COLORS] ||
-      "bg-gray-100 text-gray-800";
-    return (
-      <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${colorClass}`}
-      >
-        {status.replace("_", " ").toUpperCase()}
-      </span>
-    );
+  const allMobilizationIds = groupedMobilizations.flatMap((g) =>
+    g.mobilizations.map((m) => m.id)
+  );
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === allMobilizationIds.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allMobilizationIds));
+    }
   };
 
-  const getJobStatusBadge = (status: string) => {
-    const colorClass =
-      JOB_STATUS_COLORS[status as keyof typeof JOB_STATUS_COLORS] ||
-      "bg-gray-100 text-gray-800";
-    return (
-      <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${colorClass}`}
-      >
-        {status.replace("_", " ").toUpperCase()}
-      </span>
-    );
-  };
+  const handleDelete = useCallback(
+    (id: number) => {
+      if (
+        window.confirm(
+          "Are you sure you want to delete this mobilization record?"
+        )
+      ) {
+        deleteMutation.mutate(id);
+      }
+    },
+    [deleteMutation]
+  );
 
   const formattedDate = formatDateLong(selectedDate);
 
@@ -318,7 +490,36 @@ export default function DailyMobilizationManagement() {
                 </p>
               </div>
 
-              <div className="flex items-end gap-2">
+              <div className="flex items-end gap-2 flex-wrap">
+                {!isSelectMode ? (
+                  <Button
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                    onClick={() => setIsSelectMode(true)}
+                  >
+                    Delete Multiple
+                  </Button>
+                ) : (
+                  <>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 self-center">
+                      {selectedIds.size} selected
+                    </span>
+                    <Button
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                      onClick={handleDeleteSelected}
+                      disabled={selectedIds.size === 0 || deleteManyMutation.isPending}
+                    >
+                      {deleteManyMutation.isPending ? "Deleting..." : "Confirm Delete"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => { setIsSelectMode(false); setSelectedIds(new Set()); }}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                )}
                 <Button
                   onClick={() => exportMutation.mutate()}
                   variant="outline"
@@ -326,7 +527,6 @@ export default function DailyMobilizationManagement() {
                   disabled={
                     exportMutation.isPending || totalMobilizations === 0
                   }
-                  className="flex-1"
                 >
                   Export
                 </Button>
@@ -334,14 +534,12 @@ export default function DailyMobilizationManagement() {
                   onClick={() => setIsImportModalOpen(true)}
                   variant="outline"
                   startIcon={<FileIcon className="h-5 w-5" />}
-                  className="flex-1"
                 >
                   Import
                 </Button>
                 <Button
                   onClick={handleCreateManual}
                   startIcon={<PlusIcon />}
-                  className="flex-1"
                 >
                   Create
                 </Button>
@@ -584,6 +782,30 @@ export default function DailyMobilizationManagement() {
                       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                         <thead className="bg-gray-50 dark:bg-gray-900/50">
                           <tr>
+                            {isSelectMode && (
+                              <th className="px-4 py-3 w-10">
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    group.mobilizations.length > 0 &&
+                                    group.mobilizations.every((m) => selectedIds.has(m.id))
+                                  }
+                                  onChange={() => {
+                                    const groupIds = group.mobilizations.map((m) => m.id);
+                                    const allSelected = groupIds.every((id) => selectedIds.has(id));
+                                    setSelectedIds((prev) => {
+                                      const next = new Set(prev);
+                                      groupIds.forEach((id) => {
+                                        if (allSelected) next.delete(id);
+                                        else next.add(id);
+                                      });
+                                      return next;
+                                    });
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                />
+                              </th>
+                            )}
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Employee
                             </th>
@@ -610,100 +832,26 @@ export default function DailyMobilizationManagement() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                          {group.mobilizations.map((mobilization) => {
-                            // Check if this is an off day (job status is "off" and it's a carried-forward record)
-                            const isOffDay =
-                              showCarryForward &&
-                              mobilization.jobStatus === "off" &&
-                              new Date(mobilization.actionDate)
-                                .toISOString()
-                                .split("T")[0] !== selectedDate;
-
-                            return (
-                              <tr
-                                key={mobilization.id}
-                                className={
-                                  isOffDay
-                                    ? "bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30"
-                                    : "hover:bg-gray-50 dark:hover:bg-gray-900/30"
-                                }
-                              >
-                                <td className="px-4 py-3 whitespace-nowrap">
-                                  <div>
-                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                      {mobilization.employee?.name}
-                                    </div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                                      {mobilization.employee?.adaa_emp_code}
-                                    </div>
-                                  </div>
-                                </td>
-                                {showCarryForward && (
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    {new Date(
-                                      mobilization.actionDate
-                                    ).toLocaleDateString()}
-                                  </td>
-                                )}
-                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                  {mobilization.mobilizedTrade?.skill || "-"}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap">
-                                  {getMobStatusBadge(mobilization.mobStatus)}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap">
-                                  {getJobStatusBadge(mobilization.jobStatus)}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                                  {mobilization.notes || "-"}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-center">
-                                  <div className="flex items-center justify-center gap-2">
-                                    <button
-                                      onClick={() =>
-                                        setHistoryModal({
-                                          isOpen: true,
-                                          employeeId: mobilization.employeeId,
-                                          employeeName:
-                                            mobilization.employee?.name ||
-                                            "Unknown",
-                                        })
-                                      }
-                                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
-                                      title="View History"
-                                    >
-                                      <TimeIcon className="h-4 w-4 inline mr-1" />
-                                      History
-                                    </button>
-                                    <span className="text-gray-300 dark:text-gray-700">
-                                      |
-                                    </span>
-                                    <button
-                                      onClick={() =>
-                                        navigate(
-                                          `/mobilizations/${mobilization.id}/edit`
-                                        )
-                                      }
-                                      className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium"
-                                    >
-                                      Edit
-                                    </button>
-                                    <span className="text-gray-300 dark:text-gray-700">
-                                      |
-                                    </span>
-                                    <button
-                                      onClick={() =>
-                                        handleDelete(mobilization.id)
-                                      }
-                                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
+                          {group.mobilizations.map((mobilization) => (
+                            <MobilizationRow
+                              key={mobilization.id}
+                              mobilization={mobilization}
+                              isSelectMode={isSelectMode}
+                              isSelected={selectedIds.has(mobilization.id)}
+                              isOffDay={
+                                showCarryForward &&
+                                mobilization.jobStatus === "off" &&
+                                new Date(mobilization.actionDate)
+                                  .toISOString()
+                                  .split("T")[0] !== selectedDate
+                              }
+                              showCarryForward={showCarryForward}
+                              onToggleSelect={toggleSelect}
+                              onShowHistory={handleShowHistory}
+                              onEdit={handleEditRow}
+                              onDelete={handleDelete}
+                            />
+                          ))}
                         </tbody>
                       </table>
                     </div>

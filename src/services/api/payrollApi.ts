@@ -75,6 +75,14 @@ export const payrollApi = {
     await axiosInstance.delete(`/payroll/${id}`);
   },
 
+  deleteMany: async (ids: number[]): Promise<{ deleted: number }> => {
+    const response = await axiosInstance.post<{ deleted: number }>(
+      "/payroll/actions/delete-many",
+      { ids }
+    );
+    return response.data;
+  },
+
   /**
    * Calculate payroll for a specific month from approved timesheets
    */

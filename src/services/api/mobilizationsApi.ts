@@ -132,6 +132,15 @@ export const mobilizationsApi = {
     await axiosInstance.delete(`/mobilizations/${id}`);
   },
 
+  // Delete multiple mobilizations
+  deleteMany: async (ids: number[]): Promise<{ deleted: number }> => {
+    const response = await axiosInstance.post<{ deleted: number }>(
+      "/mobilizations/actions/delete-many",
+      { ids }
+    );
+    return response.data;
+  },
+
   // Get statistics
   getStatistics: async (
     projectId?: number

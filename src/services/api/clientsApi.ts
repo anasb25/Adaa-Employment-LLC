@@ -54,4 +54,12 @@ export const clientsApi = {
   deleteClient: async (id: number): Promise<void> => {
     await axiosInstance.delete(`/clients/${id}`);
   },
+
+  deleteMany: async (ids: number[]): Promise<{ deleted: number }> => {
+    const response = await axiosInstance.post<{ deleted: number }>(
+      "/clients/actions/delete-many",
+      { ids }
+    );
+    return response.data;
+  },
 };

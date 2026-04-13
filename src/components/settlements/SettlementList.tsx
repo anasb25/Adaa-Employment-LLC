@@ -39,6 +39,8 @@ export default function SettlementList({
   totalSettlements = 0,
 }: SettlementListProps) {
   const [page, setPage] = useState(1);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const queryClient = useQueryClient();
 
   const limit = 10;
@@ -159,6 +161,38 @@ export default function SettlementList({
     [deleteMutation]
   );
 
+  const deleteManyMutation = useMutation({
+    mutationFn: (ids: number[]) => settlementsApi.deleteMany(ids),
+    onSuccess: (data) => {
+      let msg = `${data.deleted} settlement(s) deleted successfully!`;
+      if (data.skipped > 0) msg += ` ${data.skipped} paid settlement(s) were skipped.`;
+      toast.success(msg);
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.settlements.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.settlements.search });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete settlements");
+    },
+  });
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    if (window.confirm(`Are you sure you want to delete ${selectedIds.size} settlement(s)?`)) {
+      deleteManyMutation.mutate(Array.from(selectedIds));
+    }
+  }, [selectedIds, deleteManyMutation]);
+
   const handleApprove = useCallback(
     (settlementId: number) => {
       if (
@@ -241,6 +275,37 @@ export default function SettlementList({
           <div className="text-sm text-gray-500 dark:text-gray-400">
             Total Settlements: {totalSettlements}
           </div>
+          <PermissionGuard permission="settlement:delete">
+            {!isSelectMode ? (
+              <Button
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                onClick={() => setIsSelectMode(true)}
+              >
+                Delete Multiple
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {selectedIds.size} selected
+                </span>
+                <Button
+                  variant="outline"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                  onClick={handleDeleteSelected}
+                  disabled={selectedIds.size === 0 || deleteManyMutation.isPending}
+                >
+                  {deleteManyMutation.isPending ? "Deleting..." : "Confirm Delete"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => { setIsSelectMode(false); setSelectedIds(new Set()); }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+          </PermissionGuard>
           <PermissionGuard permission="settlement:create">
             <Button onClick={onCreateSettlement} startIcon={<PlusIcon />}>
               Create Settlement
@@ -312,6 +377,31 @@ export default function SettlementList({
                   {/* Table Header */}
                   <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                     <TableRow>
+                      {isSelectMode && (
+                        <TableCell
+                          isHeader
+                          className="px-5 py-3 w-10"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={
+                              currentData?.data &&
+                              currentData.data.length > 0 &&
+                              currentData.data.every((s) => selectedIds.has(s.id))
+                            }
+                            onChange={() => {
+                              if (!currentData?.data) return;
+                              const allIds = currentData.data.map((s) => s.id);
+                              if (allIds.every((id) => selectedIds.has(id))) {
+                                setSelectedIds(new Set());
+                              } else {
+                                setSelectedIds(new Set(allIds));
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          />
+                        </TableCell>
+                      )}
                       <TableCell
                         isHeader
                         className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
@@ -355,6 +445,16 @@ export default function SettlementList({
                   <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                     {currentData.data.map((settlement) => (
                       <TableRow key={settlement.id}>
+                        {isSelectMode && (
+                          <TableCell className="px-5 py-4 w-10">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(settlement.id)}
+                              onChange={() => toggleSelect(settlement.id)}
+                              className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                            />
+                          </TableCell>
+                        )}
                         <TableCell className="px-5 py-4 sm:px-6 text-start">
                           <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
                             {settlement.empCode}

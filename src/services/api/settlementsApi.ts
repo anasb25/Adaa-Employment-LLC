@@ -61,6 +61,15 @@ export const settlementsApi = {
     await axiosInstance.delete(`/settlements/${id}`);
   },
 
+  // Delete multiple settlements
+  deleteMany: async (ids: number[]): Promise<{ deleted: number; skipped: number }> => {
+    const response = await axiosInstance.post<{ deleted: number; skipped: number }>(
+      "/settlements/actions/delete-many",
+      { ids }
+    );
+    return response.data;
+  },
+
   // Search settlements
   searchSettlements: async (
     query: string,

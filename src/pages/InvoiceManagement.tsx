@@ -48,6 +48,8 @@ export default function InvoiceManagement() {
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [generateForm, setGenerateForm] = useState<GenerateInvoiceRequest>({
     projectId: 0,
     month: currentMonth,
@@ -150,6 +152,37 @@ export default function InvoiceManagement() {
       )
     ) {
       deleteMutation.mutate(id);
+    }
+  };
+
+  const deleteManyMutation = useMutation({
+    mutationFn: (ids: number[]) => invoicesApi.deleteMany(ids),
+    onSuccess: (data) => {
+      let msg = `${data.deleted} invoice(s) deleted successfully!`;
+      if (data.skipped > 0) msg += ` ${data.skipped} paid invoice(s) were skipped.`;
+      toast.success(msg);
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete invoices");
+    },
+  });
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.size === 0) return;
+    if (window.confirm(`Are you sure you want to delete ${selectedIds.size} invoice(s)?`)) {
+      deleteManyMutation.mutate(Array.from(selectedIds));
     }
   };
 
@@ -278,6 +311,35 @@ export default function InvoiceManagement() {
                 >
                   Generate Invoice
                 </Button>
+                {!isSelectMode ? (
+                  <Button
+                    variant="outline"
+                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                    onClick={() => setIsSelectMode(true)}
+                  >
+                    Delete Multiple
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2 w-full">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {selectedIds.size} selected
+                    </span>
+                    <Button
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                      onClick={handleDeleteSelected}
+                      disabled={selectedIds.size === 0 || deleteManyMutation.isPending}
+                    >
+                      {deleteManyMutation.isPending ? "Deleting..." : "Confirm Delete"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => { setIsSelectMode(false); setSelectedIds(new Set()); }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -310,6 +372,28 @@ export default function InvoiceManagement() {
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                   <thead className="bg-gray-50 dark:bg-gray-900/50">
                     <tr>
+                      {isSelectMode && (
+                        <th className="px-6 py-3 w-10">
+                          <input
+                            type="checkbox"
+                            checked={
+                              invoicesData?.data &&
+                              invoicesData.data.length > 0 &&
+                              invoicesData.data.every((inv: Invoice) => selectedIds.has(inv.id))
+                            }
+                            onChange={() => {
+                              if (!invoicesData?.data) return;
+                              const allIds = invoicesData.data.map((inv: Invoice) => inv.id);
+                              if (allIds.every((id: number) => selectedIds.has(id))) {
+                                setSelectedIds(new Set());
+                              } else {
+                                setSelectedIds(new Set(allIds));
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          />
+                        </th>
+                      )}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Invoice #
                       </th>
@@ -340,8 +424,22 @@ export default function InvoiceManagement() {
                     {invoicesData?.data?.map((invoice: any) => (
                       <tr
                         key={invoice.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-900/30"
+                        className={`${
+                          isSelectMode && selectedIds.has(invoice.id)
+                            ? "bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20"
+                            : "hover:bg-gray-50 dark:hover:bg-gray-900/30"
+                        }`}
                       >
+                        {isSelectMode && (
+                          <td className="px-6 py-4 w-10">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(invoice.id)}
+                              onChange={() => toggleSelect(invoice.id)}
+                              className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                            />
+                          </td>
+                        )}
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                           {invoice.invoiceNumber}
                         </td>

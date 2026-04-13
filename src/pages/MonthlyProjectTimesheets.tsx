@@ -45,16 +45,16 @@ export default function MonthlyProjectTimesheets() {
   // Get current month as default
   const currentDate = new Date();
   const currentMonth = `${currentDate.getFullYear()}-${String(
-    currentDate.getMonth() + 1
+    currentDate.getMonth() + 1,
   ).padStart(2, "0")}`;
 
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
   const [expandedProjects, setExpandedProjects] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
   const [projectEdits, setProjectEdits] = useState<ProjectEdits>({});
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
   const [exportProjectId, setExportProjectId] = useState<number | null>(null);
   const [unlockedApprovedProjects, setUnlockedApprovedProjects] = useState<
@@ -64,7 +64,7 @@ export default function MonthlyProjectTimesheets() {
     number | null
   >(null);
   const [editingStatusCell, setEditingStatusCell] = useState<string | null>(
-    null
+    null,
   );
   const [editingHoursCell, setEditingHoursCell] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -90,7 +90,7 @@ export default function MonthlyProjectTimesheets() {
   // Get project IDs from the response (ordered by backend)
   const projectIds = useMemo(
     () => allTimesheetsData?.map((d) => d.project.id) || [],
-    [allTimesheetsData]
+    [allTimesheetsData],
   );
 
   // Search: match by employee id, name, or project name; compute highlight set
@@ -110,9 +110,7 @@ export default function MonthlyProjectTimesheets() {
       };
     }
     for (const data of allTimesheetsData) {
-      const projectNameMatches = data.project.name
-        .toLowerCase()
-        .includes(q);
+      const projectNameMatches = data.project.name.toLowerCase().includes(q);
       for (const emp of data.employees) {
         const idMatches =
           (emp.idNo && emp.idNo.toString().toLowerCase().includes(q)) ?? false;
@@ -136,9 +134,7 @@ export default function MonthlyProjectTimesheets() {
   // When search matches an employee, auto-expand those projects so the highlighted row is visible
   useEffect(() => {
     if (matchingEmployeeIds.size > 0 && filteredProjectIds.length > 0) {
-      setExpandedProjects(
-        (prev) => new Set([...prev, ...filteredProjectIds])
-      );
+      setExpandedProjects((prev) => new Set([...prev, ...filteredProjectIds]));
     }
   }, [matchingEmployeeIds.size, filteredProjectIds.join(",")]);
 
@@ -186,7 +182,7 @@ export default function MonthlyProjectTimesheets() {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.message || "Failed to submit timesheet"
+        error.response?.data?.message || "Failed to submit timesheet",
       );
     },
   });
@@ -201,7 +197,7 @@ export default function MonthlyProjectTimesheets() {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.message || "Failed to update timesheet"
+        error.response?.data?.message || "Failed to update timesheet",
       );
     },
   });
@@ -274,7 +270,7 @@ export default function MonthlyProjectTimesheets() {
     projectId: number,
     employeeId: number,
     date: string,
-    newStatus: string
+    newStatus: string,
   ) => {
     const key = `${employeeId}-${date}`;
     const defaultHours = getDefaultHoursForStatus(newStatus);
@@ -296,7 +292,7 @@ export default function MonthlyProjectTimesheets() {
     projectId: number,
     employeeId: number,
     date: string,
-    currentStatus: string | null
+    currentStatus: string | null,
   ) => {
     const key = `${projectId}-${employeeId}-${date}`;
     setEditingStatusCell(key);
@@ -321,7 +317,7 @@ export default function MonthlyProjectTimesheets() {
     employeeId: number,
     date: string,
     hours: number,
-    currentStatus: string
+    currentStatus: string,
   ) => {
     const key = `${employeeId}-${date}`;
 
@@ -341,7 +337,7 @@ export default function MonthlyProjectTimesheets() {
   const getHoursValue = (
     projectId: number,
     employeeId: number,
-    dailyHours: DailyHours
+    dailyHours: DailyHours,
   ): number => {
     const key = `${employeeId}-${dailyHours.date}`;
     const edits = projectEdits[projectId];
@@ -351,7 +347,7 @@ export default function MonthlyProjectTimesheets() {
   const getStatusValue = (
     projectId: number,
     employeeId: number,
-    dailyHours: DailyHours
+    dailyHours: DailyHours,
   ): string => {
     const key = `${employeeId}-${dailyHours.date}`;
     const edits = projectEdits[projectId];
@@ -468,7 +464,7 @@ export default function MonthlyProjectTimesheets() {
 
   const handleApprove = async (
     timesheetId: number,
-    status: TimesheetStatus.APPROVED | TimesheetStatus.REJECTED
+    status: TimesheetStatus.APPROVED | TimesheetStatus.REJECTED,
   ) => {
     await approveTimesheetMutation.mutateAsync({ timesheetId, status });
   };
@@ -477,7 +473,7 @@ export default function MonthlyProjectTimesheets() {
     setUnlockedApprovedProjects((prev) => new Set(prev).add(projectId));
     setUnlockConfirmProjectId(null);
     toast.info(
-      "Timesheet unlocked for editing. Remember to resubmit after changes."
+      "Timesheet unlocked for editing. Remember to resubmit after changes.",
     );
   };
 
@@ -502,7 +498,11 @@ export default function MonthlyProjectTimesheets() {
     for (const data of allTimesheetsData) {
       for (const employee of data.employees) {
         for (const dh of employee.dailyHours) {
-          if (dh.jobStatus && dh.jobStatus !== "demobilized" && dh.jobStatus !== null) {
+          if (
+            dh.jobStatus &&
+            dh.jobStatus !== "demobilized" &&
+            dh.jobStatus !== null
+          ) {
             total += getHoursValue(data.project.id, employee.employeeId, dh);
           }
         }
@@ -522,15 +522,19 @@ export default function MonthlyProjectTimesheets() {
       const monthName = new Date(
         parseInt(year),
         parseInt(monthNum) - 1,
-        1
+        1,
       ).toLocaleString("default", { month: "long" });
-      const daysInMonth = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
+      const daysInMonth = new Date(
+        parseInt(year),
+        parseInt(monthNum),
+        0,
+      ).getDate();
       const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
       const getDisplayValue = (
         projectId: number,
         employeeId: number,
-        dailyHour: DailyHours | undefined
+        dailyHour: DailyHours | undefined,
       ): string => {
         if (!dailyHour || dailyHour.jobStatus === null) return "-";
         if (dailyHour.jobStatus === "demobilized") return "Dem";
@@ -543,10 +547,20 @@ export default function MonthlyProjectTimesheets() {
 
       const excelData: any[] = [];
 
-      excelData.push([`ADAA Employment LLC - Timesheets - ${monthName} ${year}`]);
+      excelData.push([
+        `ADAA Employment LLC - Timesheets - ${monthName} ${year}`,
+      ]);
       excelData.push([]);
 
-      const headerRow = ["Sr", "ID No", "Name", "Trade", "Site", "Client", "FAT"];
+      const headerRow = [
+        "Sr",
+        "ID No",
+        "Name",
+        "Trade",
+        "Site",
+        "Client",
+        "FAT",
+      ];
       days.forEach((day) => headerRow.push(day.toString()));
       headerRow.push("Total");
       excelData.push(headerRow);
@@ -568,10 +582,10 @@ export default function MonthlyProjectTimesheets() {
 
           let employeeTotal = 0;
           days.forEach((day) => {
-            const dailyHour = employee.dailyHours.find(
-              (dh) => dh.day === day
+            const dailyHour = employee.dailyHours.find((dh) => dh.day === day);
+            row.push(
+              getDisplayValue(data.project.id, employee.employeeId, dailyHour),
             );
-            row.push(getDisplayValue(data.project.id, employee.employeeId, dailyHour));
 
             if (
               dailyHour &&
@@ -582,7 +596,7 @@ export default function MonthlyProjectTimesheets() {
               employeeTotal += getHoursValue(
                 data.project.id,
                 employee.employeeId,
-                dailyHour
+                dailyHour,
               );
             }
           });
@@ -605,20 +619,18 @@ export default function MonthlyProjectTimesheets() {
       const ws = XLSX.utils.aoa_to_sheet(excelData);
 
       ws["!cols"] = [
-        { wch: 5 },   // Sr
-        { wch: 12 },  // ID No
-        { wch: 25 },  // Name
-        { wch: 20 },  // Trade
-        { wch: 25 },  // Site
-        { wch: 20 },  // Client
-        { wch: 8 },   // FAT
+        { wch: 5 }, // Sr
+        { wch: 12 }, // ID No
+        { wch: 25 }, // Name
+        { wch: 20 }, // Trade
+        { wch: 25 }, // Site
+        { wch: 20 }, // Client
+        { wch: 8 }, // FAT
         ...days.map(() => ({ wch: 5 })),
-        { wch: 8 },   // Total
+        { wch: 8 }, // Total
       ];
 
-      ws["!merges"] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
-      ];
+      ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "All Timesheets");
@@ -651,15 +663,6 @@ export default function MonthlyProjectTimesheets() {
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex flex-col gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Monthly Project Timesheets
-              </h1>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Manage employee hours by project for the selected month
-              </p>
-            </div>
-
             <div className="flex flex-wrap items-end gap-4">
               <div className="w-64">
                 <Label htmlFor="month">Month</Label>
@@ -745,7 +748,7 @@ export default function MonthlyProjectTimesheets() {
               const employeesToShow =
                 matchingEmployeeIds.size > 0
                   ? timesheetData.employees.filter((e: any) =>
-                      matchingEmployeeIds.has(e.employeeId)
+                      matchingEmployeeIds.has(e.employeeId),
                     )
                   : timesheetData.employees;
 
@@ -802,7 +805,7 @@ export default function MonthlyProjectTimesheets() {
                     >
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(
-                          status
+                          status,
                         )}`}
                       >
                         {status.toUpperCase()}
@@ -879,7 +882,7 @@ export default function MonthlyProjectTimesheets() {
                                 onClick={() =>
                                   handleApprove(
                                     timesheetData.timesheet!.id,
-                                    TimesheetStatus.REJECTED
+                                    TimesheetStatus.REJECTED,
                                   )
                                 }
                                 variant="outline"
@@ -893,7 +896,7 @@ export default function MonthlyProjectTimesheets() {
                                 onClick={() =>
                                   handleApprove(
                                     timesheetData.timesheet!.id,
-                                    TimesheetStatus.APPROVED
+                                    TimesheetStatus.APPROVED,
                                   )
                                 }
                                 variant="primary"
@@ -956,26 +959,27 @@ export default function MonthlyProjectTimesheets() {
                           <tbody className="bg-white dark:bg-gray-800">
                             {employeesToShow.map((employee: any) => {
                               // Calculate total hours for this employee
-                              const employeeTotal = Math.round(
-                                employee.dailyHours.reduce(
-                                  (sum: number, dh: any) => {
-                                    if (
-                                      dh.jobStatus &&
-                                      dh.jobStatus !== "demobilized" &&
-                                      dh.jobStatus !== null
-                                    ) {
-                                      const hoursValue = getHoursValue(
-                                        projectId,
-                                        employee.employeeId,
-                                        dh
-                                      );
-                                      return sum + hoursValue;
-                                    }
-                                    return sum;
-                                  },
-                                  0
-                                ) * 100
-                              ) / 100;
+                              const employeeTotal =
+                                Math.round(
+                                  employee.dailyHours.reduce(
+                                    (sum: number, dh: any) => {
+                                      if (
+                                        dh.jobStatus &&
+                                        dh.jobStatus !== "demobilized" &&
+                                        dh.jobStatus !== null
+                                      ) {
+                                        const hoursValue = getHoursValue(
+                                          projectId,
+                                          employee.employeeId,
+                                          dh,
+                                        );
+                                        return sum + hoursValue;
+                                      }
+                                      return sum;
+                                    },
+                                    0,
+                                  ) * 100,
+                                ) / 100;
 
                               return (
                                 <tr
@@ -1025,20 +1029,20 @@ export default function MonthlyProjectTimesheets() {
                                   {days.map((day) => {
                                     // Find the dailyHour entry for this specific day
                                     const dailyHour = employee.dailyHours.find(
-                                      (dh: any) => dh.day === day
+                                      (dh: any) => dh.day === day,
                                     );
                                     const hoursValue = dailyHour
                                       ? getHoursValue(
-                                            projectId,
-                                            employee.employeeId,
-                                            dailyHour
-                                          )
+                                          projectId,
+                                          employee.employeeId,
+                                          dailyHour,
+                                        )
                                       : 0;
                                     const statusValue = dailyHour
                                       ? getStatusValue(
                                           projectId,
                                           employee.employeeId,
-                                          dailyHour
+                                          dailyHour,
                                         )
                                       : "active";
                                     const isZero = hoursValue === 0;
@@ -1079,141 +1083,147 @@ export default function MonthlyProjectTimesheets() {
                                             projectId,
                                             employee.employeeId,
                                             dailyHour.date,
-                                            dailyHour.jobStatus
+                                            dailyHour.jobStatus,
                                           )
                                         }
                                       >
-                                        <div className={dailyHour ? "relative" : ""}>
-                                        {(() => {
-                                          if (!dailyHour) {
-                                            return (
-                                              <span className="text-xs text-gray-400 dark:text-gray-600">
-                                                -
-                                              </span>
-                                            );
+                                        <div
+                                          className={
+                                            dailyHour ? "relative" : ""
                                           }
+                                        >
+                                          {(() => {
+                                            if (!dailyHour) {
+                                              return (
+                                                <span className="text-xs text-gray-400 dark:text-gray-600">
+                                                  -
+                                                </span>
+                                              );
+                                            }
 
-                                          const cellKey = `${projectId}-${employee.employeeId}-${dailyHour.date}`;
-                                          const isEditingStatus =
-                                            editingStatusCell === cellKey;
-                                          const isEditingHours =
-                                            editingHoursCell === cellKey;
+                                            const cellKey = `${projectId}-${employee.employeeId}-${dailyHour.date}`;
+                                            const isEditingStatus =
+                                              editingStatusCell === cellKey;
+                                            const isEditingHours =
+                                              editingHoursCell === cellKey;
 
-                                          // Show status dropdown when double-clicked
-                                          if (isEditingStatus) {
+                                            // Show status dropdown when double-clicked
+                                            if (isEditingStatus) {
+                                              return (
+                                                <select
+                                                  autoFocus
+                                                  value={statusValue}
+                                                  onChange={(e) =>
+                                                    handleStatusChange(
+                                                      projectId,
+                                                      employee.employeeId,
+                                                      dailyHour.date,
+                                                      e.target.value,
+                                                    )
+                                                  }
+                                                  onBlur={() =>
+                                                    setEditingStatusCell(null)
+                                                  }
+                                                  className="w-full px-0.5 py-0.5 text-xs border border-brand-500 dark:border-brand-400 rounded
+                                                       bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                                       focus:ring-1 focus:ring-brand-500 focus:border-brand-500"
+                                                >
+                                                  {jobStatusOptions.map(
+                                                    (opt) => (
+                                                      <option
+                                                        key={opt.value}
+                                                        value={opt.value}
+                                                      >
+                                                        {opt.label}
+                                                      </option>
+                                                    ),
+                                                  )}
+                                                </select>
+                                              );
+                                            }
+
+                                            // Show "Dem" for demobilized
+                                            if (
+                                              dailyHour.jobStatus ===
+                                              "demobilized"
+                                            ) {
+                                              return (
+                                                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                                  Dem
+                                                </span>
+                                              );
+                                            }
+
+                                            // For null status, show "-" as text (not input) to allow double-click
+                                            if (dailyHour.jobStatus === null) {
+                                              return (
+                                                <div
+                                                  className="w-full px-0.5 py-0.5 text-xs text-center text-gray-400 dark:text-gray-600 font-medium cursor-pointer hover:text-brand-600 dark:hover:text-brand-400"
+                                                  title="Double-click to set status"
+                                                >
+                                                  -
+                                                </div>
+                                              );
+                                            }
+
+                                            // Show status abbreviation if hours are 0, otherwise show hours
+                                            const isAbbreviation =
+                                              hoursValue === 0;
+
+                                            // If showing abbreviation (0 hours), display as text unless editing
+                                            if (
+                                              isAbbreviation &&
+                                              !isEditingHours
+                                            ) {
+                                              return (
+                                                <div
+                                                  onClick={(e) => {
+                                                    if (canEdit) {
+                                                      e.stopPropagation();
+                                                      setEditingHoursCell(
+                                                        cellKey,
+                                                      );
+                                                    }
+                                                  }}
+                                                  className={`w-full px-0.5 py-0.5 text-xs text-center font-medium cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded ${colorClass}`}
+                                                  title={`Status: ${statusValue} (Click to edit hours, Double-click to change status)`}
+                                                >
+                                                  {getStatusAbbreviation(
+                                                    statusValue,
+                                                  )}
+                                                </div>
+                                              );
+                                            }
+
+                                            // Show normal hours input (or when editing 0 hours)
                                             return (
-                                              <select
-                                                autoFocus
-                                                value={statusValue}
-                                                onChange={(e) =>
-                                                  handleStatusChange(
+                                              <HoursInput
+                                                value={hoursValue}
+                                                autoFocus={isEditingHours}
+                                                onChange={(val) =>
+                                                  handleHoursChange(
                                                     projectId,
                                                     employee.employeeId,
                                                     dailyHour.date,
-                                                    e.target.value
+                                                    val,
+                                                    statusValue,
                                                   )
                                                 }
-                                                onBlur={() =>
-                                                  setEditingStatusCell(null)
-                                                }
-                                                className="w-full px-0.5 py-0.5 text-xs border border-brand-500 dark:border-brand-400 rounded
-                                                       bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                                       focus:ring-1 focus:ring-brand-500 focus:border-brand-500"
-                                              >
-                                                {jobStatusOptions.map((opt) => (
-                                                  <option
-                                                    key={opt.value}
-                                                    value={opt.value}
-                                                  >
-                                                    {opt.label}
-                                                  </option>
-                                                ))}
-                                              </select>
-                                            );
-                                          }
-
-                                          // Show "Dem" for demobilized
-                                          if (
-                                            dailyHour.jobStatus ===
-                                            "demobilized"
-                                          ) {
-                                            return (
-                                              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                                                Dem
-                                              </span>
-                                            );
-                                          }
-
-                                          // For null status, show "-" as text (not input) to allow double-click
-                                          if (dailyHour.jobStatus === null) {
-                                            return (
-                                              <div
-                                                className="w-full px-0.5 py-0.5 text-xs text-center text-gray-400 dark:text-gray-600 font-medium cursor-pointer hover:text-brand-600 dark:hover:text-brand-400"
-                                                title="Double-click to set status"
-                                              >
-                                                -
-                                              </div>
-                                            );
-                                          }
-
-                                          // Show status abbreviation if hours are 0, otherwise show hours
-                                          const isAbbreviation =
-                                            hoursValue === 0;
-
-                                          // If showing abbreviation (0 hours), display as text unless editing
-                                          if (
-                                            isAbbreviation &&
-                                            !isEditingHours
-                                          ) {
-                                            return (
-                                              <div
-                                                onClick={(e) => {
-                                                  if (canEdit) {
-                                                    e.stopPropagation();
-                                                    setEditingHoursCell(
-                                                      cellKey
-                                                    );
+                                                onBlur={() => {
+                                                  if (isEditingHours) {
+                                                    setEditingHoursCell(null);
                                                   }
                                                 }}
-                                                className={`w-full px-0.5 py-0.5 text-xs text-center font-medium cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded ${colorClass}`}
-                                                title={`Status: ${statusValue} (Click to edit hours, Double-click to change status)`}
-                                              >
-                                                {getStatusAbbreviation(
-                                                  statusValue
-                                                )}
-                                              </div>
-                                            );
-                                          }
-
-                                          // Show normal hours input (or when editing 0 hours)
-                                          return (
-                                            <HoursInput
-                                              value={hoursValue}
-                                              autoFocus={isEditingHours}
-                                              onChange={(val) =>
-                                                handleHoursChange(
-                                                  projectId,
-                                                  employee.employeeId,
-                                                  dailyHour.date,
-                                                  val,
-                                                  statusValue
-                                                )
-                                              }
-                                              onBlur={() => {
-                                                if (isEditingHours) {
-                                                  setEditingHoursCell(null);
-                                                }
-                                              }}
-                                              disabled={!canEdit}
-                                              title={`Status: ${statusValue} (Double-click to change)`}
-                                              className={`w-full px-0.5 py-0.5 text-xs text-center border border-gray-300 dark:border-gray-600 rounded
+                                                disabled={!canEdit}
+                                                title={`Status: ${statusValue} (Double-click to change)`}
+                                                className={`w-full px-0.5 py-0.5 text-xs text-center border border-gray-300 dark:border-gray-600 rounded
                                                      bg-white dark:bg-gray-700 font-medium
                                                      focus:ring-1 focus:ring-brand-500 focus:border-brand-500
                                                      disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed
                                                      ${colorClass}`}
-                                            />
-                                          );
-                                        })()}
+                                              />
+                                            );
+                                          })()}
                                         </div>
                                       </td>
                                     );
@@ -1239,33 +1249,35 @@ export default function MonthlyProjectTimesheets() {
                               </td>
                               {days.map((day) => {
                                 // Calculate total for this day across displayed employees
-                                const dayTotal = Math.round(
-                                  employeesToShow.reduce(
-                                    (sum: number, employee: any) => {
-                                      const dailyHour =
-                                        employee.dailyHours.find(
-                                          (dh: any) => dh.day === day
-                                        );
-                                      if (
-                                        dailyHour &&
-                                        dailyHour.jobStatus &&
-                                        dailyHour.jobStatus !== "demobilized" &&
-                                        dailyHour.jobStatus !== null
-                                      ) {
-                                        return (
-                                          sum +
-                                          getHoursValue(
-                                            projectId,
-                                            employee.employeeId,
-                                            dailyHour
-                                          )
-                                        );
-                                      }
-                                      return sum;
-                                    },
-                                    0
-                                  ) * 100
-                                ) / 100;
+                                const dayTotal =
+                                  Math.round(
+                                    employeesToShow.reduce(
+                                      (sum: number, employee: any) => {
+                                        const dailyHour =
+                                          employee.dailyHours.find(
+                                            (dh: any) => dh.day === day,
+                                          );
+                                        if (
+                                          dailyHour &&
+                                          dailyHour.jobStatus &&
+                                          dailyHour.jobStatus !==
+                                            "demobilized" &&
+                                          dailyHour.jobStatus !== null
+                                        ) {
+                                          return (
+                                            sum +
+                                            getHoursValue(
+                                              projectId,
+                                              employee.employeeId,
+                                              dailyHour,
+                                            )
+                                          );
+                                        }
+                                        return sum;
+                                      },
+                                      0,
+                                    ) * 100,
+                                  ) / 100;
 
                                 return (
                                   <td
@@ -1281,36 +1293,39 @@ export default function MonthlyProjectTimesheets() {
                                 className="px-2 py-3 text-center text-sm font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-800"
                                 style={{ minWidth: "70px", width: "70px" }}
                               >
-                                {decimalToHM(Math.round(
-                                  employeesToShow.reduce(
-                                    (grandTotal: number, employee: any) => {
-                                      return (
-                                        grandTotal +
-                                        employee.dailyHours.reduce(
-                                          (sum: number, dh: any) => {
-                                            if (
-                                              dh.jobStatus &&
-                                              dh.jobStatus !== "demobilized" &&
-                                              dh.jobStatus !== null
-                                            ) {
-                                              return (
-                                                sum +
-                                                getHoursValue(
-                                                  projectId,
-                                                  employee.employeeId,
-                                                  dh
-                                                )
-                                              );
-                                            }
-                                            return sum;
-                                          },
-                                          0
-                                        )
-                                      );
-                                    },
-                                    0
-                                  ) * 100
-                                ) / 100)}
+                                {decimalToHM(
+                                  Math.round(
+                                    employeesToShow.reduce(
+                                      (grandTotal: number, employee: any) => {
+                                        return (
+                                          grandTotal +
+                                          employee.dailyHours.reduce(
+                                            (sum: number, dh: any) => {
+                                              if (
+                                                dh.jobStatus &&
+                                                dh.jobStatus !==
+                                                  "demobilized" &&
+                                                dh.jobStatus !== null
+                                              ) {
+                                                return (
+                                                  sum +
+                                                  getHoursValue(
+                                                    projectId,
+                                                    employee.employeeId,
+                                                    dh,
+                                                  )
+                                                );
+                                              }
+                                              return sum;
+                                            },
+                                            0,
+                                          )
+                                        );
+                                      },
+                                      0,
+                                    ) * 100,
+                                  ) / 100,
+                                )}
                               </td>
                             </tr>
                           </tbody>

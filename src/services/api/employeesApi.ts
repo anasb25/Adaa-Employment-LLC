@@ -68,6 +68,15 @@ export const employeesApi = {
     await axiosInstance.delete(`/employees/${id}`);
   },
 
+  // Delete multiple employees
+  deleteMany: async (ids: number[]): Promise<{ deleted: number }> => {
+    const response = await axiosInstance.post<{ deleted: number }>(
+      "/employees/actions/delete-many",
+      { ids }
+    );
+    return response.data;
+  },
+
   // Search employees by various fields
   searchEmployees: async (
     query: string,

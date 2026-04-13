@@ -49,6 +49,8 @@ export default function EmployeeList({
 }: EmployeeListProps) {
   const [page, setPage] = useState(1);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const queryClient = useQueryClient();
 
   const limit = 10;
@@ -69,6 +71,51 @@ export default function EmployeeList({
       toast.error(error.response?.data?.message || "Failed to delete employee");
     },
   });
+
+  const deleteManyMutation = useMutation({
+    mutationFn: (ids: number[]) => employeesApi.deleteMany(ids),
+    onSuccess: (data) => {
+      toast.success(`${data.deleted} employee(s) deleted successfully!`);
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.employees.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.employees.search });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete employees");
+    },
+  });
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${selectedIds.size} employee(s)?`
+      )
+    ) {
+      deleteManyMutation.mutate(Array.from(selectedIds));
+    }
+  }, [selectedIds, deleteManyMutation]);
+
+  const toggleSelectAll = useCallback(
+    (employees: any[]) => {
+      if (selectedIds.size === employees.length) {
+        setSelectedIds(new Set());
+      } else {
+        setSelectedIds(new Set(employees.map((e) => e.id)));
+      }
+    },
+    [selectedIds]
+  );
 
   // Decrement air ticket mutation
   const decrementAirTicketMutation = useMutation({
@@ -212,6 +259,40 @@ export default function EmployeeList({
               Import
             </Button>
           </PermissionGuard>
+          <PermissionGuard permission="employee:delete">
+            {!isSelectMode ? (
+              <Button
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                onClick={() => setIsSelectMode(true)}
+              >
+                Delete Multiple
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {selectedIds.size} selected
+                </span>
+                <Button
+                  variant="outline"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                  onClick={handleDeleteSelected}
+                  disabled={selectedIds.size === 0 || deleteManyMutation.isPending}
+                >
+                  {deleteManyMutation.isPending ? "Deleting..." : "Confirm Delete"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsSelectMode(false);
+                    setSelectedIds(new Set());
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+          </PermissionGuard>
           <PermissionGuard permission="employee:create">
             <Button onClick={onCreateEmployee} startIcon={<PlusIcon />}>
               Create Employee
@@ -277,15 +358,40 @@ export default function EmployeeList({
         currentData?.data &&
         currentData.data.length > 0 && (
           <>
+            {isSelectMode && currentData.data.length > 0 && (
+              <div className="flex items-center gap-2 mb-3">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === currentData.data.length}
+                  onChange={() => toggleSelectAll(currentData.data)}
+                  className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Select All
+                </span>
+              </div>
+            )}
             <div className="space-y-3">
               {currentData.data.map((employee) => (
                 <div
                   key={employee.id}
-                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
+                  className={`bg-white dark:bg-gray-800 rounded-xl border p-4 ${
+                    isSelectMode && selectedIds.has(employee.id)
+                      ? "border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/10"
+                      : "border-gray-200 dark:border-gray-700"
+                  }`}
                 >
                   {/* Employee Header */}
                   <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-3">
+                      {isSelectMode && (
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(employee.id)}
+                          onChange={() => toggleSelect(employee.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 flex-shrink-0"
+                        />
+                      )}
                       <div className="w-10 h-10 bg-brand-100 dark:bg-brand-900/20 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-base font-semibold text-brand-600 dark:text-brand-400">
                           {employee.name.charAt(0).toUpperCase()}

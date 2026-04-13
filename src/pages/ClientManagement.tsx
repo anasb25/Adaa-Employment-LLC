@@ -24,6 +24,8 @@ import { useSearch } from "../hooks/useDebounce";
 export default function ClientManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [form, setForm] = useState<CreateClientRequest>({
     name: "",
     address: "",
@@ -161,6 +163,43 @@ export default function ClientManagement() {
     }
   };
 
+  const deleteManyMutation = useMutation({
+    mutationFn: (ids: number[]) => clientsApi.deleteMany(ids),
+    onSuccess: (data) => {
+      toast.success(`${data.deleted} client(s) deleted successfully!`);
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.clients.all });
+    },
+    onError: (e: any) => {
+      toast.error(e.response?.data?.message || "Failed to delete clients");
+    },
+  });
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.size === 0) return;
+    if (window.confirm(`Are you sure you want to delete ${selectedIds.size} client(s)?`)) {
+      deleteManyMutation.mutate(Array.from(selectedIds));
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredClients.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredClients.map((c: Client) => c.id)));
+    }
+  };
+
   const paymentTermsOptions: { value: PaymentTerms; label: string }[] = [
     { value: "15", label: "15 Days" },
     { value: "30", label: "30 Days" },
@@ -196,6 +235,35 @@ export default function ClientManagement() {
             )}
           </div>
 
+          {!isSelectMode ? (
+            <Button
+              variant="outline"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+              onClick={() => setIsSelectMode(true)}
+            >
+              Delete Multiple
+            </Button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {selectedIds.size} selected
+              </span>
+              <Button
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                onClick={handleDeleteSelected}
+                disabled={selectedIds.size === 0 || deleteManyMutation.isPending}
+              >
+                {deleteManyMutation.isPending ? "Deleting..." : "Confirm Delete"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => { setIsSelectMode(false); setSelectedIds(new Set()); }}
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
           <Button onClick={openCreate} startIcon={<PlusIcon />}>
             Add Client
           </Button>
@@ -205,6 +273,19 @@ export default function ClientManagement() {
             <Table>
               <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                 <TableRow>
+                  {isSelectMode && (
+                    <TableCell
+                      isHeader
+                      className="px-5 py-3 text-theme-xs text-gray-500 text-start w-10"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={filteredClients.length > 0 && selectedIds.size === filteredClients.length}
+                        onChange={toggleSelectAll}
+                        className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                    </TableCell>
+                  )}
                   <TableCell
                     isHeader
                     className="px-5 py-3 text-theme-xs text-gray-500 text-start"
@@ -252,7 +333,7 @@ export default function ClientManagement() {
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                 {filteredClients.length === 0 && searchValue ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="px-5 py-8 text-center">
+                    <TableCell colSpan={isSelectMode ? 8 : 7} className="px-5 py-8 text-center">
                       <div className="text-gray-500 dark:text-gray-400">
                         No clients found matching "{searchValue}"
                       </div>
@@ -261,6 +342,16 @@ export default function ClientManagement() {
                 ) : (
                   filteredClients.map((c: Client) => (
                     <TableRow key={c.id}>
+                      {isSelectMode && (
+                        <TableCell className="px-5 py-4 w-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(c.id)}
+                            onChange={() => toggleSelect(c.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="px-5 py-4 text-gray-800 dark:text-white/90">
                         {c.name}
                       </TableCell>
