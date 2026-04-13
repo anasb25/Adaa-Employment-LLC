@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import { timesheetsApi } from "../services/api/timesheetsApi";
 import { QUERY_KEYS } from "../lib/constants";
 import {
@@ -509,6 +511,131 @@ export default function MonthlyProjectTimesheets() {
     return Math.round(total * 100) / 100;
   }, [allTimesheetsData, projectEdits]);
 
+  const handleExportAllTimesheets = () => {
+    if (!allTimesheetsData || allTimesheetsData.length === 0) {
+      toast.error("No timesheet data to export");
+      return;
+    }
+
+    try {
+      const [year, monthNum] = selectedMonth.split("-");
+      const monthName = new Date(
+        parseInt(year),
+        parseInt(monthNum) - 1,
+        1
+      ).toLocaleString("default", { month: "long" });
+      const daysInMonth = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
+      const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+      const getDisplayValue = (
+        projectId: number,
+        employeeId: number,
+        dailyHour: DailyHours | undefined
+      ): string => {
+        if (!dailyHour || dailyHour.jobStatus === null) return "-";
+        if (dailyHour.jobStatus === "demobilized") return "Dem";
+        const hours =
+          Math.round(getHoursValue(projectId, employeeId, dailyHour) * 100) /
+          100;
+        const status = getStatusValue(projectId, employeeId, dailyHour);
+        return hours === 0 ? getStatusAbbreviation(status) : decimalToHM(hours);
+      };
+
+      const excelData: any[] = [];
+
+      excelData.push([`ADAA Employment LLC - Timesheets - ${monthName} ${year}`]);
+      excelData.push([]);
+
+      const headerRow = ["Sr", "ID No", "Name", "Trade", "Site", "Client", "FAT"];
+      days.forEach((day) => headerRow.push(day.toString()));
+      headerRow.push("Total");
+      excelData.push(headerRow);
+
+      let srNo = 1;
+      let grandTotal = 0;
+
+      for (const data of allTimesheetsData) {
+        for (const employee of data.employees) {
+          const row: any[] = [
+            srNo++,
+            employee.idNo,
+            employee.name,
+            employee.trade,
+            data.project.name,
+            data.project.client.name,
+            data.project.fat || "-",
+          ];
+
+          let employeeTotal = 0;
+          days.forEach((day) => {
+            const dailyHour = employee.dailyHours.find(
+              (dh) => dh.day === day
+            );
+            row.push(getDisplayValue(data.project.id, employee.employeeId, dailyHour));
+
+            if (
+              dailyHour &&
+              dailyHour.jobStatus &&
+              dailyHour.jobStatus !== "demobilized" &&
+              dailyHour.jobStatus !== null
+            ) {
+              employeeTotal += getHoursValue(
+                data.project.id,
+                employee.employeeId,
+                dailyHour
+              );
+            }
+          });
+
+          employeeTotal = Math.round(employeeTotal * 100) / 100;
+          grandTotal += employeeTotal;
+          row.push(decimalToHM(employeeTotal));
+          excelData.push(row);
+        }
+      }
+
+      grandTotal = Math.round(grandTotal * 100) / 100;
+      const totalRow: any[] = Array(7).fill("");
+      totalRow[0] = "";
+      totalRow[6] = "Grand Total";
+      days.forEach(() => totalRow.push(""));
+      totalRow.push(decimalToHM(grandTotal));
+      excelData.push(totalRow);
+
+      const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+      ws["!cols"] = [
+        { wch: 5 },   // Sr
+        { wch: 12 },  // ID No
+        { wch: 25 },  // Name
+        { wch: 20 },  // Trade
+        { wch: 25 },  // Site
+        { wch: 20 },  // Client
+        { wch: 8 },   // FAT
+        ...days.map(() => ({ wch: 5 })),
+        { wch: 8 },   // Total
+      ];
+
+      ws["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "All Timesheets");
+
+      const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      saveAs(blob, `Master_Timesheet_${monthName}_${year}.xlsx`);
+      toast.success("Master timesheet exported successfully");
+    } catch (error) {
+      console.error("Error exporting master timesheet:", error);
+      toast.error("Failed to export master timesheet");
+    }
+  };
+
   const isLoading = isTimesheetsLoading;
 
   return (
@@ -587,9 +714,19 @@ export default function MonthlyProjectTimesheets() {
               <span className="text-lg font-bold text-gray-900 dark:text-white">
                 Grand Total Hours (All Projects)
               </span>
-              <span className="text-2xl font-bold text-brand-600 dark:text-brand-400">
-                {decimalToHM(grandTotalHours)}
-              </span>
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={handleExportAllTimesheets}
+                  variant="outline"
+                  size="sm"
+                  startIcon={<DownloadIcon />}
+                >
+                  Export All
+                </Button>
+                <span className="text-2xl font-bold text-brand-600 dark:text-brand-400">
+                  {decimalToHM(grandTotalHours)}
+                </span>
+              </div>
             </div>
           </div>
         )}
