@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { dashboardApi } from "../../services/api/dashboardApi";
 import { AlertIcon } from "../../icons";
@@ -9,12 +9,27 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import Input from "../form/input/InputField";
+
+const STATUS_OPTIONS = [
+  { value: "", label: "All Statuses" },
+  { value: "expired", label: "Expired" },
+  { value: "expires_today", label: "Expires Today" },
+  { value: "urgent", label: "Urgent (1-3 days)" },
+  { value: "warning", label: "Warning (4-7 days)" },
+  { value: "expiring_soon", label: "Expiring Soon (8-15 days)" },
+];
 
 export default function ExpiringDocumentsCard() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   const { data: employees, isLoading, error } = useQuery({
     queryKey: ["dashboard", "expiring-documents"],
     queryFn: dashboardApi.getExpiringDocuments,
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    refetchInterval: 5 * 60 * 1000,
   });
 
   const getUrgencyColor = (days: number) => {
@@ -121,6 +136,60 @@ export default function ExpiringDocumentsCard() {
     return "Expiring Soon";
   };
 
+  const getStatusKey = (days: number) => {
+    if (days < 0) return "expired";
+    if (days === 0) return "expires_today";
+    if (days <= 3) return "urgent";
+    if (days <= 7) return "warning";
+    return "expiring_soon";
+  };
+
+  const filteredTableData = useMemo(() => {
+    const groups = getTableData();
+    if (!searchTerm && !statusFilter && !dateFrom && !dateTo) return groups;
+
+    const lowerSearch = searchTerm.toLowerCase();
+
+    return groups
+      .map((group) => ({
+        ...group,
+        rows: group.rows.filter((row) => {
+          if (searchTerm) {
+            const matchesName = row.name.toLowerCase().includes(lowerSearch);
+            const matchesId = row.adaa_emp_code.toLowerCase().includes(lowerSearch);
+            if (!matchesName && !matchesId) return false;
+          }
+
+          if (statusFilter && getStatusKey(row.daysUntilExpiry) !== statusFilter) {
+            return false;
+          }
+
+          if (dateFrom || dateTo) {
+            const expiry = new Date(row.expiryDate);
+            if (dateFrom && expiry < new Date(dateFrom)) return false;
+            if (dateTo && expiry > new Date(dateTo)) return false;
+          }
+
+          return true;
+        }),
+      }))
+      .filter((group) => group.rows.length > 0);
+  }, [employees, searchTerm, statusFilter, dateFrom, dateTo]);
+
+  const totalFilteredCount = useMemo(
+    () => filteredTableData.reduce((sum, g) => sum + g.rows.length, 0),
+    [filteredTableData]
+  );
+
+  const hasActiveFilters = searchTerm || statusFilter || dateFrom || dateTo;
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("");
+    setDateFrom("");
+    setDateTo("");
+  };
+
   if (isLoading) {
     return (
       <div className="rounded-lg border border-stroke bg-white p-6 shadow-default dark:border-gray-800 dark:bg-gray-800">
@@ -145,20 +214,87 @@ export default function ExpiringDocumentsCard() {
   return (
     <div className="rounded-lg border border-stroke bg-white shadow-default dark:border-gray-800 dark:bg-gray-800">
       <div className="border-b border-stroke px-6 py-4 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-semibold text-black dark:text-white">
-                Document Expiry Alerts
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Expired or expiring within 15 days
-              </p>
+        <div className="flex flex-col gap-4">
+          {/* Search and filters row */}
+          <div className="flex flex-col lg:flex-row items-start lg:items-end gap-3">
+            {/* Search bar */}
+            <div className="w-full lg:max-w-sm">
+              <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">
+                Search
+              </label>
+              <div className="relative">
+                <AlertIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search by name or ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
-          {employees && employees.length > 0 && (
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-sm font-medium text-white dark:bg-red-600">
-              {employees.length}
-            </span>
-          )}
+
+            {/* Status filter */}
+            <div className="w-full lg:w-48">
+              <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">
+                Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className={`h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 ${
+                  statusFilter ? "text-gray-800 dark:text-white/90" : "text-gray-400 dark:text-gray-400"
+                }`}
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value} className="text-gray-700 dark:bg-gray-900 dark:text-gray-400">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date from */}
+            <div className="w-full lg:w-44">
+              <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">
+                From
+              </label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+            </div>
+
+            {/* Date to */}
+            <div className="w-full lg:w-44">
+              <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">
+                To
+              </label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
+            </div>
+
+            {/* Result count + clear */}
+            <div className="flex items-center gap-2 pb-2">
+              {employees && employees.length > 0 && (
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-sm font-medium text-white dark:bg-red-600">
+                  {totalFilteredCount}
+                </span>
+              )}
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="text-xs text-brand-500 hover:text-brand-600 dark:text-brand-400 whitespace-nowrap"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -186,6 +322,20 @@ export default function ExpiringDocumentsCard() {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               No expired or expiring documents in the next 15 days
             </p>
+          </div>
+        ) : filteredTableData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No documents match your filters.
+            </p>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="mt-2 text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -233,7 +383,7 @@ export default function ExpiringDocumentsCard() {
                 </TableHeader>
 
                 <TableBody className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {getTableData().map((group) => (
+                  {filteredTableData.map((group) => (
                     <React.Fragment key={group.docType}>
                       {/* Document Type Group Header */}
                       <TableRow className="bg-gray-100 dark:bg-gray-900/50">
