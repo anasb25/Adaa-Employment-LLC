@@ -42,6 +42,29 @@ const formatDate = (dateString?: string) => {
   }
 };
 
+const getLeaveDetails = (employee: Employee) => {
+  if (!employee.date_of_joining) {
+    return { totalService: "N/A", daysEarned: 0, daysTaken: 0, balance: 0 };
+  }
+  const joinDate = new Date(employee.date_of_joining);
+  const now = new Date();
+  const totalMs = now.getTime() - joinDate.getTime();
+  const totalYears = totalMs / (365.25 * 24 * 60 * 60 * 1000);
+  const fullYears = Math.floor(totalYears);
+  const remainingMonths = Math.floor((totalYears - fullYears) * 12);
+
+  const parts: string[] = [];
+  if (fullYears > 0) parts.push(`${fullYears}y`);
+  if (remainingMonths > 0) parts.push(`${remainingMonths}m`);
+  const totalService = parts.length > 0 ? parts.join(" ") : "< 1m";
+
+  const daysEarned = fullYears * 30;
+  const balance = Number(employee.annual_leave_balance ?? 0);
+  const daysTaken = Math.max(0, daysEarned - balance);
+
+  return { totalService, daysEarned, daysTaken, balance };
+};
+
 export default function EmployeeList({
   onCreateEmployee,
   onEditEmployee,
@@ -529,112 +552,169 @@ export default function EmployeeList({
                       </div>
                     </div>
 
-                    {/* Identity Card */}
-                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                      <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">
-                        Identity
-                      </h4>
-                      <div className="space-y-1.5 text-xs">
-                        <div>
-                          <span className="text-gray-500 dark:text-gray-400">
-                            Emirates ID:
-                          </span>
-                          <span className="ml-2 text-gray-900 dark:text-white">
-                            {employee.emirates_id || "N/A"}
-                          </span>
-                          {employee.emirates_id_expiry && (
-                            <span className="ml-2 text-gray-500 dark:text-gray-400">
-                              (Exp: {formatDate(employee.emirates_id_expiry)})
+                    {/* Identity + Skills Column */}
+                    <div className="space-y-3">
+                      {/* Identity Card */}
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                        <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">
+                          Identity
+                        </h4>
+                        <div className="space-y-1.5 text-xs">
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              Emirates ID:
                             </span>
-                          )}
-                        </div>
-                        <div>
-                          <span className="text-gray-500 dark:text-gray-400">
-                            Passport No:
-                          </span>
-                          <span className="ml-2 text-gray-900 dark:text-white">
-                            {employee.pp_no || "N/A"}
-                          </span>
-                          {employee.pp_expiry && (
-                            <span className="ml-2 text-gray-500 dark:text-gray-400">
-                              (Exp: {formatDate(employee.pp_expiry)})
+                            <span className="ml-2 text-gray-900 dark:text-white">
+                              {employee.emirates_id || "N/A"}
                             </span>
-                          )}
+                            {employee.emirates_id_expiry && (
+                              <span className="ml-2 text-gray-500 dark:text-gray-400">
+                                (Exp: {formatDate(employee.emirates_id_expiry)})
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              Passport No:
+                            </span>
+                            <span className="ml-2 text-gray-900 dark:text-white">
+                              {employee.pp_no || "N/A"}
+                            </span>
+                            {employee.pp_expiry && (
+                              <span className="ml-2 text-gray-500 dark:text-gray-400">
+                                (Exp: {formatDate(employee.pp_expiry)})
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              Visa Expiry:
+                            </span>
+                            <span className="ml-2 text-gray-900 dark:text-white">
+                              {formatDate(employee.visa_expiry)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              Work Permit:
+                            </span>
+                            <span className="ml-2 text-gray-900 dark:text-white">
+                              {employee.work_permit_no || "N/A"}
+                            </span>
+                            {employee.work_permit_expiry && (
+                              <span className="ml-2 text-gray-500 dark:text-gray-400">
+                                (Exp: {formatDate(employee.work_permit_expiry)})
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-gray-500 dark:text-gray-400">
-                            Visa Expiry:
-                          </span>
-                          <span className="ml-2 text-gray-900 dark:text-white">
-                            {formatDate(employee.visa_expiry)}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500 dark:text-gray-400">
-                            Work Permit:
-                          </span>
-                          <span className="ml-2 text-gray-900 dark:text-white">
-                            {employee.work_permit_no || "N/A"}
-                          </span>
-                          {employee.work_permit_expiry && (
-                            <span className="ml-2 text-gray-500 dark:text-gray-400">
-                              (Exp: {formatDate(employee.work_permit_expiry)})
+                      </div>
+
+                      {/* Skills Card */}
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                        <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">
+                          Skills & Rates
+                        </h4>
+                        <div className="space-y-1.5">
+                          {employee.employeeSkills &&
+                          employee.employeeSkills.length > 0 ? (
+                            <>
+                              {employee.employeeSkills.filter((es) => es?.skill).map((es) => (
+                                <div
+                                  key={es.id}
+                                  className="text-xs space-y-1 pb-2 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-gray-900 dark:text-white font-medium">
+                                      {es.skill?.skill ?? "Unknown Skill"}
+                                    </span>
+                                    <StarRating
+                                      rating={es.rating}
+                                      maxRating={5}
+                                      size="sm"
+                                    />
+                                  </div>
+                                  <div className="text-gray-600 dark:text-gray-400">
+                                    {es.cost_price !== null &&
+                                    es.cost_price !== undefined ? (
+                                      <>
+                                        Rate:{" "}
+                                        <span className="font-semibold text-green-600 dark:text-green-400">
+                                          AED {Number(es.cost_price).toFixed(2)}
+                                          /hr
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="italic text-gray-400 dark:text-gray-500">
+                                        Rate: Not set
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500 text-xs">
+                              No skills assigned
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Skills Card */}
-                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                      <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">
-                        Skills & Rates
-                      </h4>
-                      <div className="space-y-1.5">
-                        {employee.employeeSkills &&
-                        employee.employeeSkills.length > 0 ? (
-                          <>
-                            {employee.employeeSkills.filter((es) => es?.skill).map((es) => (
-                              <div
-                                key={es.id}
-                                className="text-xs space-y-1 pb-2 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-gray-900 dark:text-white font-medium">
-                                    {es.skill?.skill ?? "Unknown Skill"}
-                                  </span>
-                                  <StarRating
-                                    rating={es.rating}
-                                    maxRating={5}
-                                    size="sm"
-                                  />
-                                </div>
-                                <div className="text-gray-600 dark:text-gray-400">
-                                  {es.cost_price !== null &&
-                                  es.cost_price !== undefined ? (
-                                    <>
-                                      Rate:{" "}
-                                      <span className="font-semibold text-green-600 dark:text-green-400">
-                                        AED {Number(es.cost_price).toFixed(2)}
-                                        /hr
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <span className="italic text-gray-400 dark:text-gray-500">
-                                      Rate: Not set
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </>
-                        ) : (
-                          <span className="text-gray-400 dark:text-gray-500 text-xs">
-                            No skills assigned
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    {/* Leave & Service Card */}
+                    {(() => {
+                      const leave = getLeaveDetails(employee);
+                      return (
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                          <h4 className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                            Leave & Service
+                          </h4>
+                          <div className="space-y-1.5 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-blue-700 dark:text-blue-300">
+                                Total Service:
+                              </span>
+                              <span className="font-medium text-blue-900 dark:text-blue-100">
+                                {leave.totalService}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-blue-700 dark:text-blue-300">
+                                Days Earned:
+                              </span>
+                              <span className="font-medium text-blue-900 dark:text-blue-100">
+                                {leave.daysEarned}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-blue-700 dark:text-blue-300">
+                                Days Taken:
+                              </span>
+                              <span className="font-medium text-blue-900 dark:text-blue-100">
+                                {leave.daysTaken}
+                              </span>
+                            </div>
+                            <div className="flex justify-between pt-2 mt-2 border-t border-blue-200 dark:border-blue-700">
+                              <span className="font-semibold text-blue-900 dark:text-blue-100">
+                                Balance:
+                              </span>
+                              <span className="font-bold text-blue-900 dark:text-blue-100">
+                                {leave.balance} days
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-blue-700 dark:text-blue-300">
+                                Air Tickets:
+                              </span>
+                              <span className="font-medium text-blue-900 dark:text-blue-100">
+                                {employee.air_tickets ?? 0}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Salary Information Card */}
                     <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-700">
