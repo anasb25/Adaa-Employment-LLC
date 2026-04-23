@@ -42,25 +42,38 @@ const formatDate = (dateString?: string) => {
   }
 };
 
+const MONTHLY_LEAVE_ACCRUAL = 2.5;
+
+const completedMonthsBetween = (start: Date, end: Date): number => {
+  if (end.getTime() <= start.getTime()) return 0;
+  let months =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth());
+  if (end.getDate() < start.getDate()) months -= 1;
+  return Math.max(0, months);
+};
+
 const getLeaveDetails = (employee: Employee) => {
   if (!employee.date_of_joining) {
     return { totalService: "N/A", daysEarned: 0, daysTaken: 0, balance: 0 };
   }
   const joinDate = new Date(employee.date_of_joining);
   const now = new Date();
-  const totalMs = now.getTime() - joinDate.getTime();
-  const totalYears = totalMs / (365.25 * 24 * 60 * 60 * 1000);
-  const fullYears = Math.floor(totalYears);
-  const remainingMonths = Math.floor((totalYears - fullYears) * 12);
+
+  const totalMonths = completedMonthsBetween(joinDate, now);
+  const fullYears = Math.floor(totalMonths / 12);
+  const remainingMonths = totalMonths % 12;
 
   const parts: string[] = [];
   if (fullYears > 0) parts.push(`${fullYears}y`);
   if (remainingMonths > 0) parts.push(`${remainingMonths}m`);
   const totalService = parts.length > 0 ? parts.join(" ") : "< 1m";
 
-  const daysEarned = fullYears * 30;
+  const daysEarned =
+    Math.round(totalMonths * MONTHLY_LEAVE_ACCRUAL * 100) / 100;
   const balance = Number(employee.annual_leave_balance ?? 0);
-  const daysTaken = Math.max(0, daysEarned - balance);
+  const daysTaken =
+    Math.max(0, Math.round((daysEarned - balance) * 100) / 100);
 
   return { totalService, daysEarned, daysTaken, balance };
 };
