@@ -11,6 +11,7 @@ import Button from "../components/ui/button/Button";
 import Input from "../components/form/input/InputField";
 import Select from "../components/form/Select";
 import MultiSelect from "../components/form/MultiSelect";
+import Checkbox from "../components/form/input/Checkbox";
 import Label from "../components/form/Label";
 import Badge from "../components/ui/badge/Badge";
 import { Modal } from "../components/ui/ReusableModal";
@@ -173,11 +174,13 @@ export default function ProjectManagement() {
         p.specialDayRates?.map((rate) => ({
           specialDayId: rate.specialDayId,
           clientRateMultiplier: rate.clientRateMultiplier,
+          isEnabled: rate.isEnabled ?? true,
         })) || [],
       rateVariantRates:
         p.rateVariantRates?.map((rate) => ({
           rateVariantId: rate.rateVariantId,
           clientRateMultiplier: rate.clientRateMultiplier,
+          isEnabled: rate.isEnabled ?? true,
         })) || [],
       clientId: p.clientId,
     });
@@ -263,7 +266,7 @@ export default function ProjectManagement() {
       ...form,
       specialDayRates: [
         ...(form.specialDayRates || []),
-        { specialDayId: 0, clientRateMultiplier: 1.0 },
+        { specialDayId: 0, clientRateMultiplier: 1.0, isEnabled: true },
       ],
     });
   };
@@ -289,7 +292,7 @@ export default function ProjectManagement() {
       ...form,
       rateVariantRates: [
         ...(form.rateVariantRates || []),
-        { rateVariantId: 0, clientRateMultiplier: 1.0 },
+        { rateVariantId: 0, clientRateMultiplier: 1.0, isEnabled: true },
       ],
     });
   };
@@ -650,65 +653,84 @@ export default function ProjectManagement() {
               </Button>
             </div>
             <p className="text-xs text-gray-500 mb-3">
-              Set project-specific client rate multipliers for special days.
-              Employee multipliers remain global.
+              Set project-specific client rate multipliers for special days,
+              or uncheck <b>Applies to project</b> to exclude a special day
+              from this project entirely (no mandatory off, no billing-hours
+              rules, no multiplier). Employee multipliers remain global.
             </p>
             {form.specialDayRates && form.specialDayRates.length > 0 && (
               <div className="space-y-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                {form.specialDayRates.map((rate, index) => (
-                  <div
-                    key={index}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end"
-                  >
-                    <div>
-                      <Label>Special Day</Label>
-                      <Select
-                        options={(specialDaysData || []).map((sd) => ({
-                          value: String(sd.id),
-                          label: sd.name,
-                        }))}
-                        value={
-                          rate.specialDayId ? String(rate.specialDayId) : ""
-                        }
-                        onChange={(v) =>
-                          updateSpecialDayRate(
-                            index,
-                            "specialDayId",
-                            Number(v)
-                          )
-                        }
-                        placeholder="Select special day"
-                      />
+                {form.specialDayRates.map((rate, index) => {
+                  const enabled = rate.isEnabled !== false;
+                  return (
+                    <div
+                      key={index}
+                      className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end"
+                    >
+                      <div>
+                        <Label>Special Day</Label>
+                        <Select
+                          options={(specialDaysData || []).map((sd) => ({
+                            value: String(sd.id),
+                            label: sd.name,
+                          }))}
+                          value={
+                            rate.specialDayId ? String(rate.specialDayId) : ""
+                          }
+                          onChange={(v) =>
+                            updateSpecialDayRate(
+                              index,
+                              "specialDayId",
+                              Number(v)
+                            )
+                          }
+                          placeholder="Select special day"
+                        />
+                      </div>
+                      <div className={enabled ? "" : "opacity-50"}>
+                        <Label>Client Multiplier</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          disabled={!enabled}
+                          value={rate.clientRateMultiplier || 1.0}
+                          onChange={(e) =>
+                            updateSpecialDayRate(
+                              index,
+                              "clientRateMultiplier",
+                              parseFloat(e.target.value) || 1.0
+                            )
+                          }
+                          placeholder="1.0"
+                        />
+                      </div>
+                      <div className="pb-2">
+                        <Checkbox
+                          label="Applies to project"
+                          checked={enabled}
+                          onChange={(checked) =>
+                            updateSpecialDayRate(
+                              index,
+                              "isEnabled",
+                              checked
+                            )
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => removeSpecialDayRate(index)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300"
+                        >
+                          <TrashBinIcon className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div>
-                      <Label>Client Multiplier</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={rate.clientRateMultiplier || 1.0}
-                        onChange={(e) =>
-                          updateSpecialDayRate(
-                            index,
-                            "clientRateMultiplier",
-                            parseFloat(e.target.value) || 1.0
-                          )
-                        }
-                        placeholder="1.0"
-                      />
-                    </div>
-                    <div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => removeSpecialDayRate(index)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        <TrashBinIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             {(!form.specialDayRates ||
@@ -732,65 +754,84 @@ export default function ProjectManagement() {
               </Button>
             </div>
             <p className="text-xs text-gray-500 mb-3">
-              Set project-specific client rate multipliers for rate variants.
-              Employee multipliers remain global.
+              Set project-specific client rate multipliers for rate variants,
+              or uncheck <b>Applies to project</b> to skip a variant on this
+              project (its hours bill at the regular/base rate). Employee
+              multipliers remain global.
             </p>
             {form.rateVariantRates && form.rateVariantRates.length > 0 && (
               <div className="space-y-3 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                {form.rateVariantRates.map((rate, index) => (
-                  <div
-                    key={index}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end"
-                  >
-                    <div>
-                      <Label>Rate Variant</Label>
-                      <Select
-                        options={(rateVariantsData || []).map((rv) => ({
-                          value: String(rv.id),
-                          label: rv.name,
-                        }))}
-                        value={
-                          rate.rateVariantId ? String(rate.rateVariantId) : ""
-                        }
-                        onChange={(v) =>
-                          updateRateVariantRate(
-                            index,
-                            "rateVariantId",
-                            Number(v)
-                          )
-                        }
-                        placeholder="Select rate variant"
-                      />
+                {form.rateVariantRates.map((rate, index) => {
+                  const enabled = rate.isEnabled !== false;
+                  return (
+                    <div
+                      key={index}
+                      className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end"
+                    >
+                      <div>
+                        <Label>Rate Variant</Label>
+                        <Select
+                          options={(rateVariantsData || []).map((rv) => ({
+                            value: String(rv.id),
+                            label: rv.name,
+                          }))}
+                          value={
+                            rate.rateVariantId ? String(rate.rateVariantId) : ""
+                          }
+                          onChange={(v) =>
+                            updateRateVariantRate(
+                              index,
+                              "rateVariantId",
+                              Number(v)
+                            )
+                          }
+                          placeholder="Select rate variant"
+                        />
+                      </div>
+                      <div className={enabled ? "" : "opacity-50"}>
+                        <Label>Client Multiplier</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          disabled={!enabled}
+                          value={rate.clientRateMultiplier || 1.0}
+                          onChange={(e) =>
+                            updateRateVariantRate(
+                              index,
+                              "clientRateMultiplier",
+                              parseFloat(e.target.value) || 1.0
+                            )
+                          }
+                          placeholder="1.0"
+                        />
+                      </div>
+                      <div className="pb-2">
+                        <Checkbox
+                          label="Applies to project"
+                          checked={enabled}
+                          onChange={(checked) =>
+                            updateRateVariantRate(
+                              index,
+                              "isEnabled",
+                              checked
+                            )
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => removeRateVariantRate(index)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300"
+                        >
+                          <TrashBinIcon className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div>
-                      <Label>Client Multiplier</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={rate.clientRateMultiplier || 1.0}
-                        onChange={(e) =>
-                          updateRateVariantRate(
-                            index,
-                            "clientRateMultiplier",
-                            parseFloat(e.target.value) || 1.0
-                          )
-                        }
-                        placeholder="1.0"
-                      />
-                    </div>
-                    <div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => removeRateVariantRate(index)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        <TrashBinIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             {(!form.rateVariantRates ||

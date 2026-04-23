@@ -10,6 +10,12 @@ export interface ProjectSpecialDayRate {
   projectId: number;
   specialDayId: number;
   clientRateMultiplier: number;
+  /**
+   * When `false`, the special day is NOT applied to this project at all
+   * (overrides global rules, multipliers, and billing-hours behaviour).
+   * Defaults to `true`.
+   */
+  isEnabled: boolean;
   specialDay?: SpecialDay;
   createdAt: string;
   updatedAt: string;
@@ -20,6 +26,12 @@ export interface ProjectRateVariantRate {
   projectId: number;
   rateVariantId: number;
   clientRateMultiplier: number;
+  /**
+   * When `false`, the rate variant is NOT applied to this project.
+   * Its hours fall through to the regular/base rate during invoicing
+   * and payroll. Defaults to `true`.
+   */
+  isEnabled: boolean;
   rateVariant?: RateVariant;
   createdAt: string;
   updatedAt: string;
@@ -45,11 +57,15 @@ export interface Project {
 export interface ProjectSpecialDayRateRequest {
   specialDayId: number;
   clientRateMultiplier: number;
+  /** Defaults to `true` on the server when omitted. */
+  isEnabled?: boolean;
 }
 
 export interface ProjectRateVariantRateRequest {
   rateVariantId: number;
   clientRateMultiplier: number;
+  /** Defaults to `true` on the server when omitted. */
+  isEnabled?: boolean;
 }
 
 export interface CreateProjectRequest {
