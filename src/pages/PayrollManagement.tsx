@@ -25,6 +25,16 @@ import {
   GridIcon,
 } from "../icons";
 
+/** All hour buckets counted in payroll / earnings (matches breakdown sum). */
+function payrollTotalPaidHours(p: Payroll): number {
+  return (
+    (Number(p.totalHours) || 0) +
+    (Number(p.totalOtHours) || 0) +
+    (Number(p.totalOffdaysWorkedHours) || 0) +
+    (Number(p.totalIdleDayHours) || 0)
+  );
+}
+
 export default function PayrollManagement() {
   const queryClient = useQueryClient();
 
@@ -615,6 +625,11 @@ export default function PayrollManagement() {
                 netSalary: 0,
               },
             );
+            const totalPaidHoursAcrossEmployees =
+              totals.totalHours +
+              totals.totalOtHours +
+              totals.totalOffdaysWorkedHours +
+              totals.totalIdleDayHours;
             return (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 border-brand-500 dark:border-brand-400 p-6">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
@@ -626,7 +641,7 @@ export default function PayrollManagement() {
                       Total Hours
                     </div>
                     <div className="text-lg font-bold text-gray-900 dark:text-white">
-                      {formatHours(totals.totalHours)}
+                      {formatHours(totalPaidHoursAcrossEmployees)}
                     </div>
                   </div>
                   <div>
@@ -805,7 +820,7 @@ export default function PayrollManagement() {
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
                                 <div className="text-sm text-gray-900 dark:text-white">
-                                  {formatHours(payroll.totalHours)}
+                                  {formatHours(payrollTotalPaidHours(payroll))}
                                 </div>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
@@ -959,6 +974,11 @@ export default function PayrollManagement() {
                             netSalary: 0,
                           },
                         );
+                        const grandTotalPaidHours =
+                          totals.totalHours +
+                          totals.totalOtHours +
+                          totals.totalOffdaysWorkedHours +
+                          totals.totalIdleDayHours;
                         return (
                           <tr className="bg-gray-100 dark:bg-gray-900 font-bold border-t-2 border-gray-300 dark:border-gray-600">
                             <td className="px-4 py-3 whitespace-nowrap sticky left-0 bg-gray-100 dark:bg-gray-900 z-10 text-sm font-bold text-gray-900 dark:text-white">
@@ -966,7 +986,7 @@ export default function PayrollManagement() {
                             </td>
                             <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
-                              {formatHours(totals.totalHours)}
+                              {formatHours(grandTotalPaidHours)}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
                               {formatHours(totals.totalOtHours)}
@@ -1474,7 +1494,7 @@ export default function PayrollManagement() {
                             >
                               <div className="text-right">
                                 <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                  Total Hours: {formatHours(payroll.totalHours)}
+                                  Total Hours: {formatHours(payrollTotalPaidHours(payroll))}
                                 </div>
                               </div>
                             </div>
