@@ -1189,7 +1189,7 @@ export default function MonthlyProjectTimesheets() {
                                               return (
                                                 <span
                                                   className="text-xs font-medium text-orange-800 dark:text-orange-200"
-                                                  title="Sunday — always off for idle employees"
+                                                  title="Sunday — always off on this sheet"
                                                 >
                                                   Off
                                                 </span>

@@ -53,7 +53,7 @@ export interface DailyHours {
   jobStatus: string | null;
   notes: string | null;
   entryId: number | null;
-  /** e.g. forced Sunday off for Idle Employees grid */
+  /** e.g. forced Sunday off for idle / annual-leave grid (virtual project id 0) */
   isOffDay?: boolean;
 }
 
@@ -66,7 +66,7 @@ export interface EmployeeTimesheet {
   dailyHours: DailyHours[];
 }
 
-/** project.id === 0 means "Idle Employees" (no real project) */
+/** project.id === 0 means idle + annual-leave monthly sheet (no real project) */
 export const IDLE_PROJECT_ID = 0;
 
 export interface MonthlyProjectTimesheetData {
