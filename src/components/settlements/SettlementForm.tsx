@@ -168,7 +168,7 @@ export default function SettlementForm({
     const hra = Number(selectedEmployee.hra) || 0;
     const annualLeaveBalance = Number(selectedEmployee.annual_leave_balance) || 0;
 
-    // 1. GRATUITY - Formula: basic salary / 30 * gratuity days per year (21 or 30) * total days from date of joining till last day / 365
+    // 1. GRATUITY — backend: under 5 years at 21 days/year; 5+ years at 30 days/year for full service; basic/30 daily wage
     if (eligibleForGratuity && gratuityCalc && gratuityCalc.gratuityAmount > 0) {
       const totalDays = selectedEmployee.date_of_joining && lastDateOfWork
         ? Math.floor((new Date(lastDateOfWork).getTime() - new Date(selectedEmployee.date_of_joining).getTime()) / (24 * 60 * 60 * 1000))
