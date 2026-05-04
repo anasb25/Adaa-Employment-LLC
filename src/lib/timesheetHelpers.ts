@@ -130,3 +130,16 @@ export function getStatusFullName(status: string | null): string {
 
   return statusNames[status] || status;
 }
+
+/** YYYY-MM-DD as UTC calendar date — Sunday is 0 (matches backend parseDateOnly). */
+export function isUtcSundayDate(dateStr: string): boolean {
+  const parts = dateStr.split("-");
+  if (parts.length !== 3) return false;
+  const year = Number(parts[0]);
+  const month = Number(parts[1]) - 1;
+  const day = Number(parts[2]);
+  if (Number.isNaN(year) || Number.isNaN(month + 1) || Number.isNaN(day)) {
+    return false;
+  }
+  return new Date(Date.UTC(year, month, day)).getUTCDay() === 0;
+}

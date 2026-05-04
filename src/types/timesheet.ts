@@ -53,6 +53,8 @@ export interface DailyHours {
   jobStatus: string | null;
   notes: string | null;
   entryId: number | null;
+  /** e.g. forced Sunday off for Idle Employees grid */
+  isOffDay?: boolean;
 }
 
 export interface EmployeeTimesheet {
