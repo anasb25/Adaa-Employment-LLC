@@ -53,7 +53,7 @@ export interface DailyHours {
   jobStatus: string | null;
   notes: string | null;
   entryId: number | null;
-  /** e.g. forced Sunday off for idle / annual-leave grid (virtual project id 0) */
+  /** e.g. forced Sunday off for idle rows on virtual project id 0 (not annual leave) */
   isOffDay?: boolean;
 }
 

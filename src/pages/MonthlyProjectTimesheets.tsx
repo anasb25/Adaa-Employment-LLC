@@ -19,7 +19,7 @@ import Label from "../components/form/Label";
 import HoursInput from "../components/form/HoursInput";
 import { decimalToHM } from "../utils/timeUtils";
 import TimesheetExportModal from "../components/timesheets/TimesheetExportModal";
-import { isUtcSundayDate } from "../lib/timesheetHelpers";
+import { isUtcSundayDate, isIdleSheetSundayForcedOff } from "../lib/timesheetHelpers";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -273,7 +273,6 @@ export default function MonthlyProjectTimesheets() {
     date: string,
     newStatus: string,
   ) => {
-    if (projectId === IDLE_PROJECT_ID && isUtcSundayDate(date)) return;
     const key = `${employeeId}-${date}`;
     const defaultHours = getDefaultHoursForStatus(newStatus);
 
@@ -296,7 +295,12 @@ export default function MonthlyProjectTimesheets() {
     date: string,
     currentStatus: string | null,
   ) => {
-    if (projectId === IDLE_PROJECT_ID && isUtcSundayDate(date)) return;
+    if (
+      projectId === IDLE_PROJECT_ID &&
+      isUtcSundayDate(date) &&
+      currentStatus !== "annual_leave"
+    )
+      return;
     const key = `${projectId}-${employeeId}-${date}`;
     setEditingStatusCell(key);
 
@@ -322,7 +326,12 @@ export default function MonthlyProjectTimesheets() {
     hours: number,
     currentStatus: string,
   ) => {
-    if (projectId === IDLE_PROJECT_ID && isUtcSundayDate(date)) return;
+    if (
+      projectId === IDLE_PROJECT_ID &&
+      isUtcSundayDate(date) &&
+      currentStatus !== "annual_leave"
+    )
+      return;
     const key = `${employeeId}-${date}`;
 
     setProjectEdits((prev: ProjectEdits) => {
@@ -343,11 +352,16 @@ export default function MonthlyProjectTimesheets() {
     employeeId: number,
     dailyHours: DailyHours,
   ): number => {
-    if (projectId === IDLE_PROJECT_ID && isUtcSundayDate(dailyHours.date)) {
-      return 0;
-    }
     const key = `${employeeId}-${dailyHours.date}`;
     const edits = projectEdits[projectId];
+    const resolvedStatus = edits?.has(key)
+      ? edits.get(key)!.status
+      : dailyHours.jobStatus;
+    if (
+      isIdleSheetSundayForcedOff(projectId, dailyHours.date, resolvedStatus)
+    ) {
+      return 0;
+    }
     return edits?.has(key) ? edits.get(key)!.hours : dailyHours.hoursWorked;
   };
 
@@ -356,13 +370,16 @@ export default function MonthlyProjectTimesheets() {
     employeeId: number,
     dailyHours: DailyHours,
   ): string => {
-    if (projectId === IDLE_PROJECT_ID && isUtcSundayDate(dailyHours.date)) {
-      return "off";
-    }
     const key = `${employeeId}-${dailyHours.date}`;
     const edits = projectEdits[projectId];
     const editStatus = edits?.has(key) ? edits.get(key)!.status : undefined;
-    return editStatus || dailyHours.jobStatus || "active";
+    const resolved =
+      editStatus || dailyHours.jobStatus || "active";
+
+    if (isIdleSheetSundayForcedOff(projectId, dailyHours.date, resolved)) {
+      return "off";
+    }
+    return resolved;
   };
 
   const handleSave = async (projectId: number, timesheetData: any) => {
@@ -390,10 +407,7 @@ export default function MonthlyProjectTimesheets() {
             const edit = edits.get(key);
             let hours = edit?.hours ?? dailyHour.hoursWorked;
             let status = edit?.status ?? dailyHour.jobStatus;
-            if (
-              projectId === IDLE_PROJECT_ID &&
-              isUtcSundayDate(dailyHour.date)
-            ) {
+            if (isIdleSheetSundayForcedOff(projectId, dailyHour.date, status)) {
               hours = 0;
               status = "off";
             }
@@ -450,10 +464,7 @@ export default function MonthlyProjectTimesheets() {
               const edit = edits.get(key);
               let hours = edit?.hours ?? dailyHour.hoursWorked;
               let status = edit?.status ?? dailyHour.jobStatus;
-              if (
-                projectId === IDLE_PROJECT_ID &&
-                isUtcSundayDate(dailyHour.date)
-              ) {
+              if (isIdleSheetSundayForcedOff(projectId, dailyHour.date, status)) {
                 hours = 0;
                 status = "off";
               }
@@ -1092,6 +1103,17 @@ export default function MonthlyProjectTimesheets() {
                                       ? "bg-orange-50 dark:bg-orange-900/20"
                                       : "";
 
+                                    const lockIdleSundayCell = Boolean(
+                                      dailyHour &&
+                                        isIdleSheetSundayForcedOff(
+                                          projectId,
+                                          dailyHour.date,
+                                          projectEdits[projectId]?.get(
+                                            `${employee.employeeId}-${dailyHour.date}`,
+                                          )?.status ?? dailyHour.jobStatus,
+                                        ),
+                                    );
+
                                     return (
                                       <td
                                         key={day}
@@ -1103,10 +1125,7 @@ export default function MonthlyProjectTimesheets() {
                                         onDoubleClick={() =>
                                           canEdit &&
                                           dailyHour &&
-                                          !(
-                                            projectId === IDLE_PROJECT_ID &&
-                                            isUtcSundayDate(dailyHour.date)
-                                          ) &&
+                                          !lockIdleSundayCell &&
                                           handleCellDoubleClick(
                                             projectId,
                                             employee.employeeId,
@@ -1182,14 +1201,11 @@ export default function MonthlyProjectTimesheets() {
                                               );
                                             }
 
-                                            if (
-                                              projectId === IDLE_PROJECT_ID &&
-                                              isUtcSundayDate(dailyHour.date)
-                                            ) {
+                                            if (lockIdleSundayCell) {
                                               return (
                                                 <span
                                                   className="text-xs font-medium text-orange-800 dark:text-orange-200"
-                                                  title="Sunday — always off on this sheet"
+                                                  title="Sunday — off for idle rows only; annual leave includes Sundays."
                                                 >
                                                   Off
                                                 </span>
@@ -1398,33 +1414,42 @@ export default function MonthlyProjectTimesheets() {
                 projectEdits[exportProjectId] || new Map<string, DayEdit>()
               }
               getHoursValue={(employeeId: number, dailyHour: any) => {
+                const key = `${employeeId}-${dailyHour.date}`;
+                const edits = projectEdits[exportProjectId];
+                const resolved = edits?.has(key)
+                  ? edits.get(key)!.status
+                  : dailyHour.jobStatus;
                 if (
-                  exportProjectId === IDLE_PROJECT_ID &&
-                  dailyHour?.date &&
-                  isUtcSundayDate(dailyHour.date)
+                  isIdleSheetSundayForcedOff(
+                    exportProjectId,
+                    dailyHour?.date,
+                    resolved,
+                  )
                 ) {
                   return 0;
                 }
-                const key = `${employeeId}-${dailyHour.date}`;
-                const edits = projectEdits[exportProjectId];
                 return edits?.has(key)
                   ? edits.get(key)!.hours
                   : dailyHour.hoursWorked;
               }}
               getStatusValue={(employeeId: number, dailyHour: any) => {
-                if (
-                  exportProjectId === IDLE_PROJECT_ID &&
-                  dailyHour?.date &&
-                  isUtcSundayDate(dailyHour.date)
-                ) {
-                  return "off";
-                }
                 const key = `${employeeId}-${dailyHour.date}`;
                 const edits = projectEdits[exportProjectId];
                 const editStatus = edits?.has(key)
                   ? edits.get(key)!.status
                   : undefined;
-                return editStatus || dailyHour.jobStatus || "active";
+                const resolved =
+                  editStatus || dailyHour.jobStatus || "active";
+                if (
+                  isIdleSheetSundayForcedOff(
+                    exportProjectId,
+                    dailyHour?.date,
+                    resolved,
+                  )
+                ) {
+                  return "off";
+                }
+                return resolved;
               }}
             />
           );

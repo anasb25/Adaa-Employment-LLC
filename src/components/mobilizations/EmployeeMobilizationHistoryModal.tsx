@@ -25,7 +25,7 @@ export default function EmployeeMobilizationHistoryModal({
 }: EmployeeMobilizationHistoryModalProps) {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
 
   // Fetch employee history
@@ -35,7 +35,7 @@ export default function EmployeeMobilizationHistoryModal({
       mobilizationsApi.getEmployeeHistory(
         employeeId,
         startDate || undefined,
-        endDate || undefined
+        endDate || undefined,
       ),
     enabled: isOpen && employeeId > 0,
   });

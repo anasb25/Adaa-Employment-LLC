@@ -15,6 +15,7 @@ import {
   PlusIcon,
   FileIcon,
   DownloadIcon,
+  ListIcon,
 } from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
 import { Employee } from "../../types/employee";
@@ -25,6 +26,7 @@ import {
 import { JobStatus } from "../../types/mobilization";
 import PermissionGuard from "../auth/PermissionGuard";
 import EmployeeImportModal from "./EmployeeImportModal";
+import AnnualLeaveHistoryModal from "./AnnualLeaveHistoryModal";
 import { downloadFile } from "../../utils/excelValidator";
 
 interface EmployeeListProps {
@@ -72,8 +74,7 @@ const getLeaveDetails = (employee: Employee) => {
   const daysEarned =
     Math.round(totalMonths * MONTHLY_LEAVE_ACCRUAL * 100) / 100;
   const balance = Number(employee.annual_leave_balance ?? 0);
-  const daysTaken =
-    Math.max(0, Math.round((daysEarned - balance) * 100) / 100);
+  const daysTaken = Math.max(0, Math.round((daysEarned - balance) * 100) / 100);
 
   return { totalService, daysEarned, daysTaken, balance };
 };
@@ -87,6 +88,10 @@ export default function EmployeeList({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [annualLeaveModalEmployee, setAnnualLeaveModalEmployee] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
   const queryClient = useQueryClient();
 
   const limit = 10;
@@ -118,7 +123,9 @@ export default function EmployeeList({
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.employees.search });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to delete employees");
+      toast.error(
+        error.response?.data?.message || "Failed to delete employees",
+      );
     },
   });
 
@@ -135,7 +142,7 @@ export default function EmployeeList({
     if (selectedIds.size === 0) return;
     if (
       window.confirm(
-        `Are you sure you want to delete ${selectedIds.size} employee(s)?`
+        `Are you sure you want to delete ${selectedIds.size} employee(s)?`,
       )
     ) {
       deleteManyMutation.mutate(Array.from(selectedIds));
@@ -150,7 +157,7 @@ export default function EmployeeList({
         setSelectedIds(new Set(employees.map((e) => e.id)));
       }
     },
-    [selectedIds]
+    [selectedIds],
   );
 
   // Decrement air ticket mutation
@@ -167,7 +174,7 @@ export default function EmployeeList({
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.message || "Failed to decrement air ticket"
+        error.response?.data?.message || "Failed to decrement air ticket",
       );
     },
   });
@@ -178,7 +185,7 @@ export default function EmployeeList({
     onSuccess: (blob) => {
       downloadFile(
         blob,
-        `employees_export_${new Date().toISOString().split("T")[0]}.xlsx`
+        `employees_export_${new Date().toISOString().split("T")[0]}.xlsx`,
       );
       toast.success("Employees exported successfully!");
     },
@@ -193,7 +200,7 @@ export default function EmployeeList({
         onEditEmployee(employee);
       }
     },
-    [onEditEmployee]
+    [onEditEmployee],
   );
 
   const handleDelete = useCallback(
@@ -202,7 +209,7 @@ export default function EmployeeList({
         deleteMutation.mutate(employeeId);
       }
     },
-    [deleteMutation]
+    [deleteMutation],
   );
 
   // Use the custom search hook with debouncing
@@ -313,9 +320,13 @@ export default function EmployeeList({
                   variant="outline"
                   className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
                   onClick={handleDeleteSelected}
-                  disabled={selectedIds.size === 0 || deleteManyMutation.isPending}
+                  disabled={
+                    selectedIds.size === 0 || deleteManyMutation.isPending
+                  }
                 >
-                  {deleteManyMutation.isPending ? "Deleting..." : "Confirm Delete"}
+                  {deleteManyMutation.isPending
+                    ? "Deleting..."
+                    : "Confirm Delete"}
                 </Button>
                 <Button
                   variant="outline"
@@ -454,7 +465,8 @@ export default function EmployeeList({
                         >
                           {JOB_STATUS_OPTIONS.find(
                             (o) =>
-                              o.value === employee.latestMobilization?.jobStatus
+                              o.value ===
+                              employee.latestMobilization?.jobStatus,
                           )?.label || employee.latestMobilization.jobStatus}
                         </span>
                       ) : (
@@ -632,39 +644,42 @@ export default function EmployeeList({
                           {employee.employeeSkills &&
                           employee.employeeSkills.length > 0 ? (
                             <>
-                              {employee.employeeSkills.filter((es) => es?.skill).map((es) => (
-                                <div
-                                  key={es.id}
-                                  className="text-xs space-y-1 pb-2 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0"
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-gray-900 dark:text-white font-medium">
-                                      {es.skill?.skill ?? "Unknown Skill"}
-                                    </span>
-                                    <StarRating
-                                      rating={es.rating}
-                                      maxRating={5}
-                                      size="sm"
-                                    />
-                                  </div>
-                                  <div className="text-gray-600 dark:text-gray-400">
-                                    {es.cost_price !== null &&
-                                    es.cost_price !== undefined ? (
-                                      <>
-                                        Rate:{" "}
-                                        <span className="font-semibold text-green-600 dark:text-green-400">
-                                          AED {Number(es.cost_price).toFixed(2)}
-                                          /hr
-                                        </span>
-                                      </>
-                                    ) : (
-                                      <span className="italic text-gray-400 dark:text-gray-500">
-                                        Rate: Not set
+                              {employee.employeeSkills
+                                .filter((es) => es?.skill)
+                                .map((es) => (
+                                  <div
+                                    key={es.id}
+                                    className="text-xs space-y-1 pb-2 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-gray-900 dark:text-white font-medium">
+                                        {es.skill?.skill ?? "Unknown Skill"}
                                       </span>
-                                    )}
+                                      <StarRating
+                                        rating={es.rating}
+                                        maxRating={5}
+                                        size="sm"
+                                      />
+                                    </div>
+                                    <div className="text-gray-600 dark:text-gray-400">
+                                      {es.cost_price !== null &&
+                                      es.cost_price !== undefined ? (
+                                        <>
+                                          Rate:{" "}
+                                          <span className="font-semibold text-green-600 dark:text-green-400">
+                                            AED{" "}
+                                            {Number(es.cost_price).toFixed(2)}
+                                            /hr
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <span className="italic text-gray-400 dark:text-gray-500">
+                                          Rate: Not set
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
                             </>
                           ) : (
                             <span className="text-gray-400 dark:text-gray-500 text-xs">
@@ -700,11 +715,27 @@ export default function EmployeeList({
                                 {leave.daysEarned}
                               </span>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-blue-700 dark:text-blue-300">
+                            <div className="flex justify-between items-center gap-2">
+                              <span className="flex items-center gap-0.5 text-blue-700 dark:text-blue-300">
                                 Days Taken:
+                                <PermissionGuard permission="employee:read">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setAnnualLeaveModalEmployee({
+                                        id: employee.id,
+                                        name: employee.name,
+                                      })
+                                    }
+                                    className="-m-0.5 inline-flex rounded p-0.5 text-blue-600 hover:bg-blue-200/70 hover:text-blue-800 dark:text-blue-400 dark:hover:bg-blue-800/60 dark:hover:text-blue-100"
+                                    title="Annual leave history"
+                                    aria-label="View annual leave history"
+                                  >
+                                    <ListIcon className="h-4 w-4 shrink-0" />
+                                  </button>
+                                </PermissionGuard>
                               </span>
-                              <span className="font-medium text-blue-900 dark:text-blue-100">
+                              <span className="font-medium tabular-nums text-blue-900 dark:text-blue-100">
                                 {leave.daysTaken}
                               </span>
                             </div>
@@ -742,7 +773,7 @@ export default function EmployeeList({
                           <span className="font-medium text-green-900 dark:text-green-100">
                             {employee.basic_salary
                               ? `AED ${Number(employee.basic_salary).toFixed(
-                                  2
+                                  2,
                                 )}`
                               : "N/A"}
                           </span>
@@ -764,7 +795,7 @@ export default function EmployeeList({
                           <span className="font-medium text-green-900 dark:text-green-100">
                             {employee.other_allowance
                               ? `AED ${Number(employee.other_allowance).toFixed(
-                                  2
+                                  2,
                                 )}`
                               : "N/A"}
                           </span>
@@ -805,6 +836,15 @@ export default function EmployeeList({
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
       />
+
+      {annualLeaveModalEmployee && (
+        <AnnualLeaveHistoryModal
+          isOpen
+          employeeId={annualLeaveModalEmployee.id}
+          employeeName={annualLeaveModalEmployee.name}
+          onClose={() => setAnnualLeaveModalEmployee(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { IDLE_PROJECT_ID } from "../types/timesheet";
+
 /**
  * Job status abbreviations for timesheet display
  * Max 3 letters for narrow columns
@@ -142,4 +144,23 @@ export function isUtcSundayDate(dateStr: string): boolean {
     return false;
   }
   return new Date(Date.UTC(year, month, day)).getUTCDay() === 0;
+}
+
+/**
+ * Idle + annual-leave virtual sheet (`IDLE_PROJECT_ID`): Sundays default to forced
+ * "off" for idle/non-leave rows only; annual_leave periods include Sundays.
+ */
+export function isIdleSheetSundayForcedOff(
+  projectId: number,
+  dateStr: string | undefined,
+  resolvedJobStatus: string | null | undefined,
+): boolean {
+  if (
+    projectId !== IDLE_PROJECT_ID ||
+    !dateStr ||
+    !isUtcSundayDate(dateStr)
+  ) {
+    return false;
+  }
+  return resolvedJobStatus?.toLowerCase() !== "annual_leave";
 }
