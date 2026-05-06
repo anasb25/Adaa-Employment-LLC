@@ -152,148 +152,27 @@ export default function PayrollManagement() {
     }
   };
 
-  const handleDownloadPDF = (payroll: Payroll) => {
-    // Create a print-friendly window
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      toast.error("Please allow popups to download PDF");
-      return;
+  const handleDownloadPDF = async (payroll: Payroll) => {
+    const toastId = toast.loading("Generating PDF…");
+    try {
+      const blob = await payrollApi.downloadPayrollPdf(payroll.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      const safe = (payroll.employee?.adaa_emp_code ?? "emp").replace(
+        /[^\w\-]/g,
+        "_",
+      );
+      link.download = `Payroll_${safe}_${payroll.month}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("Payroll PDF downloaded", { id: toastId });
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to download payroll PDF", { id: toastId });
     }
-
-    const employee = payroll.employee;
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Payroll - ${
-          employee?.name || "Employee"
-        } - ${selectedMonth}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .header h1 { margin: 0; color: #333; }
-          .header p { margin: 5px 0; color: #666; }
-          .section { margin: 20px 0; }
-          .section-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; background: #f5f5f5; padding: 8px; }
-          table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-          th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
-          th { background: #f5f5f5; font-weight: bold; }
-          .total-row { font-weight: bold; background: #f9f9f9; }
-          .salary-box { background: #e8f5e9; padding: 15px; margin: 10px 0; border-radius: 5px; }
-          .gross-box { background: #e3f2fd; padding: 15px; margin: 10px 0; border-radius: 5px; }
-          .net-box { background: #c8e6c9; padding: 15px; margin: 10px 0; border-radius: 5px; font-size: 18px; font-weight: bold; }
-          @media print { button { display: none; } }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>PAYROLL STATEMENT</h1>
-          <p>Month: ${selectedMonth}</p>
-          <p>Generated on: ${new Date().toLocaleDateString()}</p>
-        </div>
-
-        <div class="section">
-          <h2>Employee Information</h2>
-          <table>
-            <tr><th>Name</th><td>${employee?.name || "N/A"}</td></tr>
-            <tr><th>Employee Code</th><td>${
-              employee?.adaa_emp_code || "N/A"
-            }</td></tr>
-            <tr><th>Month</th><td>${payroll.month}</td></tr>
-          </table>
-        </div>
-
-        <div class="net-box">
-          NET SALARY: AED ${formatNumber(payroll.netSalary || 0)}
-          <div style="font-size: 12px; font-weight: normal; margin-top: 5px;">Hours-based gross + additional allowances − deductions</div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Hours & Earnings</div>
-          <table>
-            <tr><th>Type</th><th>Hours</th></tr>
-            <tr><td>Regular Hours</td><td>${formatNumber(
-              payroll.totalHours,
-            )}</td></tr>
-            <tr><td>Overtime Hours</td><td>${formatNumber(
-              payroll.totalOtHours,
-            )}</td></tr>
-            <tr><td>Off Days Worked Hours</td><td>${formatNumber(
-              payroll.totalOffdaysWorkedHours,
-            )}</td></tr>
-            <tr><td>Idle Hours</td><td>${formatNumber(
-              payroll.totalIdleDayHours,
-            )}</td></tr>
-          </table>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Additional Allowances</div>
-          ${
-            payroll.allowances && Object.keys(payroll.allowances).length > 0
-              ? `<table>
-                  <tr><th>Description</th><th>Amount (AED)</th></tr>
-                  ${Object.entries(payroll.allowances)
-                    .map(
-                      ([key, value]) =>
-                        `<tr><td>${key}</td><td>${formatNumber(
-                          Number(value),
-                        )}</td></tr>`,
-                    )
-                    .join("")}
-                </table>`
-              : "<p>No additional allowances</p>"
-          }
-        </div>
-
-        <div class="section">
-          <div class="section-title">Deductions</div>
-          <table>
-            <tr><th>Description</th><th>Amount (AED)</th></tr>
-            <tr><td>Absent Days Deductible</td><td>${formatNumber(
-              payroll.absentDaysDeductible,
-            )}</td></tr>
-            ${
-              payroll.otherDeductions &&
-              Object.keys(payroll.otherDeductions).length > 0
-                ? Object.entries(payroll.otherDeductions)
-                    .map(
-                      ([key, value]) =>
-                        `<tr><td>${key}</td><td>${formatNumber(
-                          Number(value),
-                        )}</td></tr>`,
-                    )
-                    .join("")
-                : ""
-            }
-          </table>
-        </div>
-
-        <div class="gross-box">
-          <strong>TOTAL GROSS SALARY:</strong> AED ${formatNumber(
-            payroll.totalGrossSalary || 0,
-          )}
-          <div style="font-size: 12px; margin-top: 5px;">Base Rate: AED ${formatNumber(
-            payroll.baseHourlyRate || 0,
-          )}/hr</div>
-        </div>
-
-        ${
-          payroll.notes
-            ? `<div class="section"><strong>Notes:</strong><p>${payroll.notes}</p></div>`
-            : ""
-        }
-
-        <div style="margin-top: 40px; text-align: center;">
-          <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Print / Save as PDF</button>
-        </div>
-      </body>
-      </html>
-    `;
-
-    printWindow.document.write(html);
-    printWindow.document.close();
   };
 
   const formatNumber = (value: number): string => {

@@ -148,6 +148,16 @@ export const payrollApi = {
   },
 
   /**
+   * Download payroll PDF (server-generated, same approach as invoices)
+   */
+  downloadPayrollPdf: async (id: number): Promise<Blob> => {
+    const response = await axiosInstance.get(`/payroll/${id}/pdf`, {
+      responseType: "blob",
+    });
+    return response.data;
+  },
+
+  /**
    * Check if payroll exists for an employee and month
    */
   checkPayrollExists: async (
