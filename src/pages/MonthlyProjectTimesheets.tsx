@@ -17,7 +17,7 @@ import PermissionGuard from "../components/auth/PermissionGuard";
 import Button from "../components/ui/button/Button";
 import Label from "../components/form/Label";
 import HoursInput from "../components/form/HoursInput";
-import { decimalToHM } from "../utils/timeUtils";
+import { formatDecimalHours } from "../utils/timeUtils";
 import TimesheetExportModal from "../components/timesheets/TimesheetExportModal";
 import { isUtcSundayDate, isIdleSheetSundayForcedOff } from "../lib/timesheetHelpers";
 import {
@@ -577,7 +577,7 @@ export default function MonthlyProjectTimesheets() {
           Math.round(getHoursValue(projectId, employeeId, dailyHour) * 100) /
           100;
         const status = getStatusValue(projectId, employeeId, dailyHour);
-        return hours === 0 ? getStatusAbbreviation(status) : decimalToHM(hours);
+        return hours === 0 ? getStatusAbbreviation(status) : formatDecimalHours(hours);
       };
 
       const excelData: any[] = [];
@@ -638,7 +638,7 @@ export default function MonthlyProjectTimesheets() {
 
           employeeTotal = Math.round(employeeTotal * 100) / 100;
           grandTotal += employeeTotal;
-          row.push(decimalToHM(employeeTotal));
+          row.push(formatDecimalHours(employeeTotal));
           excelData.push(row);
         }
       }
@@ -648,7 +648,7 @@ export default function MonthlyProjectTimesheets() {
       totalRow[0] = "";
       totalRow[6] = "Grand Total";
       days.forEach(() => totalRow.push(""));
-      totalRow.push(decimalToHM(grandTotal));
+      totalRow.push(formatDecimalHours(grandTotal));
       excelData.push(totalRow);
 
       const ws = XLSX.utils.aoa_to_sheet(excelData);
@@ -762,7 +762,7 @@ export default function MonthlyProjectTimesheets() {
                   Export All
                 </Button>
                 <span className="text-2xl font-bold text-brand-600 dark:text-brand-400">
-                  {decimalToHM(grandTotalHours)}
+                  {formatDecimalHours(grandTotalHours)}
                 </span>
               </div>
             </div>
@@ -1290,7 +1290,7 @@ export default function MonthlyProjectTimesheets() {
                                     className="px-2 py-2 text-center text-sm font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900/50"
                                     style={{ minWidth: "70px", width: "70px" }}
                                   >
-                                    {decimalToHM(employeeTotal)}
+                                    {formatDecimalHours(employeeTotal)}
                                   </td>
                                 </tr>
                               );
@@ -1343,7 +1343,7 @@ export default function MonthlyProjectTimesheets() {
                                     className="px-0.5 py-3 text-center text-xs font-bold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
                                     style={{ minWidth: "45px", width: "45px" }}
                                   >
-                                    {dayTotal > 0 ? decimalToHM(dayTotal) : "-"}
+                                    {dayTotal > 0 ? formatDecimalHours(dayTotal) : "-"}
                                   </td>
                                 );
                               })}
@@ -1351,7 +1351,7 @@ export default function MonthlyProjectTimesheets() {
                                 className="px-2 py-3 text-center text-sm font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-800"
                                 style={{ minWidth: "70px", width: "70px" }}
                               >
-                                {decimalToHM(
+                                {formatDecimalHours(
                                   Math.round(
                                     employeesToShow.reduce(
                                       (grandTotal: number, employee: any) => {

@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { invoicesApi } from "../services/api/invoicesApi";
-import { decimalToHM } from "../utils/timeUtils";
+import { formatDecimalHours } from "../utils/timeUtils";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import Button from "../components/ui/button/Button";
@@ -239,7 +239,7 @@ export default function InvoiceDetail() {
                             {variant.variantName}
                           </td>
                           <td className="px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300">
-                            {decimalToHM(Number(variant.hours))}
+                            {formatDecimalHours(Number(variant.hours))}
                           </td>
                           <td className="px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300">
                             {formatCurrency(variant.ratePerHour)}
@@ -265,7 +265,7 @@ export default function InvoiceDetail() {
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Total Hours:</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
-                  {decimalToHM(
+                  {formatDecimalHours(
                     invoice.lineItems.reduce(
                       (sum, item) =>
                         sum +

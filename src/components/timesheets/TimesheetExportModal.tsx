@@ -3,7 +3,7 @@ import { Modal } from "../ui/ReusableModal";
 import Button from "../ui/button/Button";
 import { MonthlyProjectTimesheetData } from "../../types/timesheet";
 import { DownloadIcon, FileIcon } from "../../icons";
-import { decimalToHM } from "../../utils/timeUtils";
+import { formatDecimalHours } from "../../utils/timeUtils";
 import * as XLSX from "xlsx";
 import {
   Document,
@@ -76,7 +76,7 @@ export default function TimesheetExportModal({
     const hours = Math.round(getHoursValue(employeeId, dailyHour) * 100) / 100;
     const status = getStatusValue(employeeId, dailyHour);
 
-    return hours === 0 ? getStatusAbbreviation(status) : decimalToHM(hours);
+    return hours === 0 ? getStatusAbbreviation(status) : formatDecimalHours(hours);
   };
 
   const getDaysInMonth = (monthStr: string) => {
@@ -189,7 +189,7 @@ export default function TimesheetExportModal({
         }
       });
 
-      row += `<td style="text-align: center; font-weight: bold;">${decimalToHM(employeeTotals[idx])}</td></tr>`;
+      row += `<td style="text-align: center; font-weight: bold;">${formatDecimalHours(employeeTotals[idx])}</td></tr>`;
       tableRows += row;
     });
 
@@ -199,11 +199,11 @@ export default function TimesheetExportModal({
 
     dayTotals.forEach((total) => {
       totalRow += `<td style="text-align: center;">${
-        total > 0 ? decimalToHM(total) : "-"
+        total > 0 ? formatDecimalHours(total) : "-"
       }</td>`;
     });
 
-    totalRow += `<td style="text-align: center; font-weight: bold; font-size: 10px;">${decimalToHM(grandTotal)}</td></tr>`;
+    totalRow += `<td style="text-align: center; font-weight: bold; font-size: 10px;">${formatDecimalHours(grandTotal)}</td></tr>`;
     tableRows += totalRow;
 
     return `
@@ -471,7 +471,7 @@ export default function TimesheetExportModal({
             new TableCell({
               children: [
                 new Paragraph({
-                  text: decimalToHM(employeeTotals[idx]),
+                  text: formatDecimalHours(employeeTotals[idx]),
                   alignment: AlignmentType.CENTER,
                   bold: true,
                 }),
@@ -496,7 +496,7 @@ export default function TimesheetExportModal({
           new TableCell({
             children: [
               new Paragraph({
-                text: total > 0 ? decimalToHM(total) : "-",
+                text: total > 0 ? formatDecimalHours(total) : "-",
                 alignment: AlignmentType.CENTER,
                 bold: true,
               }),
@@ -509,7 +509,7 @@ export default function TimesheetExportModal({
         new TableCell({
           children: [
             new Paragraph({
-              text: decimalToHM(grandTotal),
+              text: formatDecimalHours(grandTotal),
               alignment: AlignmentType.CENTER,
               bold: true,
             }),
@@ -664,16 +664,16 @@ export default function TimesheetExportModal({
           row.push(displayValue);
         });
 
-        row.push(decimalToHM(employeeTotals[idx]));
+        row.push(formatDecimalHours(employeeTotals[idx]));
         excelData.push(row);
       });
 
       // Total row
       const totalRow = ["", "", "", "", "Total Hrs"];
       days.forEach((day, idx) => {
-        totalRow.push(dayTotals[idx] > 0 ? decimalToHM(dayTotals[idx]) : "-");
+        totalRow.push(dayTotals[idx] > 0 ? formatDecimalHours(dayTotals[idx]) : "-");
       });
-      totalRow.push(decimalToHM(grandTotal));
+      totalRow.push(formatDecimalHours(grandTotal));
       excelData.push(totalRow);
 
       // Signature row

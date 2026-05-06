@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { payrollApi } from "../services/api/payrollApi";
-import { decimalToHM } from "../utils/timeUtils";
+import { formatDecimalHours } from "../utils/timeUtils";
 import { QUERY_KEYS } from "../lib/constants";
 import { Payroll } from "../types/payroll";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
@@ -301,7 +301,7 @@ export default function PayrollManagement() {
   };
 
   const formatHours = (value: number): string => {
-    return decimalToHM(Number(value) || 0);
+    return formatDecimalHours(Number(value) || 0);
   };
 
   const formatJsonDisplay = (data: Record<string, any> | null): string => {

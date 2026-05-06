@@ -1,14 +1,11 @@
 /**
- * Convert a decimal hours value (e.g. 10.5) to "H:MM" display string (e.g. "10:30").
- * Whole hours omit the minutes part (e.g. 10 → "10").
+ * Format decimal hours for display (e.g. 10.5 → "10.5", 10 → "10").
+ * Rounds to two decimal places; trims trailing zeros.
  */
-export function decimalToHM(decimal: number): string {
+export function formatDecimalHours(decimal: number): string {
   if (decimal == null || isNaN(decimal)) return "0";
-  const totalMinutes = Math.round(decimal * 60);
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  if (m === 0) return h.toString();
-  return `${h}:${m.toString().padStart(2, "0")}`;
+  const rounded = Math.round(decimal * 100) / 100;
+  return rounded.toFixed(2).replace(/\.?0+$/, "");
 }
 
 /**

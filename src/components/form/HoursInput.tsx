@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { decimalToHM, parseTimeInput } from "../../utils/timeUtils";
+import { formatDecimalHours, parseTimeInput } from "../../utils/timeUtils";
 
 interface HoursInputProps {
   value: number;
@@ -35,7 +35,7 @@ export default function HoursInput({
 
   const handleFocus = () => {
     setEditing(true);
-    setText(decimalToHM(value));
+    setText(formatDecimalHours(value));
     setTimeout(() => inputRef.current?.select(), 0);
   };
 
@@ -53,7 +53,7 @@ export default function HoursInput({
       inputRef.current?.blur();
     }
     if (e.key === "Escape") {
-      setText(decimalToHM(value));
+      setText(formatDecimalHours(value));
       setEditing(false);
       onBlur?.();
     }
@@ -64,7 +64,7 @@ export default function HoursInput({
       ref={inputRef}
       type="text"
       inputMode="numeric"
-      value={editing ? text : decimalToHM(value)}
+      value={editing ? text : formatDecimalHours(value)}
       onChange={(e) => setText(e.target.value)}
       onFocus={handleFocus}
       onBlur={handleBlur}
@@ -72,7 +72,7 @@ export default function HoursInput({
       disabled={disabled}
       autoFocus={autoFocus}
       title={title}
-      placeholder="H:MM"
+      placeholder="hours"
       className={className}
     />
   );
