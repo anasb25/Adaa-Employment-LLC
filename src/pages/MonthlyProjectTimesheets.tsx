@@ -566,18 +566,19 @@ export default function MonthlyProjectTimesheets() {
       ).getDate();
       const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-      const getDisplayValue = (
+      /** Excel: real numbers for hour cells so SUM/AVERAGE work; text for statuses. */
+      const getExcelCellValue = (
         projectId: number,
         employeeId: number,
         dailyHour: DailyHours | undefined,
-      ): string => {
+      ): string | number => {
         if (!dailyHour || dailyHour.jobStatus === null) return "-";
         if (dailyHour.jobStatus === "demobilized") return "Dem";
         const hours =
           Math.round(getHoursValue(projectId, employeeId, dailyHour) * 100) /
           100;
         const status = getStatusValue(projectId, employeeId, dailyHour);
-        return hours === 0 ? getStatusAbbreviation(status) : formatDecimalHours(hours);
+        return hours === 0 ? getStatusAbbreviation(status) : hours;
       };
 
       const excelData: any[] = [];
@@ -619,7 +620,11 @@ export default function MonthlyProjectTimesheets() {
           days.forEach((day) => {
             const dailyHour = employee.dailyHours.find((dh) => dh.day === day);
             row.push(
-              getDisplayValue(data.project.id, employee.employeeId, dailyHour),
+              getExcelCellValue(
+                data.project.id,
+                employee.employeeId,
+                dailyHour,
+              ),
             );
 
             if (
@@ -638,7 +643,7 @@ export default function MonthlyProjectTimesheets() {
 
           employeeTotal = Math.round(employeeTotal * 100) / 100;
           grandTotal += employeeTotal;
-          row.push(formatDecimalHours(employeeTotal));
+          row.push(employeeTotal);
           excelData.push(row);
         }
       }
@@ -648,7 +653,7 @@ export default function MonthlyProjectTimesheets() {
       totalRow[0] = "";
       totalRow[6] = "Grand Total";
       days.forEach(() => totalRow.push(""));
-      totalRow.push(formatDecimalHours(grandTotal));
+      totalRow.push(grandTotal);
       excelData.push(totalRow);
 
       const ws = XLSX.utils.aoa_to_sheet(excelData);

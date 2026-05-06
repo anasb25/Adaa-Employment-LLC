@@ -79,6 +79,14 @@ export default function TimesheetExportModal({
     return hours === 0 ? getStatusAbbreviation(status) : formatDecimalHours(hours);
   };
 
+  const getExcelCellValue = (employeeId: number, dailyHour: any): string | number => {
+    if (!dailyHour || dailyHour.jobStatus === null) return "-";
+    if (dailyHour.jobStatus === "demobilized") return "Dem";
+    const hours = Math.round(getHoursValue(employeeId, dailyHour) * 100) / 100;
+    const status = getStatusValue(employeeId, dailyHour);
+    return hours === 0 ? getStatusAbbreviation(status) : hours;
+  };
+
   const getDaysInMonth = (monthStr: string) => {
     const [year, monthNum] = monthStr.split("-").map(Number);
     return new Date(year, monthNum, 0).getDate();
@@ -660,20 +668,19 @@ export default function TimesheetExportModal({
           const dailyHour = employee.dailyHours.find(
             (dh: any) => dh.day === day
           );
-          const displayValue = getDisplayValue(employee.employeeId, dailyHour);
-          row.push(displayValue);
+          row.push(getExcelCellValue(employee.employeeId, dailyHour));
         });
 
-        row.push(formatDecimalHours(employeeTotals[idx]));
+        row.push(employeeTotals[idx]);
         excelData.push(row);
       });
 
       // Total row
       const totalRow = ["", "", "", "", "Total Hrs"];
-      days.forEach((day, idx) => {
-        totalRow.push(dayTotals[idx] > 0 ? formatDecimalHours(dayTotals[idx]) : "-");
+      days.forEach((_day, idx) => {
+        totalRow.push(dayTotals[idx]);
       });
-      totalRow.push(formatDecimalHours(grandTotal));
+      totalRow.push(grandTotal);
       excelData.push(totalRow);
 
       // Signature row
