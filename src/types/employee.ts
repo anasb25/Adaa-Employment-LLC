@@ -1,5 +1,13 @@
 import { EmployeeSkill } from "./skill";
 
+export interface AirTicketHistoryEntry {
+  at: string;
+  type: "add" | "subtract";
+  amount: number;
+  balance_after: number;
+  reason?: string;
+}
+
 export interface LatestMobilization {
   jobStatus: string;
   mobStatus: string;
@@ -27,6 +35,7 @@ export interface Employee {
   hra?: number | null;
   other_allowance?: number | null;
   air_tickets?: number;
+  air_tickets_history?: AirTicketHistoryEntry[];
   annual_leave_balance?: number;
   createdAt: string;
   updatedAt: string;

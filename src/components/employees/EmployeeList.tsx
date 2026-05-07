@@ -27,6 +27,7 @@ import { JobStatus } from "../../types/mobilization";
 import PermissionGuard from "../auth/PermissionGuard";
 import EmployeeImportModal from "./EmployeeImportModal";
 import AnnualLeaveHistoryModal from "./AnnualLeaveHistoryModal";
+import AirTicketHistoryModal from "./AirTicketHistoryModal";
 import { downloadFile } from "../../utils/excelValidator";
 
 interface EmployeeListProps {
@@ -89,6 +90,10 @@ export default function EmployeeList({
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [annualLeaveModalEmployee, setAnnualLeaveModalEmployee] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [airTicketModalEmployee, setAirTicketModalEmployee] = useState<{
     id: number;
     name: string;
   } | null>(null);
@@ -163,13 +168,16 @@ export default function EmployeeList({
   // Decrement air ticket mutation
   const decrementAirTicketMutation = useMutation({
     mutationFn: (id: number) => employeesApi.decrementAirTicket(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       toast.success("Air ticket decremented successfully!");
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.employees.all,
       });
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.employees.search,
+      });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.employees.detail(id),
       });
     },
     onError: (error: any) => {
@@ -747,9 +755,25 @@ export default function EmployeeList({
                                 {leave.balance} days
                               </span>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-blue-700 dark:text-blue-300">
+                            <div className="flex justify-between items-center gap-2">
+                              <span className="flex items-center gap-0.5 text-blue-700 dark:text-blue-300">
                                 Air Tickets:
+                                <PermissionGuard permission="employee:read">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setAirTicketModalEmployee({
+                                        id: employee.id,
+                                        name: employee.name,
+                                      })
+                                    }
+                                    className="-m-0.5 inline-flex rounded p-0.5 text-blue-600 hover:bg-blue-200/70 hover:text-blue-800 dark:text-blue-400 dark:hover:bg-blue-800/60 dark:hover:text-blue-100"
+                                    title="Air ticket history"
+                                    aria-label="View air ticket history"
+                                  >
+                                    <ListIcon className="h-4 w-4 shrink-0" />
+                                  </button>
+                                </PermissionGuard>
                               </span>
                               <span className="font-medium text-blue-900 dark:text-blue-100">
                                 {employee.air_tickets ?? 0}
@@ -843,6 +867,15 @@ export default function EmployeeList({
           employeeId={annualLeaveModalEmployee.id}
           employeeName={annualLeaveModalEmployee.name}
           onClose={() => setAnnualLeaveModalEmployee(null)}
+        />
+      )}
+
+      {airTicketModalEmployee && (
+        <AirTicketHistoryModal
+          isOpen
+          employeeId={airTicketModalEmployee.id}
+          employeeName={airTicketModalEmployee.name}
+          onClose={() => setAirTicketModalEmployee(null)}
         />
       )}
     </div>
