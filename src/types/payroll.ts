@@ -1,3 +1,5 @@
+import type { AirTicketHistoryEntry } from "./employee";
+
 export interface HoursBreakdown {
   regular: Array<{
     rateVariantName: string;
@@ -54,6 +56,8 @@ export interface Payroll {
     basic_salary?: number | null;
     hra?: number | null;
     other_allowance?: number | null;
+    air_tickets?: number;
+    air_tickets_history?: AirTicketHistoryEntry[];
   };
 }
 

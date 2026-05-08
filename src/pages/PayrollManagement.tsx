@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -13,6 +13,7 @@ import Button from "../components/ui/button/Button";
 import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
 import AllowanceDeductionImportModal from "../components/payroll/AllowanceDeductionImportModal";
+import { airTicketsUsedInPayrollMonth } from "../utils/payrollAirTickets";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -60,6 +61,29 @@ export default function PayrollManagement() {
     queryFn: () => payrollApi.getPayrollsByMonth(selectedMonth),
     enabled: !!selectedMonth,
   });
+
+  const payrollSearchFiltered = useMemo(() => {
+    if (!payrollData) return [];
+    if (!searchQuery.trim()) return payrollData;
+    const q = searchQuery.toLowerCase();
+    return payrollData.filter((p: Payroll) => {
+      const name = p.employee?.name?.toLowerCase() || "";
+      const code = p.employee?.adaa_emp_code?.toLowerCase() || "";
+      return name.includes(q) || code.includes(q);
+    });
+  }, [payrollData, searchQuery]);
+
+  const showAirTicketUsedColumn = useMemo(
+    () =>
+      payrollSearchFiltered.some(
+        (p) =>
+          airTicketsUsedInPayrollMonth(
+            p.month,
+            p.employee?.air_tickets_history,
+          ) > 0,
+      ),
+    [payrollSearchFiltered],
+  );
 
   // Delete payroll mutation
   const deletePayrollMutation = useMutation({
@@ -204,57 +228,74 @@ export default function PayrollManagement() {
       return;
     }
 
-    const filteredData = payrollData.filter((payroll: Payroll) => {
-      if (!searchQuery.trim()) return true;
-      const query = searchQuery.toLowerCase();
-      const employeeName = payroll.employee?.name?.toLowerCase() || "";
-      const employeeCode = payroll.employee?.adaa_emp_code?.toLowerCase() || "";
-      return employeeName.includes(query) || employeeCode.includes(query);
-    });
+    const filteredData = payrollSearchFiltered;
+
+    const anyAirTicketUsed = filteredData.some(
+      (p) =>
+        airTicketsUsedInPayrollMonth(
+          p.month,
+          p.employee?.air_tickets_history,
+        ) > 0,
+    );
 
     // Prepare data for Excel
-    const excelData = filteredData.map((payroll: Payroll) => ({
-      "Employee Name": payroll.employee?.name || "N/A",
-      "Employee Code": payroll.employee?.adaa_emp_code || "N/A",
-      Month: payroll.month,
-      "Regular Hours": formatHours(payroll.totalHours || 0),
-      "OT Hours": formatHours(payroll.totalOtHours || 0),
-      "Off-Days Hours": formatHours(payroll.totalOffdaysWorkedHours || 0),
-      "Idle Hours": formatHours(payroll.totalIdleDayHours || 0),
-      "Additional Allowances": sumJsonValues(payroll.allowances).toFixed(2),
-      "Allowances Detail": formatJsonDisplay(payroll.allowances),
-      "Absent Days Deduction": Number(
-        payroll.absentDaysDeductible || 0,
-      ).toFixed(2),
-      "Other Deductions": sumJsonValues(payroll.otherDeductions).toFixed(2),
-      "Deductions Detail": formatJsonDisplay(payroll.otherDeductions),
-      "Base Hourly Rate": Number(payroll.baseHourlyRate || 0).toFixed(2),
-      "Total Gross Salary": Number(payroll.totalGrossSalary || 0).toFixed(2),
-      "Net Salary": Number(payroll.netSalary || 0).toFixed(2),
-      Notes: payroll.notes || "",
-    }));
+    const excelData = filteredData.map((payroll: Payroll) => {
+      const airUsed = airTicketsUsedInPayrollMonth(
+        payroll.month,
+        payroll.employee?.air_tickets_history,
+      );
+      const row: Record<string, string | number> = {
+        "Employee Name": payroll.employee?.name || "N/A",
+        "Employee Code": payroll.employee?.adaa_emp_code || "N/A",
+        Month: payroll.month,
+        "Regular Hours": formatHours(payroll.totalHours || 0),
+        "OT Hours": formatHours(payroll.totalOtHours || 0),
+        "Off-Days Hours": formatHours(payroll.totalOffdaysWorkedHours || 0),
+        "Idle Hours": formatHours(payroll.totalIdleDayHours || 0),
+        "Additional Allowances": sumJsonValues(payroll.allowances).toFixed(2),
+        "Allowances Detail": formatJsonDisplay(payroll.allowances),
+        "Absent Days Deduction": Number(
+          payroll.absentDaysDeductible || 0,
+        ).toFixed(2),
+      };
+      if (anyAirTicketUsed) {
+        row["Air Ticket Used"] = airUsed > 0 ? airUsed : "";
+      }
+      row["Other Deductions"] = sumJsonValues(
+        payroll.otherDeductions,
+      ).toFixed(2);
+      row["Deductions Detail"] = formatJsonDisplay(payroll.otherDeductions);
+      row["Base Hourly Rate"] = Number(payroll.baseHourlyRate || 0).toFixed(2);
+      row["Total Gross Salary"] = Number(
+        payroll.totalGrossSalary || 0,
+      ).toFixed(2);
+      row["Net Salary"] = Number(payroll.netSalary || 0).toFixed(2);
+      row.Notes = payroll.notes || "";
+      return row;
+    });
 
     // Create worksheet
     const worksheet = XLSX.utils.json_to_sheet(excelData);
 
-    // Set column widths
+    // Set column widths (omit Air Ticket Used when no usage in export)
     const columnWidths = [
-      { wch: 20 }, // Employee Name
-      { wch: 15 }, // Employee Code
-      { wch: 10 }, // Month
-      { wch: 12 }, // Regular Hours
-      { wch: 12 }, // OT Hours
-      { wch: 14 }, // Off-Days Hours
-      { wch: 12 }, // Idle Hours
-      { wch: 20 }, // Additional Allowances
-      { wch: 30 }, // Allowances Detail
-      { wch: 20 }, // Absent Days Deduction
-      { wch: 16 }, // Other Deductions
-      { wch: 30 }, // Deductions Detail
-      { wch: 16 }, // Base Hourly Rate
-      { wch: 18 }, // Total Gross Salary
-      { wch: 14 }, // Net Salary
-      { wch: 40 }, // Notes
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 20 },
+      { wch: 30 },
+      { wch: 20 },
+      ...(anyAirTicketUsed ? [{ wch: 14 }] : []),
+      { wch: 16 },
+      { wch: 30 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 40 },
     ];
     worksheet["!cols"] = columnWidths;
 
@@ -636,6 +677,11 @@ export default function PayrollManagement() {
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Absent Deduct
                         </th>
+                        {showAirTicketUsedColumn && (
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Air Ticket Used
+                          </th>
+                        )}
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Other Deduct
                         </th>
@@ -651,21 +697,7 @@ export default function PayrollManagement() {
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {payrollData
-                        .filter((payroll: Payroll) => {
-                          if (!searchQuery.trim()) return true;
-                          const query = searchQuery.toLowerCase();
-                          const employeeName =
-                            payroll.employee?.name?.toLowerCase() || "";
-                          const employeeCode =
-                            payroll.employee?.adaa_emp_code?.toLowerCase() ||
-                            "";
-                          return (
-                            employeeName.includes(query) ||
-                            employeeCode.includes(query)
-                          );
-                        })
-                        .map((payroll: Payroll) => {
+                      {payrollSearchFiltered.map((payroll: Payroll) => {
                           const employee = payroll.employee;
 
                           return (
@@ -740,6 +772,19 @@ export default function PayrollManagement() {
                                   {formatNumber(payroll.absentDaysDeductible)}
                                 </div>
                               </td>
+                              {showAirTicketUsedColumn && (
+                                <td className="px-4 py-3 whitespace-nowrap text-right">
+                                  <div className="text-sm text-gray-900 dark:text-white tabular-nums">
+                                    {(() => {
+                                      const n = airTicketsUsedInPayrollMonth(
+                                        payroll.month,
+                                        payroll.employee?.air_tickets_history,
+                                      );
+                                      return n > 0 ? n : "";
+                                    })()}
+                                  </div>
+                                </td>
+                              )}
                               <td className="px-4 py-3 max-w-xs">
                                 <div
                                   className="text-sm text-gray-900 dark:text-white truncate"
@@ -821,14 +866,7 @@ export default function PayrollManagement() {
                         })}
                       {/* Grand Total Row */}
                       {(() => {
-                        const filtered = payrollData.filter((p: Payroll) => {
-                          if (!searchQuery.trim()) return true;
-                          const query = searchQuery.toLowerCase();
-                          const name = p.employee?.name?.toLowerCase() || "";
-                          const code =
-                            p.employee?.adaa_emp_code?.toLowerCase() || "";
-                          return name.includes(query) || code.includes(query);
-                        });
+                        const filtered = payrollSearchFiltered;
                         const totals = filtered.reduce(
                           (acc: any, p: Payroll) => {
                             acc.totalHours += Number(p.totalHours) || 0;
@@ -840,6 +878,11 @@ export default function PayrollManagement() {
                             acc.grossSalary += Number(p.totalGrossSalary) || 0;
                             acc.absentDeduct +=
                               Number(p.absentDaysDeductible) || 0;
+                            acc.airTicketsUsed +=
+                              airTicketsUsedInPayrollMonth(
+                                p.month,
+                                p.employee?.air_tickets_history,
+                              );
                             acc.netSalary += Number(p.netSalary) || 0;
                             return acc;
                           },
@@ -850,6 +893,7 @@ export default function PayrollManagement() {
                             totalIdleDayHours: 0,
                             grossSalary: 0,
                             absentDeduct: 0,
+                            airTicketsUsed: 0,
                             netSalary: 0,
                           },
                         );
@@ -884,6 +928,13 @@ export default function PayrollManagement() {
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-red-600 dark:text-red-400">
                               {formatNumber(totals.absentDeduct)}
                             </td>
+                            {showAirTicketUsedColumn && (
+                              <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white tabular-nums">
+                                {totals.airTicketsUsed > 0
+                                  ? totals.airTicketsUsed
+                                  : ""}
+                              </td>
+                            )}
                             <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-green-600 dark:text-green-400">
                               {formatNumber(totals.netSalary)}
@@ -1253,6 +1304,22 @@ export default function PayrollManagement() {
                                   {formatNumber(payroll.absentDaysDeductible)}
                                 </span>
                               </div>
+                              {airTicketsUsedInPayrollMonth(
+                                payroll.month,
+                                payroll.employee?.air_tickets_history,
+                              ) > 0 && (
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600 dark:text-gray-400">
+                                    Air Ticket Used:
+                                  </span>
+                                  <span className="font-medium text-gray-900 dark:text-white tabular-nums">
+                                    {airTicketsUsedInPayrollMonth(
+                                      payroll.month,
+                                      payroll.employee?.air_tickets_history,
+                                    )}
+                                  </span>
+                                </div>
+                              )}
                               <div>
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
                                   Other Deductions:
@@ -1306,20 +1373,7 @@ export default function PayrollManagement() {
             {/* Card View */}
             {viewMode === "card" && (
               <div className="space-y-4">
-                {payrollData
-                  .filter((payroll: Payroll) => {
-                    if (!searchQuery.trim()) return true;
-                    const query = searchQuery.toLowerCase();
-                    const employeeName =
-                      payroll.employee?.name?.toLowerCase() || "";
-                    const employeeCode =
-                      payroll.employee?.adaa_emp_code?.toLowerCase() || "";
-                    return (
-                      employeeName.includes(query) ||
-                      employeeCode.includes(query)
-                    );
-                  })
-                  .map((payroll: Payroll) => {
+                {payrollSearchFiltered.map((payroll: Payroll) => {
                     const isExpanded = expandedEmployees.has(
                       payroll.employeeId,
                     );
@@ -1748,6 +1802,23 @@ export default function PayrollManagement() {
                                         )}
                                       </span>
                                     </div>
+                                    {airTicketsUsedInPayrollMonth(
+                                      payroll.month,
+                                      payroll.employee?.air_tickets_history,
+                                    ) > 0 && (
+                                      <div className="flex justify-between text-sm">
+                                        <span className="text-gray-600 dark:text-gray-400">
+                                          Air Ticket Used:
+                                        </span>
+                                        <span className="font-medium text-gray-900 dark:text-white tabular-nums">
+                                          {airTicketsUsedInPayrollMonth(
+                                            payroll.month,
+                                            payroll.employee
+                                              ?.air_tickets_history,
+                                          )}
+                                        </span>
+                                      </div>
+                                    )}
                                     <div>
                                       <span className="text-xs text-gray-500 dark:text-gray-400">
                                         Other Deductions:
