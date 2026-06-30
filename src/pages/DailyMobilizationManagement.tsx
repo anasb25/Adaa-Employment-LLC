@@ -174,7 +174,7 @@ export default function DailyMobilizationManagement() {
     getTodayDateString()
   );
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [showCarryForward, setShowCarryForward] = useState(false);
+  const [showCarryForward, setShowCarryForward] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMobStatus, setFilterMobStatus] = useState<string | null>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);

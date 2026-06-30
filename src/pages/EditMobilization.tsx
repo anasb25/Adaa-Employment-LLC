@@ -7,6 +7,7 @@ import { employeesApi } from "../services/api/employeesApi";
 import { projectsApi } from "../services/api/projectsApi";
 import { skillsApi } from "../services/api/skillsApi";
 import { MobStatus, JobStatus } from "../types/mobilization";
+import { QUERY_KEYS } from "../lib/constants";
 import Button from "../components/ui/button/Button";
 import Select from "../components/form/Select";
 import Label from "../components/form/Label";
@@ -16,6 +17,7 @@ import {
   MOB_STATUS_OPTIONS,
   JOB_STATUS_OPTIONS,
   getMobStatusFromJobStatus,
+  clearsProjectOnJobStatus,
 } from "../lib/mobilizationConstants";
 
 export default function EditMobilization() {
@@ -79,6 +81,7 @@ export default function EditMobilization() {
       queryClient.invalidateQueries({ queryKey: ["mobilizations"] });
       queryClient.invalidateQueries({ queryKey: ["daily-mobilizations"] });
       queryClient.invalidateQueries({ queryKey: ["mobilization", id] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
       navigate(-1); // Go back to previous page
     },
     onError: (error: any) => {
@@ -107,6 +110,9 @@ export default function EditMobilization() {
     const next = { ...formData, [field]: value };
     if (field === "jobStatus" && value) {
       next.mobStatus = getMobStatusFromJobStatus(value as JobStatus);
+      if (clearsProjectOnJobStatus(value)) {
+        next.projectId = undefined;
+      }
     }
     setFormData(next);
   };

@@ -19,7 +19,11 @@ import Label from "../components/form/Label";
 import HoursInput from "../components/form/HoursInput";
 import { formatDecimalHours } from "../utils/timeUtils";
 import TimesheetExportModal from "../components/timesheets/TimesheetExportModal";
-import { isUtcSundayDate, isIdleSheetSundayForcedOff } from "../lib/timesheetHelpers";
+import {
+  isUtcSundayDate,
+  isIdleSheetSundayForcedOff,
+  buildTimesheetSaveEntries,
+} from "../lib/timesheetHelpers";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -396,32 +400,12 @@ export default function MonthlyProjectTimesheets() {
         timesheetId = newTimesheet.id;
       }
 
-      // Prepare entries
-      const entries: any[] = [];
       const edits = projectEdits[projectId] || new Map();
+      const entries = buildTimesheetSaveEntries(projectId, timesheetData, edits);
 
-      timesheetData.employees.forEach((employee: any) => {
-        employee.dailyHours.forEach((dailyHour: any) => {
-          if (dailyHour.jobStatus && dailyHour.jobStatus !== "demobilized") {
-            const key = `${employee.employeeId}-${dailyHour.date}`;
-            const edit = edits.get(key);
-            let hours = edit?.hours ?? dailyHour.hoursWorked;
-            let status = edit?.status ?? dailyHour.jobStatus;
-            if (isIdleSheetSundayForcedOff(projectId, dailyHour.date, status)) {
-              hours = 0;
-              status = "off";
-            }
-
-            entries.push({
-              employeeId: employee.employeeId,
-              date: dailyHour.date,
-              hoursWorked: hours,
-              jobStatus: status,
-              notes: dailyHour.notes,
-            });
-          }
-        });
-      });
+      if (entries.length === 0) {
+        return;
+      }
 
       await saveEntriesMutation.mutateAsync({ timesheetId, entries });
 
@@ -454,33 +438,16 @@ export default function MonthlyProjectTimesheets() {
 
       // Save entries if there are changes
       if (hasChanges || !timesheetData.timesheet?.id) {
-        const entries: any[] = [];
         const edits = projectEdits[projectId] || new Map();
+        const entries = buildTimesheetSaveEntries(
+          projectId,
+          timesheetData,
+          edits,
+        );
 
-        timesheetData.employees.forEach((employee: any) => {
-          employee.dailyHours.forEach((dailyHour: any) => {
-            if (dailyHour.jobStatus && dailyHour.jobStatus !== "demobilized") {
-              const key = `${employee.employeeId}-${dailyHour.date}`;
-              const edit = edits.get(key);
-              let hours = edit?.hours ?? dailyHour.hoursWorked;
-              let status = edit?.status ?? dailyHour.jobStatus;
-              if (isIdleSheetSundayForcedOff(projectId, dailyHour.date, status)) {
-                hours = 0;
-                status = "off";
-              }
-
-              entries.push({
-                employeeId: employee.employeeId,
-                date: dailyHour.date,
-                hoursWorked: hours,
-                jobStatus: status,
-                notes: dailyHour.notes,
-              });
-            }
-          });
-        });
-
-        await saveEntriesMutation.mutateAsync({ timesheetId, entries });
+        if (entries.length > 0) {
+          await saveEntriesMutation.mutateAsync({ timesheetId, entries });
+        }
 
         // Clear edits for this project
         setProjectEdits((prev) => {

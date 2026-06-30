@@ -17,7 +17,9 @@ import {
   MOB_STATUS_OPTIONS,
   JOB_STATUS_OPTIONS,
   getMobStatusFromJobStatus,
+  clearsProjectOnJobStatus,
 } from "../lib/mobilizationConstants";
+import { QUERY_KEYS } from "../lib/constants";
 import CarryForwardInfo from "../components/mobilizations/CarryForwardInfo";
 
 interface BulkMobilizationRow {
@@ -93,6 +95,7 @@ export default function CreateMobilization() {
     onSuccess: () => {
       toast.success("Mobilization created successfully");
       queryClient.invalidateQueries({ queryKey: ["mobilizations"] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
       navigate("/mobilizations/daily");
     },
     onError: (error: any) => {
@@ -125,6 +128,7 @@ export default function CreateMobilization() {
     onSuccess: (results) => {
       toast.success(`Successfully created ${results.length} mobilization(s)`);
       queryClient.invalidateQueries({ queryKey: ["mobilizations"] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
       navigate("/mobilizations/daily");
     },
     onError: (error: any) => {
@@ -161,6 +165,9 @@ export default function CreateMobilization() {
     const next = { ...formData, [field]: value };
     if (field === "jobStatus" && value) {
       next.mobStatus = getMobStatusFromJobStatus(value as JobStatus);
+      if (clearsProjectOnJobStatus(value)) {
+        next.projectId = undefined;
+      }
     }
     setFormData(next);
   };
@@ -176,6 +183,9 @@ export default function CreateMobilization() {
         const next = { ...row, [field]: value };
         if (field === "jobStatus" && value) {
           next.mobStatus = getMobStatusFromJobStatus(value as JobStatus);
+          if (clearsProjectOnJobStatus(value)) {
+            next.projectId = null;
+          }
         }
         return next;
       })

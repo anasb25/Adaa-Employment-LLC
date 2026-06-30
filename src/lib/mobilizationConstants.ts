@@ -20,6 +20,20 @@ export function getMobStatusFromJobStatus(jobStatus: JobStatus): MobStatus {
   return JOB_STATUS_TO_MOB_STATUS[jobStatus] ?? MobStatus.DEMOBILIZED;
 }
 
+/** Job statuses that clear project assignment (demobilized, no site). */
+export const NO_PROJECT_JOB_STATUSES: JobStatus[] = [
+  JobStatus.IDLE,
+  JobStatus.ANNUAL_LEAVE,
+  JobStatus.CANCELLED,
+  JobStatus.ABSCONDED,
+  JobStatus.RESIGNED,
+  JobStatus.URGENT_LEAVE,
+];
+
+export function clearsProjectOnJobStatus(jobStatus: JobStatus | string): boolean {
+  return NO_PROJECT_JOB_STATUSES.includes(jobStatus as JobStatus);
+}
+
 export const MOB_STATUS_OPTIONS = [
   { value: 'mobilized', label: 'Mobilized' },
   { value: 'demobilized', label: 'Demobilized' },

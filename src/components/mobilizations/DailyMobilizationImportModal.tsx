@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { mobilizationsApi, ImportMobilizationResult } from "../../services/api/mobilizationsApi";
 import { downloadFile } from "../../utils/excelValidator";
+import { QUERY_KEYS } from "../../lib/constants";
 import { Modal } from "../ui/ReusableModal";
 import Button from "../ui/button/Button";
 import { FileIcon, DownloadIcon, ArrowUpIcon, AlertIcon } from "../../icons";
@@ -32,6 +33,7 @@ export default function DailyMobilizationImportModal({
         toast.success(`Successfully imported ${result.success} mobilization(s)!`);
         queryClient.invalidateQueries({ queryKey: ['mobilizations'] });
         queryClient.invalidateQueries({ queryKey: ['daily-mobilizations', selectedDate] });
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
         setTimeout(() => {
           handleClose();
         }, 2000);

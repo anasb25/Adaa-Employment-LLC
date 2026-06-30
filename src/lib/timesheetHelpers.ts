@@ -164,3 +164,60 @@ export function isIdleSheetSundayForcedOff(
   }
   return resolvedJobStatus?.toLowerCase() !== "annual_leave";
 }
+
+export interface TimesheetDayEdit {
+  hours: number;
+  status?: string;
+}
+
+/** Build save payload from edited cells only (avoids sending the full month grid). */
+export function buildTimesheetSaveEntries(
+  projectId: number,
+  timesheetData: {
+    employees?: Array<{
+      employeeId: number;
+      dailyHours?: Array<{ date: string; notes?: string | null }>;
+    }>;
+  },
+  edits: Map<string, TimesheetDayEdit>,
+) {
+  const entries: {
+    employeeId: number;
+    date: string;
+    hoursWorked: number;
+    jobStatus: string;
+    notes?: string | null;
+  }[] = [];
+
+  edits.forEach((edit, key) => {
+    const match = key.match(/^(\d+)-(\d{4}-\d{2}-\d{2})$/);
+    if (!match) return;
+
+    const employeeId = Number(match[1]);
+    const date = match[2];
+    let hours = edit.hours;
+    let status = edit.status;
+
+    if (!status) return;
+
+    if (isIdleSheetSundayForcedOff(projectId, date, status)) {
+      hours = 0;
+      status = "off";
+    }
+
+    const employee = timesheetData.employees?.find(
+      (e) => e.employeeId === employeeId,
+    );
+    const dailyHour = employee?.dailyHours?.find((d) => d.date === date);
+
+    entries.push({
+      employeeId,
+      date,
+      hoursWorked: hours,
+      jobStatus: status,
+      notes: dailyHour?.notes,
+    });
+  });
+
+  return entries;
+}
