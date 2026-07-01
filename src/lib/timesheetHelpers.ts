@@ -87,8 +87,10 @@ export const JOB_STATUS_COLORS: Record<
  */
 export function getStatusAbbreviation(status: string | null): string {
   if (!status) return "-";
+  const normalized = status.toLowerCase();
   return (
-    JOB_STATUS_ABBREVIATIONS[status] || status.substring(0, 3).toUpperCase()
+    JOB_STATUS_ABBREVIATIONS[normalized] ||
+    normalized.substring(0, 3).toUpperCase()
   );
 }
 

@@ -64,8 +64,10 @@ export default function TimesheetExportModal({
   };
 
   const getStatusAbbreviation = (status: string): string => {
+    const normalized = status.toLowerCase();
     return (
-      jobStatusAbbreviations[status] || status.substring(0, 3).toUpperCase()
+      jobStatusAbbreviations[normalized] ||
+      normalized.substring(0, 3).toUpperCase()
     );
   };
 

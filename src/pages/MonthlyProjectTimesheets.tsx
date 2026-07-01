@@ -262,8 +262,9 @@ export default function MonthlyProjectTimesheets() {
   ];
 
   const getStatusAbbreviation = (status: string): string => {
-    const option = jobStatusOptions.find((opt) => opt.value === status);
-    return option?.abbr ?? status.substring(0, 3).toUpperCase();
+    const normalized = status.toLowerCase();
+    const option = jobStatusOptions.find((opt) => opt.value === normalized);
+    return option?.abbr ?? normalized.substring(0, 3).toUpperCase();
   };
 
   const getDefaultHoursForStatus = (status: string): number => {
@@ -378,7 +379,11 @@ export default function MonthlyProjectTimesheets() {
     const edits = projectEdits[projectId];
     const editStatus = edits?.has(key) ? edits.get(key)!.status : undefined;
     const resolved =
-      editStatus || dailyHours.jobStatus || "active";
+      editStatus ||
+      (dailyHours.jobStatus
+        ? String(dailyHours.jobStatus).toLowerCase()
+        : undefined) ||
+      "active";
 
     if (isIdleSheetSundayForcedOff(projectId, dailyHours.date, resolved)) {
       return "off";
