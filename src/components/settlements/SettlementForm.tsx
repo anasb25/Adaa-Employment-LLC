@@ -165,8 +165,13 @@ export default function SettlementForm({
 
     const items = [];
     const basicSalary = Number(selectedEmployee.basic_salary) || 0;
-    const hra = Number(selectedEmployee.hra) || 0;
-    const annualLeaveBalance = Number(selectedEmployee.annual_leave_balance) || 0;
+    const totalYearsOfService =
+      Number(gratuityCalc?.totalYearsOfService) ||
+      (selectedEmployee.date_of_joining && lastDateOfWork
+        ? (new Date(lastDateOfWork).getTime() -
+            new Date(selectedEmployee.date_of_joining).getTime()) /
+          (365.25 * 24 * 60 * 60 * 1000)
+        : 0);
 
     // 1. GRATUITY — backend: under 5 years at 21 days/year; 5+ years at 30 days/year for full service; basic/30 daily wage
     if (eligibleForGratuity && gratuityCalc && gratuityCalc.gratuityAmount > 0) {
@@ -180,12 +185,13 @@ export default function SettlementForm({
       });
     }
 
-    // 2. LEAVE SALARY - Formula: ((basic salary + HRA)/30) * leave balance days
-    if (annualLeaveBalance > 0) {
-      const leaveSalaryAmount = ((basicSalary + hra) / 30) * annualLeaveBalance;
+    // 2. LEAVE SALARY — client rule: monthly basic salary × years of service
+    if (basicSalary > 0 && totalYearsOfService > 0) {
+      const leaveSalaryAmount =
+        Math.round(basicSalary * totalYearsOfService * 100) / 100;
       items.push({
         description: "LEAVE SALARY",
-        forDays: annualLeaveBalance,
+        forDays: totalYearsOfService,
         amount: leaveSalaryAmount,
       });
     }
