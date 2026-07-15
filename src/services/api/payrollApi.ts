@@ -88,7 +88,9 @@ export const payrollApi = {
    */
   calculatePayrollForMonth: async (month: string): Promise<Payroll[]> => {
     const response = await axiosInstance.post(
-      `/payroll/calculate/month/${month}`
+      `/payroll/calculate/month/${month}`,
+      undefined,
+      { timeout: 300000 }, // 5 minutes — full-month calc can exceed default 30s
     );
     return response.data;
   },
@@ -101,7 +103,9 @@ export const payrollApi = {
     month: string
   ): Promise<Payroll[]> => {
     const response = await axiosInstance.post(
-      `/payroll/calculate/project/${projectId}/month/${month}`
+      `/payroll/calculate/project/${projectId}/month/${month}`,
+      undefined,
+      { timeout: 300000 },
     );
     return response.data;
   },
