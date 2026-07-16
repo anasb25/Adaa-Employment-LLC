@@ -1308,10 +1308,10 @@ export default function PayrollManagement() {
                                   </div>
                                   <div className="flex justify-between text-sm">
                                     <span className="text-gray-600 dark:text-gray-400">
-                                      Off-days Hours:
+                                      Off-days / Special Hours:
                                     </span>
                                     <span className="font-medium text-gray-900 dark:text-white">
-                                      {formatNumber(
+                                      {formatHours(
                                         payroll.totalOffdaysWorkedHours,
                                       )}
                                     </span>
@@ -1322,6 +1322,22 @@ export default function PayrollManagement() {
                                     </span>
                                     <span className="font-medium text-gray-900 dark:text-white">
                                       {formatHours(payroll.totalIdleDayHours)}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-sm pt-2 border-t border-gray-200 dark:border-gray-700 font-semibold">
+                                    <span className="text-gray-900 dark:text-white">
+                                      Total Hours (matches timesheets):
+                                    </span>
+                                    <span className="text-gray-900 dark:text-white">
+                                      {formatHours(
+                                        (Number(payroll.totalHours) || 0) +
+                                          (Number(payroll.totalOtHours) || 0) +
+                                          (Number(
+                                            payroll.totalOffdaysWorkedHours,
+                                          ) || 0) +
+                                          (Number(payroll.totalIdleDayHours) ||
+                                            0),
+                                      )}
                                     </span>
                                   </div>
                                 </div>
