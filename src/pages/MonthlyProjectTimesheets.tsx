@@ -115,7 +115,6 @@ export default function MonthlyProjectTimesheets() {
       };
     }
     for (const data of allTimesheetsData) {
-      const projectNameMatches = data.project.name.toLowerCase().includes(q);
       for (const emp of data.employees) {
         const idMatches =
           (emp.idNo && emp.idNo.toString().toLowerCase().includes(q)) ?? false;
@@ -272,6 +271,15 @@ export default function MonthlyProjectTimesheets() {
     return option?.defaultHours ?? 10;
   };
 
+  const isLeaveStatus = (status?: string | null): boolean =>
+    [
+      "absent",
+      "sick_leave",
+      "casual_leave",
+      "urgent_leave",
+      "annual_leave",
+    ].includes(String(status || "").toLowerCase());
+
   const handleStatusChange = (
     projectId: number,
     employeeId: number,
@@ -283,6 +291,7 @@ export default function MonthlyProjectTimesheets() {
 
     setProjectEdits((prev: ProjectEdits) => {
       const projectMap = new Map(prev[projectId] || new Map());
+      // Leave / terminal → 0 hours. Active with hours stays workable.
       projectMap.set(key, { hours: defaultHours, status: newStatus });
       return {
         ...prev,
@@ -342,7 +351,18 @@ export default function MonthlyProjectTimesheets() {
     setProjectEdits((prev: ProjectEdits) => {
       const projectMap = new Map(prev[projectId] || new Map());
       const existing = projectMap.get(key);
-      projectMap.set(key, { hours, status: existing?.status || currentStatus });
+      const priorStatus = existing?.status || currentStatus;
+      // Typing hours on a leave day = worked → switch to active.
+      const nextStatus =
+        hours > 0 && isLeaveStatus(priorStatus) ? "active" : priorStatus;
+      const nextHours =
+        isLeaveStatus(nextStatus) ||
+        ["cancelled", "absconded", "resigned"].includes(
+          String(nextStatus).toLowerCase(),
+        )
+          ? 0
+          : hours;
+      projectMap.set(key, { hours: nextHours, status: nextStatus });
       return {
         ...prev,
         [projectId]: projectMap,
@@ -362,12 +382,29 @@ export default function MonthlyProjectTimesheets() {
     const resolvedStatus = edits?.has(key)
       ? edits.get(key)!.status
       : dailyHours.jobStatus;
+    const rawHours = edits?.has(key)
+      ? edits.get(key)!.hours
+      : dailyHours.hoursWorked;
     if (
       isIdleSheetSundayForcedOff(projectId, dailyHours.date, resolvedStatus)
     ) {
       return 0;
     }
-    return edits?.has(key) ? edits.get(key)!.hours : dailyHours.hoursWorked;
+    // Leave + hours means worked — keep hours (status treated as active).
+    if (isLeaveStatus(resolvedStatus) && Number(rawHours) > 0) {
+      return Number(rawHours);
+    }
+    if (isLeaveStatus(resolvedStatus)) {
+      return 0;
+    }
+    if (
+      ["cancelled", "absconded", "resigned"].includes(
+        String(resolvedStatus || "").toLowerCase(),
+      )
+    ) {
+      return 0;
+    }
+    return Number(rawHours) || 0;
   };
 
   const getStatusValue = (
@@ -387,6 +424,11 @@ export default function MonthlyProjectTimesheets() {
 
     if (isIdleSheetSundayForcedOff(projectId, dailyHours.date, resolved)) {
       return "off";
+    }
+    const hours = getHoursValue(projectId, employeeId, dailyHours);
+    // Hours on a leave day → treat as working (active).
+    if (hours > 0 && isLeaveStatus(resolved)) {
+      return "active";
     }
     return resolved;
   };
@@ -1396,6 +1438,9 @@ export default function MonthlyProjectTimesheets() {
                 const resolved = edits?.has(key)
                   ? edits.get(key)!.status
                   : dailyHour.jobStatus;
+                const rawHours = edits?.has(key)
+                  ? edits.get(key)!.hours
+                  : dailyHour.hoursWorked;
                 if (
                   isIdleSheetSundayForcedOff(
                     exportProjectId,
@@ -1405,9 +1450,11 @@ export default function MonthlyProjectTimesheets() {
                 ) {
                   return 0;
                 }
-                return edits?.has(key)
-                  ? edits.get(key)!.hours
-                  : dailyHour.hoursWorked;
+                if (isLeaveStatus(resolved) && Number(rawHours) > 0) {
+                  return Number(rawHours);
+                }
+                if (isLeaveStatus(resolved)) return 0;
+                return Number(rawHours) || 0;
               }}
               getStatusValue={(employeeId: number, dailyHour: any) => {
                 const key = `${employeeId}-${dailyHour.date}`;
@@ -1425,6 +1472,15 @@ export default function MonthlyProjectTimesheets() {
                   )
                 ) {
                   return "off";
+                }
+                const hours = (() => {
+                  const raw = edits?.has(key)
+                    ? edits.get(key)!.hours
+                    : dailyHour.hoursWorked;
+                  return Number(raw) || 0;
+                })();
+                if (hours > 0 && isLeaveStatus(resolved)) {
+                  return "active";
                 }
                 return resolved;
               }}
