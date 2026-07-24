@@ -122,6 +122,9 @@ export default function EmployeeImportModal({
             <li>Download the template file to see the required format</li>
             <li>The Excel file must have a sheet containing "Master List"</li>
             <li>All columns shown in the template are required</li>
+            <li>
+              SUPPLIER must match an existing supplier name exactly (e.g. ADAA)
+            </li>
             <li>Date format should be YYYY-MM-DD (e.g., 2024-01-15)</li>
           </ul>
         </div>

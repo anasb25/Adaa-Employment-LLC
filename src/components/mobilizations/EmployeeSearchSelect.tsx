@@ -2,6 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { employeesApi } from "../../services/api/employeesApi";
 import { useDebounce } from "../../hooks/useDebounce";
+import { SelectChevron } from "../form/SelectChevron";
+import {
+  buildSelectTriggerClassName,
+  selectDropdownEmptyClasses,
+  selectDropdownItemClasses,
+  selectDropdownPanelClasses,
+  selectPlaceholderTextClasses,
+  selectValueTextClasses,
+} from "../form/selectStyles";
 
 interface EmployeeSearchSelectProps {
   value: string;
@@ -146,8 +155,11 @@ export default function EmployeeSearchSelect({
     <div className={`relative w-full ${className}`} ref={containerRef}>
       <div
         onClick={openDropdown}
-        className={`flex items-center h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm shadow-theme-xs transition-colors focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:focus-within:border-brand-800 ${
-          disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+        className={`${buildSelectTriggerClassName({
+          disabled,
+          hasValue: Boolean(selectedLabel),
+        })} flex cursor-pointer items-center focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:border-brand-800 ${
+          disabled ? "cursor-not-allowed" : ""
         }`}
       >
         {isOpen ? (
@@ -164,9 +176,7 @@ export default function EmployeeSearchSelect({
         ) : (
           <span
             className={`flex-1 truncate ${
-              selectedLabel
-                ? "text-gray-800 dark:text-white/90"
-                : "text-gray-400 dark:text-gray-400"
+              selectedLabel ? selectValueTextClasses : selectPlaceholderTextClasses
             }`}
           >
             {selectedLabel || placeholder}
@@ -186,35 +196,27 @@ export default function EmployeeSearchSelect({
               </svg>
             </button>
           )}
-          <svg
-            className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <SelectChevron
+            size="sm"
+            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+          />
         </div>
       </div>
 
       {isOpen && (
         <div
           ref={listRef}
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto dark:bg-gray-900 dark:border-gray-700"
+          className={selectDropdownPanelClasses}
           role="listbox"
         >
           {searchInput.trim().length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+            <div className={selectDropdownEmptyClasses}>
               Type to search for an employee
             </div>
           ) : isSearching ? (
-            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-              Searching...
-            </div>
+            <div className={selectDropdownEmptyClasses}>Searching...</div>
           ) : options.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-              No employees found
-            </div>
+            <div className={selectDropdownEmptyClasses}>No employees found</div>
           ) : (
             options.map((option, index) => {
               const isSelected = option.value === value;
@@ -223,9 +225,7 @@ export default function EmployeeSearchSelect({
                 <div
                   key={option.value}
                   data-option
-                  className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
-                    isFocused ? "bg-brand-50 dark:bg-brand-900/20" : isSelected ? "bg-gray-50 dark:bg-gray-800" : "hover:bg-gray-50 dark:hover:bg-gray-800"
-                  } ${isSelected ? "text-brand-600 dark:text-brand-400 font-medium" : "text-gray-800 dark:text-white/90"}`}
+                  className={selectDropdownItemClasses({ isSelected, isFocused })}
                   onClick={() => handleSelect(option.value)}
                   role="option"
                   aria-selected={isSelected}

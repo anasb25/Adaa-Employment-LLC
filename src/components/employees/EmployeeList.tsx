@@ -18,6 +18,7 @@ import {
   ListIcon,
 } from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
+import { useConfirmDialog } from "../../providers/ConfirmDialogProvider";
 import { Employee } from "../../types/employee";
 import {
   JOB_STATUS_OPTIONS,
@@ -85,6 +86,7 @@ export default function EmployeeList({
   onEditEmployee,
   totalEmployees = 0,
 }: EmployeeListProps) {
+  const confirmDialog = useConfirmDialog();
   const [page, setPage] = useState(1);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -143,16 +145,18 @@ export default function EmployeeList({
     });
   }, []);
 
-  const handleDeleteSelected = useCallback(() => {
+  const handleDeleteSelected = useCallback(async () => {
     if (selectedIds.size === 0) return;
-    if (
-      window.confirm(
-        `Are you sure you want to delete ${selectedIds.size} employee(s)?`,
-      )
-    ) {
+    const confirmed = await confirmDialog({
+      title: "Delete Employees",
+      message: `Are you sure you want to delete ${selectedIds.size} employee(s)?`,
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteManyMutation.mutate(Array.from(selectedIds));
     }
-  }, [selectedIds, deleteManyMutation]);
+  }, [confirmDialog, selectedIds, deleteManyMutation]);
 
   const toggleSelectAll = useCallback(
     (employees: any[]) => {
@@ -212,12 +216,18 @@ export default function EmployeeList({
   );
 
   const handleDelete = useCallback(
-    (employeeId: number) => {
-      if (window.confirm("Are you sure you want to delete this employee?")) {
+    async (employeeId: number) => {
+      const confirmed = await confirmDialog({
+        title: "Delete Employee",
+        message: "Are you sure you want to delete this employee?",
+        confirmText: "Delete",
+        variant: "warning",
+      });
+      if (confirmed) {
         deleteMutation.mutate(employeeId);
       }
     },
-    [deleteMutation],
+    [confirmDialog, deleteMutation],
   );
 
   // Use the custom search hook with debouncing
@@ -556,6 +566,14 @@ export default function EmployeeList({
                           </span>
                           <span className="ml-2 text-gray-900 dark:text-white">
                             {employee.personal_code || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Supplier:
+                          </span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {employee.supplier?.name || "N/A"}
                           </span>
                         </div>
                         <div>

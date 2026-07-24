@@ -27,6 +27,7 @@ export const REQUIRED_HEADERS = [
   "PERSONAL CODE",
   "WORK PERMIT",
   "WP EXPIRY",
+  "SUPPLIER",
 ];
 
 /**
@@ -106,17 +107,29 @@ export const validateEmployeeImportFile = async (
 
     // Basic validation of data
     const invalidRows: number[] = [];
+    const missingSupplierRows: number[] = [];
     data.forEach((row: any, index: number) => {
+      const rowNumber = index + 2;
       if (!row["ADAA EMP CODE"] || !row["NAME"]) {
-        invalidRows.push(index + 2); // +2 for Excel row number (1-indexed + header)
+        invalidRows.push(rowNumber);
+      }
+      if (!String(row["SUPPLIER"] ?? "").trim()) {
+        missingSupplierRows.push(rowNumber);
       }
     });
 
     if (invalidRows.length > 0) {
       errors.push(
         `Rows ${invalidRows.join(
-          ", "
-        )} are missing required fields (ADAA EMP CODE or NAME).`
+          ", ",
+        )} are missing required fields (ADAA EMP CODE or NAME).`,
+      );
+      return { isValid: false, errors };
+    }
+
+    if (missingSupplierRows.length > 0) {
+      errors.push(
+        `Rows ${missingSupplierRows.join(", ")} are missing SUPPLIER.`,
       );
       return { isValid: false, errors };
     }
@@ -159,6 +172,7 @@ export const createEmployeeImportTemplate = (): Blob => {
       "PERSONAL CODE": "PC001",
       "WORK PERMIT": "WP123456",
       "WP EXPIRY": "2025-06-30",
+      SUPPLIER: "ADAA",
     },
   ];
 

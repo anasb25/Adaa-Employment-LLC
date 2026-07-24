@@ -4,6 +4,7 @@ import {
   CreatePayrollRequest,
   UpdatePayrollRequest,
   PayrollFilters,
+  PayrollMonthTotals,
 } from "../../types/payroll";
 
 export const payrollApi = {
@@ -20,6 +21,11 @@ export const payrollApi = {
    */
   getPayrollsByMonth: async (month: string): Promise<Payroll[]> => {
     const response = await axiosInstance.get(`/payroll/month/${month}`);
+    return response.data;
+  },
+
+  getPayrollMonthTotals: async (month: string): Promise<PayrollMonthTotals> => {
+    const response = await axiosInstance.get(`/payroll/month/${month}/totals`);
     return response.data;
   },
 

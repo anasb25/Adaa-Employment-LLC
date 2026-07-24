@@ -8,6 +8,7 @@ import { QUERY_KEYS } from "../../lib/constants";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
+import Select from "../form/Select";
 import {
   Settlement,
   CreateSettlementRequest,
@@ -838,20 +839,22 @@ export default function SettlementForm({
       {/* Status */}
       <div>
         <Label htmlFor="status">Settlement Status</Label>
-        <select
+        <Select
           id="status"
+          options={[
+            { value: SettlementStatus.DRAFT, label: "Draft" },
+            {
+              value: SettlementStatus.PENDING_APPROVAL,
+              label: "Pending Approval",
+            },
+            { value: SettlementStatus.APPROVED, label: "Approved" },
+            { value: SettlementStatus.PAID, label: "Paid" },
+            { value: SettlementStatus.CANCELLED, label: "Cancelled" },
+          ]}
           value={status}
-          onChange={(e) => setStatus(e.target.value as SettlementStatus)}
-          className="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-        >
-          <option value={SettlementStatus.DRAFT}>Draft</option>
-          <option value={SettlementStatus.PENDING_APPROVAL}>
-            Pending Approval
-          </option>
-          <option value={SettlementStatus.APPROVED}>Approved</option>
-          <option value={SettlementStatus.PAID}>Paid</option>
-          <option value={SettlementStatus.CANCELLED}>Cancelled</option>
-        </select>
+          onChange={(value) => setStatus(value as SettlementStatus)}
+          placeholder="Select status"
+        />
       </div>
 
       {/* Form Actions */}

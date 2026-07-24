@@ -104,6 +104,14 @@ export default memo(function EmployeeCard({
         </div>
         <div>
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+            Supplier
+          </p>
+          <p className="text-gray-900 dark:text-white">
+            {employee.supplier?.name || "N/A"}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
             Emirates ID
           </p>
           <p className="text-gray-900 dark:text-white">

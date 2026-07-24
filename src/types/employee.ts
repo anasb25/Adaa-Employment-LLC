@@ -1,4 +1,5 @@
 import { EmployeeSkill } from "./skill";
+import { Supplier } from "./supplier";
 
 export interface AirTicketHistoryEntry {
   at: string;
@@ -37,6 +38,8 @@ export interface Employee {
   air_tickets?: number;
   air_tickets_history?: AirTicketHistoryEntry[];
   annual_leave_balance?: number;
+  supplierId?: number | null;
+  supplier?: Supplier | null;
   createdAt: string;
   updatedAt: string;
   createdBy?: number;
@@ -66,6 +69,7 @@ export interface CreateEmployeeRequest {
   other_allowance?: number;
   air_tickets?: number;
   annual_leave_balance?: number;
+  supplierId?: number | null;
 }
 
 export interface UpdateEmployeeRequest extends Partial<CreateEmployeeRequest> {}

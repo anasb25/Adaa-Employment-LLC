@@ -118,6 +118,7 @@ export interface TimesheetFilters {
 // Daily Utilization Report Types
 export interface TradeUtilization {
   tradeInSite: string;
+  supplier: string;
   headCount: number;
 }
 

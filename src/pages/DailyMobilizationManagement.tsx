@@ -17,6 +17,7 @@ import Input from "../components/form/input/InputField";
 import { Accordion, AccordionItem } from "../components/ui/accordion/Accordion";
 import DailyMobilizationImportModal from "../components/mobilizations/DailyMobilizationImportModal";
 import EmployeeMobilizationHistoryModal from "../components/mobilizations/EmployeeMobilizationHistoryModal";
+import { useConfirmDialog } from "../providers/ConfirmDialogProvider";
 import {
   PlusIcon,
   FileIcon,
@@ -170,6 +171,7 @@ const MobilizationRow = memo(function MobilizationRow({
 export default function DailyMobilizationManagement() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const confirmDialog = useConfirmDialog();
   const [selectedDate, setSelectedDate] = useState<string>(
     getTodayDateString()
   );
@@ -273,13 +275,15 @@ export default function DailyMobilizationManagement() {
     });
   }, []);
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
-    if (
-      window.confirm(
-        `Are you sure you want to delete ${selectedIds.size} mobilization(s)?`
-      )
-    ) {
+    const confirmed = await confirmDialog({
+      title: "Delete Mobilizations",
+      message: `Are you sure you want to delete ${selectedIds.size} mobilization(s)?`,
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteManyMutation.mutate(Array.from(selectedIds));
     }
   };
@@ -362,16 +366,18 @@ export default function DailyMobilizationManagement() {
   };
 
   const handleDelete = useCallback(
-    (id: number) => {
-      if (
-        window.confirm(
-          "Are you sure you want to delete this mobilization record?"
-        )
-      ) {
+    async (id: number) => {
+      const confirmed = await confirmDialog({
+        title: "Delete Mobilization",
+        message: "Are you sure you want to delete this mobilization record?",
+        confirmText: "Delete",
+        variant: "warning",
+      });
+      if (confirmed) {
         deleteMutation.mutate(id);
       }
     },
-    [deleteMutation]
+    [confirmDialog, deleteMutation],
   );
 
   const formattedDate = formatDateLong(selectedDate);

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   isOpen: boolean;
@@ -56,20 +57,30 @@ export const Modal: React.FC<ModalProps> = ({
     xl: "max-w-4xl",
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[9999] pt-16">
-      {/* Backdrop */}
-      <div className="absolute inset-0" onClick={onClose} />
+  return createPortal(
+    <div className="fixed inset-0 z-999999 flex items-center justify-center p-4 sm:p-6">
+      {/* Full-screen backdrop — covers header, sidebar, and content */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      {/* Modal Container - Positioned between top bar and sidebar */}
+      {/* Modal */}
       <div
         ref={modalRef}
-        className={`relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl ${sizeClasses[size]} w-full mx-4 mt-8 max-h-[calc(100vh-12rem)] overflow-hidden ${className}`}
+        className={`relative flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-800 ${sizeClasses[size]} ${className}`}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+          <h2
+            id="modal-title"
+            className="text-xl font-semibold text-gray-900 dark:text-white"
+          >
             {title}
           </h2>
           <button
@@ -93,10 +104,11 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(100vh-16rem)]">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

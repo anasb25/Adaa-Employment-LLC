@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { ReactNode } from "react";
+import { ConfirmDialogProvider } from "./ConfirmDialogProvider";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -23,13 +24,15 @@ interface AppProvidersProps {
 export default function AppProviders({ children }: AppProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
-      <Toaster
-        position="top-right"
-        expand={true}
-        richColors={true}
-        closeButton={true}
-      />
+      <ConfirmDialogProvider>
+        {children}
+        <Toaster
+          position="top-right"
+          expand={true}
+          richColors={true}
+          closeButton={true}
+        />
+      </ConfirmDialogProvider>
     </QueryClientProvider>
   );
 }

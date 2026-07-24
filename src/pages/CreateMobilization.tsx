@@ -365,37 +365,27 @@ export default function CreateMobilization() {
                           />
                         </td>
                         <td className="px-3 py-2">
-                          <select
-                            className="w-full min-w-[120px] appearance-none rounded-md border border-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1.5 text-sm cursor-not-allowed opacity-90 dark:border-gray-700 dark:text-white"
+                          <Select
+                            size="sm"
+                            className="min-w-[120px] cursor-not-allowed opacity-90"
+                            options={MOB_STATUS_OPTIONS}
                             value={row.mobStatus}
                             disabled
-                            title="Set automatically from Job Status"
-                          >
-                            {MOB_STATUS_OPTIONS.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                            onChange={() => {}}
+                            placeholder="Mob status"
+                          />
                         </td>
                         <td className="px-3 py-2">
-                          <select
-                            className="w-full min-w-[120px] appearance-none rounded-md border border-gray-300 bg-transparent px-2 py-1.5 text-sm focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                          <Select
+                            size="sm"
+                            className="min-w-[120px]"
+                            options={JOB_STATUS_OPTIONS}
                             value={row.jobStatus}
-                            onChange={(e) =>
-                              handleBulkRowChange(
-                                row.id,
-                                "jobStatus",
-                                e.target.value
-                              )
+                            onChange={(value) =>
+                              handleBulkRowChange(row.id, "jobStatus", value)
                             }
-                          >
-                            {JOB_STATUS_OPTIONS.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                            placeholder="Job status"
+                          />
                         </td>
                         <td className="px-3 py-2">
                           <input

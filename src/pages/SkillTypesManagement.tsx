@@ -16,9 +16,11 @@ import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import PermissionGuard from "../components/auth/PermissionGuard";
 import { QUERY_KEYS } from "../lib/constants";
+import { useConfirmDialog } from "../providers/ConfirmDialogProvider";
 
 export default function SkillTypesManagement() {
   const queryClient = useQueryClient();
+  const confirmDialog = useConfirmDialog();
   const [newType, setNewType] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState("");
@@ -87,8 +89,14 @@ export default function SkillTypesManagement() {
     updateMutation.mutate({ id: editingId, type: editingValue.trim() });
   };
 
-  const handleDelete = (id: number) => {
-    if (window.confirm("Delete this skill type?")) {
+  const handleDelete = async (id: number) => {
+    const confirmed = await confirmDialog({
+      title: "Delete Skill Type",
+      message: "Delete this skill type?",
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteMutation.mutate(id);
     }
   };

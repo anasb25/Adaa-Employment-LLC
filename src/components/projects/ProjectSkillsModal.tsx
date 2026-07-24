@@ -13,6 +13,7 @@ import Select from "../form/Select";
 import Input from "../form/input/InputField";
 import Badge from "../ui/badge/Badge";
 import { TrashBinIcon, PencilIcon } from "../../icons";
+import { useConfirmDialog } from "../../providers/ConfirmDialogProvider";
 
 interface ProjectSkillsModalProps {
   project: Project;
@@ -25,6 +26,7 @@ export default function ProjectSkillsModal({
   isOpen,
   onClose,
 }: ProjectSkillsModalProps) {
+  const confirmDialog = useConfirmDialog();
   const queryClient = useQueryClient();
   const [selectedSkillId, setSelectedSkillId] = useState<string>("");
   const [salePrice, setSalePrice] = useState<string>("");
@@ -198,8 +200,14 @@ export default function ProjectSkillsModal({
     setEditingSalePrice("");
   };
 
-  const handleRemoveSkill = (skillId: number, skillName: string) => {
-    if (window.confirm(`Remove "${skillName}" from this project?`)) {
+  const handleRemoveSkill = async (skillId: number, skillName: string) => {
+    const confirmed = await confirmDialog({
+      title: "Remove Skill",
+      message: `Remove "${skillName}" from this project?`,
+      confirmText: "Remove",
+      variant: "warning",
+    });
+    if (confirmed) {
       removeSkillMutation.mutate(skillId);
     }
   };

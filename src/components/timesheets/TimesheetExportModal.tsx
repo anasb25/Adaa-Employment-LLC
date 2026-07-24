@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { Modal } from "../ui/ReusableModal";
 import Button from "../ui/button/Button";
 import { MonthlyProjectTimesheetData } from "../../types/timesheet";
@@ -621,7 +622,7 @@ export default function TimesheetExportModal({
       onClose();
     } catch (error) {
       console.error("Error generating DOCX:", error);
-      alert("Failed to generate DOCX file. Please try again.");
+      toast.error("Failed to generate DOCX file. Please try again.");
     } finally {
       setIsExporting(false);
     }
@@ -741,7 +742,7 @@ export default function TimesheetExportModal({
       onClose();
     } catch (error) {
       console.error("Error generating Excel:", error);
-      alert("Failed to generate Excel file. Please try again.");
+      toast.error("Failed to generate Excel file. Please try again.");
     } finally {
       setIsExporting(false);
     }

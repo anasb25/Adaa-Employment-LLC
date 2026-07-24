@@ -4,8 +4,10 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { payrollApi } from "../services/api/payrollApi";
 import { formatDecimalHours } from "../utils/timeUtils";
+import { formatAedAmount, formatAedRate } from "../utils/currency";
 import { QUERY_KEYS } from "../lib/constants";
 import { Payroll } from "../types/payroll";
+import { filterAdaaPayrollRecords } from "../utils/adaaPayroll";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import PermissionGuard from "../components/auth/PermissionGuard";
@@ -25,6 +27,8 @@ import {
   TableIcon,
   GridIcon,
 } from "../icons";
+import { useConfirmDialog } from "../providers/ConfirmDialogProvider";
+import MonthPicker from "../components/form/MonthPicker";
 
 /** All hour buckets counted in payroll / earnings (matches breakdown sum). */
 function payrollTotalPaidHours(p: Payroll): number {
@@ -38,6 +42,7 @@ function payrollTotalPaidHours(p: Payroll): number {
 
 export default function PayrollManagement() {
   const queryClient = useQueryClient();
+  const confirmDialog = useConfirmDialog();
 
   // Get current month as default
   const currentDate = new Date();
@@ -62,16 +67,27 @@ export default function PayrollManagement() {
     enabled: !!selectedMonth,
   });
 
+  const adaaPayrollData = useMemo(
+    () => filterAdaaPayrollRecords(payrollData),
+    [payrollData],
+  );
+
+  const { data: payrollMonthTotals } = useQuery({
+    queryKey: [...QUERY_KEYS.payroll.byMonth(selectedMonth), "totals"],
+    queryFn: () => payrollApi.getPayrollMonthTotals(selectedMonth),
+    enabled: !!selectedMonth,
+  });
+
   const payrollSearchFiltered = useMemo(() => {
-    if (!payrollData) return [];
-    if (!searchQuery.trim()) return payrollData;
+    if (!adaaPayrollData.length) return [];
+    if (!searchQuery.trim()) return adaaPayrollData;
     const q = searchQuery.toLowerCase();
-    return payrollData.filter((p: Payroll) => {
+    return adaaPayrollData.filter((p: Payroll) => {
       const name = p.employee?.name?.toLowerCase() || "";
       const code = p.employee?.adaa_emp_code?.toLowerCase() || "";
       return name.includes(q) || code.includes(q);
     });
-  }, [payrollData, searchQuery]);
+  }, [adaaPayrollData, searchQuery]);
 
   const showAirTicketUsedColumn = useMemo(
     () =>
@@ -103,7 +119,7 @@ export default function PayrollManagement() {
   const calculatePayrollMutation = useMutation({
     mutationFn: payrollApi.calculatePayrollForMonth,
     onSuccess: (data) => {
-      toast.success(`Payroll calculated for ${data.length} employee(s)!`);
+      toast.success(`Payroll calculated for ${data.length} ADAA employee(s)!`);
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.payroll.all });
     },
     onError: (error: any) => {
@@ -124,11 +140,14 @@ export default function PayrollManagement() {
   };
 
   const handleDelete = async (payrollId: number) => {
-    if (
-      window.confirm(
+    const confirmed = await confirmDialog({
+      title: "Delete Payroll Entry",
+      message:
         "Are you sure you want to delete this payroll entry? This action cannot be undone.",
-      )
-    ) {
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       await deletePayrollMutation.mutateAsync(payrollId);
     }
   };
@@ -155,23 +174,27 @@ export default function PayrollManagement() {
     });
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
-    if (
-      window.confirm(
-        `Are you sure you want to delete ${selectedIds.size} payroll(s)?`,
-      )
-    ) {
+    const confirmed = await confirmDialog({
+      title: "Delete Payrolls",
+      message: `Are you sure you want to delete ${selectedIds.size} payroll(s)?`,
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteManyMutation.mutate(Array.from(selectedIds));
     }
   };
 
   const handleCalculatePayroll = async () => {
-    if (
-      window.confirm(
-        `Calculate payroll for ${selectedMonth}? This will process all approved timesheets and create/update payroll entries.`,
-      )
-    ) {
+    const confirmed = await confirmDialog({
+      title: "Calculate Payroll",
+      message: `Calculate payroll for ${selectedMonth}? This will process all approved timesheets and create/update payroll entries.`,
+      confirmText: "Calculate",
+      variant: "info",
+    });
+    if (confirmed) {
       await calculatePayrollMutation.mutateAsync(selectedMonth);
     }
   };
@@ -199,8 +222,11 @@ export default function PayrollManagement() {
     }
   };
 
-  const formatNumber = (value: number): string => {
-    return Number(value).toFixed(2);
+  const formatCount = (value: number | null | undefined): string => {
+    return Number(value || 0).toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
   };
 
   const formatHours = (value: number): string => {
@@ -211,7 +237,15 @@ export default function PayrollManagement() {
     if (!data) return "N/A";
     const entries = Object.entries(data);
     if (entries.length === 0) return "N/A";
-    return entries.map(([key, value]) => `${key}: ${value}`).join(", ");
+    return entries
+      .map(([key, value]) => {
+        const num = Number(value);
+        if (!Number.isNaN(num) && value !== "" && value !== null) {
+          return `${key}: ${formatAedAmount(num)}`;
+        }
+        return `${key}: ${value}`;
+      })
+      .join(", ");
   };
 
   const sumJsonValues = (data: Record<string, any> | null): number => {
@@ -223,7 +257,7 @@ export default function PayrollManagement() {
   };
 
   const handleExportToExcel = () => {
-    if (!payrollData || payrollData.length === 0) {
+    if (!adaaPayrollData.length) {
       toast.error("No data to export");
       return;
     }
@@ -341,17 +375,13 @@ export default function PayrollManagement() {
             <div className="flex items-end gap-4">
               <div className="w-64">
                 <Label htmlFor="month">Select Month</Label>
-                <input
+                <MonthPicker
                   id="month"
-                  type="month"
                   value={selectedMonth}
-                  onChange={(e) => {
-                    setSelectedMonth(e.target.value);
+                  onChange={(month) => {
+                    setSelectedMonth(month);
                     setExpandedEmployees(new Set());
                   }}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                         focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
               </div>
 
@@ -382,7 +412,7 @@ export default function PayrollManagement() {
                 onClick={handleExportToExcel}
                 variant="outline"
                 startIcon={<DownloadIcon />}
-                disabled={!payrollData || payrollData.length === 0}
+                disabled={!adaaPayrollData.length}
               >
                 Export to Excel
               </Button>
@@ -466,8 +496,7 @@ export default function PayrollManagement() {
               </div>
 
               {viewMode === "table" &&
-                payrollData &&
-                payrollData.length > 0 && (
+                adaaPayrollData.length > 0 && (
                   <Button
                     onClick={handleExportToExcel}
                     variant="outline"
@@ -482,7 +511,7 @@ export default function PayrollManagement() {
 
           <div className="flex justify-between items-center mt-4">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              {payrollData?.length || 0} employee(s) found
+              {adaaPayrollData.length} employee(s) found
             </div>
           </div>
         </div>
@@ -500,7 +529,7 @@ export default function PayrollManagement() {
         )}
 
         {/* Empty State */}
-        {!isLoading && (!payrollData || payrollData.length === 0) && (
+        {!isLoading && adaaPayrollData.length === 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12">
             <div className="text-center">
               <p className="text-gray-500 dark:text-gray-400">
@@ -514,46 +543,53 @@ export default function PayrollManagement() {
         )}
 
         {/* Grand Total Summary */}
-        {!isLoading &&
-          payrollData &&
-          payrollData.length > 0 &&
+        {!isLoading && adaaPayrollData.length > 0 && (
           (() => {
-            const filtered = payrollData.filter((p: Payroll) => {
-              if (!searchQuery.trim()) return true;
-              const query = searchQuery.toLowerCase();
-              const name = p.employee?.name?.toLowerCase() || "";
-              const code = p.employee?.adaa_emp_code?.toLowerCase() || "";
-              return name.includes(query) || code.includes(query);
-            });
-            const totals = filtered.reduce(
-              (acc: any, p: Payroll) => {
-                acc.totalHours += Number(p.totalHours) || 0;
-                acc.totalOtHours += Number(p.totalOtHours) || 0;
-                acc.totalOffdaysWorkedHours +=
-                  Number(p.totalOffdaysWorkedHours) || 0;
-                acc.totalIdleDayHours += Number(p.totalIdleDayHours) || 0;
-                acc.grossSalary += Number(p.totalGrossSalary) || 0;
-                acc.netSalary += Number(p.netSalary) || 0;
-                return acc;
-              },
-              {
-                totalHours: 0,
-                totalOtHours: 0,
-                totalOffdaysWorkedHours: 0,
-                totalIdleDayHours: 0,
-                grossSalary: 0,
-                netSalary: 0,
-              },
-            );
-            const totalPaidHoursAcrossEmployees =
-              totals.totalHours +
-              totals.totalOtHours +
-              totals.totalOffdaysWorkedHours +
-              totals.totalIdleDayHours;
+            const hasSearch = searchQuery.trim().length > 0;
+            const filtered = payrollSearchFiltered;
+            const totals = hasSearch
+              ? filtered.reduce(
+                  (acc, p) => {
+                    acc.totalHours += Number(p.totalHours) || 0;
+                    acc.totalOtHours += Number(p.totalOtHours) || 0;
+                    acc.totalOffdaysWorkedHours +=
+                      Number(p.totalOffdaysWorkedHours) || 0;
+                    acc.totalIdleDayHours += Number(p.totalIdleDayHours) || 0;
+                    acc.grossSalary += Number(p.totalGrossSalary) || 0;
+                    acc.netSalary += Number(p.netSalary) || 0;
+                    return acc;
+                  },
+                  {
+                    totalHours: 0,
+                    totalOtHours: 0,
+                    totalOffdaysWorkedHours: 0,
+                    totalIdleDayHours: 0,
+                    grossSalary: 0,
+                    netSalary: 0,
+                  },
+                )
+              : {
+                  totalHours: payrollMonthTotals?.totalHours ?? 0,
+                  totalOtHours: payrollMonthTotals?.totalOtHours ?? 0,
+                  totalOffdaysWorkedHours:
+                    payrollMonthTotals?.totalOffdaysWorkedHours ?? 0,
+                  totalIdleDayHours: payrollMonthTotals?.totalIdleDayHours ?? 0,
+                  grossSalary: payrollMonthTotals?.grossSalary ?? 0,
+                  netSalary: payrollMonthTotals?.netSalary ?? 0,
+                };
+            const totalPaidHoursAcrossEmployees = hasSearch
+              ? totals.totalHours +
+                totals.totalOtHours +
+                totals.totalOffdaysWorkedHours +
+                totals.totalIdleDayHours
+              : (payrollMonthTotals?.totalPaidHours ?? 0);
+            const employeeCount = hasSearch
+              ? filtered.length
+              : (payrollMonthTotals?.employeeCount ?? adaaPayrollData.length);
             return (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 border-brand-500 dark:border-brand-400 p-6">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                  Grand Total ({filtered.length} employees)
+                  Grand Total ({employeeCount} employees)
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   <div>
@@ -593,7 +629,7 @@ export default function PayrollManagement() {
                       Gross Salary
                     </div>
                     <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                      AED {formatNumber(totals.grossSalary)}
+                      {formatAedAmount(totals.grossSalary)}
                     </div>
                   </div>
                   <div>
@@ -601,16 +637,17 @@ export default function PayrollManagement() {
                       Net Salary
                     </div>
                     <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                      AED {formatNumber(totals.netSalary)}
+                      {formatAedAmount(totals.netSalary)}
                     </div>
                   </div>
                 </div>
               </div>
             );
-          })()}
+          })()
+        )}
 
         {/* Payroll List */}
-        {!isLoading && payrollData && payrollData.length > 0 && (
+        {!isLoading && adaaPayrollData.length > 0 && (
           <>
             {/* Table View */}
             {viewMode === "table" && (
@@ -624,13 +661,13 @@ export default function PayrollManagement() {
                             <input
                               type="checkbox"
                               checked={
-                                (payrollData || []).length > 0 &&
-                                (payrollData || []).every((p: Payroll) =>
+                                adaaPayrollData.length > 0 &&
+                                adaaPayrollData.every((p: Payroll) =>
                                   selectedIds.has(p.id),
                                 )
                               }
                               onChange={() => {
-                                const allIds = (payrollData || []).map(
+                                const allIds = adaaPayrollData.map(
                                   (p: Payroll) => p.id,
                                 );
                                 if (
@@ -751,12 +788,12 @@ export default function PayrollManagement() {
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
                                 <div className="text-sm text-gray-900 dark:text-white">
-                                  {formatNumber(payroll.baseHourlyRate || 0)}
+                                  {formatAedRate(payroll.baseHourlyRate || 0)}
                                 </div>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
                                 <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                                  {formatNumber(payroll.totalGrossSalary || 0)}
+                                  {formatAedAmount(payroll.totalGrossSalary || 0)}
                                 </div>
                               </td>
                               <td className="px-4 py-3 max-w-xs">
@@ -769,7 +806,7 @@ export default function PayrollManagement() {
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
                                 <div className="text-sm text-red-600 dark:text-red-400">
-                                  {formatNumber(payroll.absentDaysDeductible)}
+                                  {formatCount(payroll.absentDaysDeductible)}
                                 </div>
                               </td>
                               {showAirTicketUsedColumn && (
@@ -797,7 +834,7 @@ export default function PayrollManagement() {
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
                                 <div className="text-sm font-bold text-green-600 dark:text-green-400">
-                                  {formatNumber(payroll.netSalary || 0)}
+                                  {formatAedAmount(payroll.netSalary || 0)}
                                 </div>
                               </td>
                               <td className="px-4 py-3 max-w-xs">
@@ -907,11 +944,11 @@ export default function PayrollManagement() {
                             </td>
                             <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-blue-600 dark:text-blue-400">
-                              {formatNumber(totals.grossSalary)}
+                              {formatAedAmount(totals.grossSalary)}
                             </td>
                             <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-red-600 dark:text-red-400">
-                              {formatNumber(totals.absentDeduct)}
+                              {formatCount(totals.absentDeduct)}
                             </td>
                             {showAirTicketUsedColumn && (
                               <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white tabular-nums">
@@ -922,7 +959,7 @@ export default function PayrollManagement() {
                             )}
                             <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-green-600 dark:text-green-400">
-                              {formatNumber(totals.netSalary)}
+                              {formatAedAmount(totals.netSalary)}
                             </td>
                             <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 sticky right-0 bg-gray-100 dark:bg-gray-900 z-10"></td>
@@ -1018,7 +1055,7 @@ export default function PayrollManagement() {
                                         </p>
                                       </div>
                                       <div className="text-3xl font-bold text-green-700 dark:text-green-400">
-                                        AED {formatNumber(payroll.netSalary)}
+                                        {formatAedAmount(payroll.netSalary)}
                                       </div>
                                     </div>
                                   </div>
@@ -1064,8 +1101,7 @@ export default function PayrollManagement() {
                                                   {item.additionalAmount !==
                                                     0 && (
                                                     <span className="ml-2 text-xs text-gray-500">
-                                                      (+{item.additionalAmount}{" "}
-                                                      AED/hr)
+                                                      (+{formatAedRate(item.additionalAmount)})
                                                     </span>
                                                   )}
                                                 </td>
@@ -1073,14 +1109,10 @@ export default function PayrollManagement() {
                                                   {formatHours(item.hours)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                                  AED{" "}
-                                                  {formatNumber(
-                                                    item.hourlyRate,
-                                                  )}
+                                                  {formatAedRate(item.hourlyRate)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
-                                                  AED{" "}
-                                                  {formatNumber(item.amount)}
+                                                  {formatAedAmount(item.amount)}
                                                 </td>
                                               </tr>
                                             ),
@@ -1125,8 +1157,7 @@ export default function PayrollManagement() {
                                                   {item.additionalAmount !==
                                                     0 && (
                                                     <span className="ml-2 text-xs text-gray-500">
-                                                      (+{item.additionalAmount}{" "}
-                                                      AED/hr)
+                                                      (+{formatAedRate(item.additionalAmount)})
                                                     </span>
                                                   )}
                                                 </td>
@@ -1134,14 +1165,10 @@ export default function PayrollManagement() {
                                                   {formatHours(item.hours)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                                  AED{" "}
-                                                  {formatNumber(
-                                                    item.hourlyRate,
-                                                  )}
+                                                  {formatAedRate(item.hourlyRate)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
-                                                  AED{" "}
-                                                  {formatNumber(item.amount)}
+                                                  {formatAedAmount(item.amount)}
                                                 </td>
                                               </tr>
                                             ),
@@ -1190,9 +1217,13 @@ export default function PayrollManagement() {
                                                       (
                                                       {item.additionalAmount > 0
                                                         ? "+"
-                                                        : ""}
-                                                      {item.additionalAmount}{" "}
-                                                      AED/hr)
+                                                        : "-"}
+                                                      {formatAedRate(
+                                                        Math.abs(
+                                                          item.additionalAmount,
+                                                        ),
+                                                      )}
+                                                      )
                                                     </span>
                                                   )}
                                                 </td>
@@ -1200,14 +1231,10 @@ export default function PayrollManagement() {
                                                   {formatHours(item.hours)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                                  AED{" "}
-                                                  {formatNumber(
-                                                    item.hourlyRate,
-                                                  )}
+                                                  {formatAedRate(item.hourlyRate)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
-                                                  AED{" "}
-                                                  {formatNumber(item.amount)}
+                                                  {formatAedAmount(item.amount)}
                                                 </td>
                                               </tr>
                                             ),
@@ -1256,9 +1283,13 @@ export default function PayrollManagement() {
                                                       (
                                                       {item.additionalAmount > 0
                                                         ? "+"
-                                                        : ""}
-                                                      {item.additionalAmount}{" "}
-                                                      AED/hr)
+                                                        : "-"}
+                                                      {formatAedRate(
+                                                        Math.abs(
+                                                          item.additionalAmount,
+                                                        ),
+                                                      )}
+                                                      )
                                                     </span>
                                                   )}
                                                 </td>
@@ -1266,14 +1297,10 @@ export default function PayrollManagement() {
                                                   {formatHours(item.hours)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                                                  AED{" "}
-                                                  {formatNumber(
-                                                    item.hourlyRate,
-                                                  )}
+                                                  {formatAedRate(item.hourlyRate)}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
-                                                  AED{" "}
-                                                  {formatNumber(item.amount)}
+                                                  {formatAedAmount(item.amount)}
                                                 </td>
                                               </tr>
                                             ),
@@ -1378,7 +1405,7 @@ export default function PayrollManagement() {
                                         Absent Days:
                                       </span>
                                       <span className="font-medium text-gray-900 dark:text-white">
-                                        {formatNumber(
+                                        {formatCount(
                                           payroll.absentDaysDeductible,
                                         )}
                                       </span>
@@ -1424,16 +1451,12 @@ export default function PayrollManagement() {
                                       Total Gross Salary
                                     </h3>
                                     <p className="text-sm text-blue-700 dark:text-blue-300">
-                                      Base Rate: AED{" "}
-                                      {formatNumber(
-                                        payroll.baseHourlyRate || 0,
-                                      )}
-                                      /hr
+                                      Base Rate:{" "}
+                                      {formatAedRate(payroll.baseHourlyRate || 0)}
                                     </p>
                                   </div>
                                   <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-                                    AED{" "}
-                                    {formatNumber(
+                                    {formatAedAmount(
                                       payroll.totalGrossSalary || 0,
                                     )}
                                   </div>

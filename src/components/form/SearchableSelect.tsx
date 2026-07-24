@@ -1,4 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { SelectChevron } from "./SelectChevron";
+import {
+  buildSelectTriggerClassName,
+  selectDropdownEmptyClasses,
+  selectDropdownItemClasses,
+  selectDropdownPanelClasses,
+  selectPlaceholderTextClasses,
+  selectValueTextClasses,
+} from "./selectStyles";
 
 interface Option {
   value: string;
@@ -143,8 +152,11 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       {/* Trigger / Display */}
       <div
         onClick={openDropdown}
-        className={`flex items-center h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm shadow-theme-xs transition-colors focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:focus-within:border-brand-800 ${
-          disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+        className={`${buildSelectTriggerClassName({
+          disabled,
+          hasValue: Boolean(selectedOption),
+        })} flex cursor-pointer items-center focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/20 dark:focus-within:border-brand-800 ${
+          disabled ? "cursor-not-allowed" : ""
         }`}
       >
         {isOpen ? (
@@ -161,9 +173,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
         ) : (
           <span
             className={`flex-1 truncate ${
-              selectedOption
-                ? "text-gray-800 dark:text-white/90"
-                : "text-gray-400 dark:text-gray-400"
+              selectedOption ? selectValueTextClasses : selectPlaceholderTextClasses
             }`}
           >
             {selectedOption ? selectedOption.label : placeholder}
@@ -196,21 +206,10 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
             </button>
           )}
           {/* Chevron */}
-          <svg
-            className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${
-              isOpen ? "rotate-180" : ""
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          <SelectChevron
+            size="sm"
+            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+          />
         </div>
       </div>
 
@@ -218,13 +217,11 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       {isOpen && (
         <div
           ref={listRef}
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto dark:bg-gray-900 dark:border-gray-700"
+          className={selectDropdownPanelClasses}
           role="listbox"
         >
           {filteredOptions.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-              No results found
-            </div>
+            <div className={selectDropdownEmptyClasses}>No results found</div>
           ) : (
             filteredOptions.map((option, index) => {
               const isSelected = option.value === value;
@@ -234,17 +231,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 <div
                   key={option.value}
                   data-option
-                  className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
-                    isFocused
-                      ? "bg-brand-50 dark:bg-brand-900/20"
-                      : isSelected
-                      ? "bg-gray-50 dark:bg-gray-800"
-                      : "hover:bg-gray-50 dark:hover:bg-gray-800"
-                  } ${
-                    isSelected
-                      ? "text-brand-600 dark:text-brand-400 font-medium"
-                      : "text-gray-800 dark:text-white/90"
-                  }`}
+                  className={selectDropdownItemClasses({ isSelected, isFocused })}
                   onClick={() => handleSelect(option.value)}
                   role="option"
                   aria-selected={isSelected}

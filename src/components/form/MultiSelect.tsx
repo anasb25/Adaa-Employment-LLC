@@ -1,5 +1,11 @@
 import type React from "react";
 import { useState, useEffect, useRef } from "react";
+import { SelectChevron } from "./SelectChevron";
+import {
+  buildSelectTriggerClassName,
+  selectDropdownItemClasses,
+  selectDropdownPanelClasses,
+} from "./selectStyles";
 
 interface Option {
   value: string;
@@ -126,10 +132,11 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             tabIndex={disabled ? -1 : 0}
           >
             <div
-              className={`mb-2 flex min-h-11  rounded-lg border border-gray-300 py-1.5 pl-3 pr-3 shadow-theme-xs outline-hidden transition focus:border-brand-300 focus:shadow-focus-ring dark:border-gray-700 dark:bg-gray-900 dark:focus:border-brand-300 ${
-                disabled
-                  ? "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
-                  : "cursor-pointer"
+              className={`${buildSelectTriggerClassName({
+                disabled,
+                hasValue: selectedOptions.length > 0,
+              })} mb-2 flex min-h-11 items-stretch py-1.5 pl-3 pr-3 ${
+                disabled ? "cursor-not-allowed" : "cursor-pointer"
               }`}
             >
               <div className="flex flex-wrap flex-auto gap-2">
@@ -176,7 +183,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                   </div>
                 )}
               </div>
-              <div className="flex items-center self-start py-1 pl-1 pr-1 w-7">
+              <div className="flex w-7 items-center self-start py-1 pl-1 pr-1">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -184,26 +191,12 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                     toggleDropdown();
                   }}
                   disabled={disabled}
-                  className="w-5 h-5 text-gray-700 outline-hidden cursor-pointer focus:outline-hidden dark:text-gray-400 disabled:cursor-not-allowed"
+                  className="h-5 w-5 cursor-pointer text-gray-500 outline-hidden focus:outline-hidden disabled:cursor-not-allowed dark:text-gray-400"
                 >
-                  <svg
-                    className={`stroke-current transition-transform ${
-                      isOpen ? "rotate-180" : ""
-                    }`}
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M4.79175 7.39551L10.0001 12.6038L15.2084 7.39551"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <SelectChevron
+                    className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    size="sm"
+                  />
                 </button>
               </div>
             </div>
@@ -211,7 +204,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
 
           {isOpen && (
             <div
-              className="absolute left-0 z-40 w-full overflow-y-auto bg-white rounded-lg shadow-sm top-full max-h-select dark:bg-gray-900"
+              className={`${selectDropdownPanelClasses} top-full max-h-select`}
               onClick={(e) => e.stopPropagation()}
               role="listbox"
               aria-label={label}
@@ -223,17 +216,19 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                 return (
                   <div
                     key={option.value}
-                    className={`hover:bg-primary/5 w-full cursor-pointer rounded-t border-b border-gray-200 dark:border-gray-800 ${
-                      isFocused ? "bg-primary/5" : ""
-                    } ${isSelected ? "bg-primary/10" : ""}`}
+                    className={selectDropdownItemClasses({ isSelected, isFocused })}
                     onClick={() => handleSelect(option.value)}
                     role="option"
                     aria-selected={isSelected}
                   >
-                    <div className="relative flex w-full items-center p-2 pl-2">
-                      <div className="mx-2 leading-6 text-gray-800 dark:text-white/90">
-                        {option.text}
-                      </div>
+                    <div className="relative flex w-full items-center gap-2">
+                      <input
+                        type="checkbox"
+                        readOnly
+                        checked={isSelected}
+                        className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-900"
+                      />
+                      <span>{option.text}</span>
                     </div>
                   </div>
                 );

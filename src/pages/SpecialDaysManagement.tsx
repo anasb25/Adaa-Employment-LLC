@@ -5,12 +5,15 @@ import { specialDaysApi } from "../services/api/specialDaysApi";
 import { SpecialDay, CreateSpecialDayRequest, SpecialDayType } from "../types/special-day";
 import Button from "../components/ui/button/Button";
 import Label from "../components/form/Label";
+import Select from "../components/form/Select";
 import { PlusIcon, PencilIcon, TrashBinIcon } from "../icons";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
+import { useConfirmDialog } from "../providers/ConfirmDialogProvider";
 
 export default function SpecialDaysManagement() {
   const queryClient = useQueryClient();
+  const confirmDialog = useConfirmDialog();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDay, setEditingDay] = useState<SpecialDay | null>(null);
   const [searchCategory, setSearchCategory] = useState("");
@@ -144,8 +147,14 @@ export default function SpecialDaysManagement() {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this special day?")) {
+  const handleDelete = async (id: number) => {
+    const confirmed = await confirmDialog({
+      title: "Delete Special Day",
+      message: "Are you sure you want to delete this special day?",
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteMutation.mutate(id);
     }
   };
@@ -184,21 +193,16 @@ export default function SpecialDaysManagement() {
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="filterCategory">Category</Label>
-              <select
+              <Select
                 id="filterCategory"
+                options={[
+                  { value: "", label: "All Categories" },
+                  ...categories.map((cat) => ({ value: cat, label: cat })),
+                ]}
                 value={searchCategory}
-                onChange={(e) => setSearchCategory(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                         focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+                onChange={setSearchCategory}
+                placeholder="All Categories"
+              />
             </div>
             <div>
               <Label htmlFor="filterYear">Year</Label>
@@ -372,10 +376,10 @@ export default function SpecialDaysManagement() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
+        <div className="fixed inset-0 z-999999 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center px-4">
             <div
-              className="fixed inset-0 bg-black opacity-30"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
               onClick={closeModal}
             ></div>
 
@@ -471,20 +475,35 @@ export default function SpecialDaysManagement() {
 
                   <div>
                     <Label htmlFor="dayType">Day Type *</Label>
-                    <select
+                    <Select
                       id="dayType"
-                      required
+                      options={[
+                        {
+                          value: SpecialDayType.REGULAR,
+                          label: "Regular (Reference Only)",
+                        },
+                        {
+                          value: SpecialDayType.PREMIUM_RATE,
+                          label: "Premium Rate",
+                        },
+                        {
+                          value: SpecialDayType.OPTIONAL_OFF,
+                          label: "Optional Off Day",
+                        },
+                        {
+                          value: SpecialDayType.MANDATORY_OFF,
+                          label: "Mandatory Off Day",
+                        },
+                      ]}
                       value={form.dayType}
-                      onChange={(e) => setForm({ ...form, dayType: e.target.value as SpecialDayType })}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                               bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                               focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                    >
-                      <option value={SpecialDayType.REGULAR}>Regular (Reference Only)</option>
-                      <option value={SpecialDayType.PREMIUM_RATE}>Premium Rate</option>
-                      <option value={SpecialDayType.OPTIONAL_OFF}>Optional Off Day</option>
-                      <option value={SpecialDayType.MANDATORY_OFF}>Mandatory Off Day</option>
-                    </select>
+                      onChange={(value) =>
+                        setForm({
+                          ...form,
+                          dayType: value as SpecialDayType,
+                        })
+                      }
+                      placeholder="Select day type"
+                    />
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       {form.dayType === SpecialDayType.MANDATORY_OFF && "Cannot be overridden - all employees must be off"}
                       {form.dayType === SpecialDayType.OPTIONAL_OFF && "Default to off, but can work with premium rates"}

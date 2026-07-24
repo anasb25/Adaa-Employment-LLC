@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { PlusIcon, PencilIcon, TrashBinIcon } from "../icons";
 import { rateVariantsApi } from "../services/api/rateVariantsApi";
 import { RateVariant, CreateRateVariantRequest } from "../types/rate-variant";
+import { useConfirmDialog } from "../providers/ConfirmDialogProvider";
 
 const RateVariantsManagement = () => {
+  const confirmDialog = useConfirmDialog();
   const [rateVariants, setRateVariants] = useState<RateVariant[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRateVariant, setEditingRateVariant] = useState<RateVariant | null>(null);
@@ -80,18 +83,24 @@ const RateVariantsManagement = () => {
       loadRateVariants();
     } catch (error) {
       console.error("Failed to save rate variant:", error);
-      alert("Failed to save rate variant");
+      toast.error("Failed to save rate variant");
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this rate variant?")) return;
+    const confirmed = await confirmDialog({
+      title: "Delete Rate Variant",
+      message: "Are you sure you want to delete this rate variant?",
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (!confirmed) return;
     try {
       await rateVariantsApi.deleteRateVariant(id);
       loadRateVariants();
     } catch (error: any) {
       console.error("Failed to delete rate variant:", error);
-      alert(error.response?.data?.message || "Failed to delete rate variant");
+      toast.error(error.response?.data?.message || "Failed to delete rate variant");
     }
   };
 
@@ -213,7 +222,7 @@ const RateVariantsManagement = () => {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 z-999999 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">

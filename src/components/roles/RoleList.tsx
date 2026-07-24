@@ -12,6 +12,7 @@ import PermissionGuard from "../auth/PermissionGuard";
 import { Modal } from "../ui/ReusableModal";
 import { AlertIcon as SearchIcon, PlusIcon } from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
+import { useConfirmDialog } from "../../providers/ConfirmDialogProvider";
 
 interface RoleListProps {
   onCreateRole: () => void;
@@ -19,6 +20,7 @@ interface RoleListProps {
 }
 
 export default function RoleList({ onCreateRole, onEditRole }: RoleListProps) {
+  const confirmDialog = useConfirmDialog();
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [showPermissionAssignment, setShowPermissionAssignment] =
     useState(false);
@@ -66,12 +68,14 @@ export default function RoleList({ onCreateRole, onEditRole }: RoleListProps) {
     },
   });
 
-  const handleDeleteRole = (role: Role) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete the "${role.name}" role? This action cannot be undone.`
-      )
-    ) {
+  const handleDeleteRole = async (role: Role) => {
+    const confirmed = await confirmDialog({
+      title: "Delete Role",
+      message: `Are you sure you want to delete the "${role.name}" role? This action cannot be undone.`,
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteRoleMutation.mutate(role.id);
     }
   };

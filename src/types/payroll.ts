@@ -1,4 +1,5 @@
 import type { AirTicketHistoryEntry } from "./employee";
+import type { Supplier } from "./supplier";
 
 export interface HoursBreakdown {
   regular: Array<{
@@ -58,7 +59,19 @@ export interface Payroll {
     other_allowance?: number | null;
     air_tickets?: number;
     air_tickets_history?: AirTicketHistoryEntry[];
+    supplier?: Supplier | null;
   };
+}
+
+export interface PayrollMonthTotals {
+  employeeCount: number;
+  totalHours: number;
+  totalOtHours: number;
+  totalOffdaysWorkedHours: number;
+  totalIdleDayHours: number;
+  totalPaidHours: number;
+  grossSalary: number;
+  netSalary: number;
 }
 
 export interface CreatePayrollRequest {

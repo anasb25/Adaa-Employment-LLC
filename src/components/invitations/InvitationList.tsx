@@ -5,6 +5,7 @@ import { Invitation, InvitationStatus } from "../../types/invitation";
 import Button from "../ui/button/Button";
 import { QUERY_KEYS } from "../../lib/constants";
 import { toast } from "sonner";
+import { useConfirmDialog } from "../../providers/ConfirmDialogProvider";
 
 interface InvitationListProps {
   refreshTrigger?: number;
@@ -12,6 +13,7 @@ interface InvitationListProps {
 
 const InvitationList: React.FC<InvitationListProps> = ({ refreshTrigger }) => {
   const queryClient = useQueryClient();
+  const confirmDialog = useConfirmDialog();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
 
@@ -75,8 +77,14 @@ const InvitationList: React.FC<InvitationListProps> = ({ refreshTrigger }) => {
     }
   };
 
-  const handleCancelInvitation = (invitationId: number) => {
-    if (!window.confirm("Are you sure you want to cancel this invitation?")) {
+  const handleCancelInvitation = async (invitationId: number) => {
+    const confirmed = await confirmDialog({
+      title: "Cancel Invitation",
+      message: "Are you sure you want to cancel this invitation?",
+      confirmText: "Cancel Invitation",
+      variant: "warning",
+    });
+    if (!confirmed) {
       return;
     }
     cancelInvitationMutation.mutate(invitationId);

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { employeesApi } from "../../services/api/employeesApi";
 import { employeeSkillsApi } from "../../services/api/employeeSkillsApi";
 import { skillsApi } from "../../services/api/skillsApi";
+import { suppliersApi } from "../../services/api/suppliersApi";
 import { Employee, CreateEmployeeRequest } from "../../types/employee";
 import { Skill, EmployeeSkill } from "../../types/skill";
 import { QUERY_KEYS } from "../../lib/constants";
@@ -14,6 +15,7 @@ import DatePicker from "../form/date-picker";
 import Button from "../ui/button/Button";
 import Badge from "../ui/badge/Badge";
 import { TrashBinIcon } from "../../icons";
+import { useConfirmDialog } from "../../providers/ConfirmDialogProvider";
 
 interface EmployeeFormProps {
   employee?: Employee;
@@ -28,6 +30,7 @@ interface PendingSkill {
 }
 
 export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
+  const confirmDialog = useConfirmDialog();
   const queryClient = useQueryClient();
   const isEditing = !!employee;
   const [selectedSkillId, setSelectedSkillId] = useState<string>("");
@@ -59,6 +62,12 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     other_allowance: employee?.other_allowance || undefined,
     air_tickets: employee?.air_tickets || undefined,
     annual_leave_balance: employee?.annual_leave_balance || undefined,
+    supplierId: employee?.supplierId ?? undefined,
+  });
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: QUERY_KEYS.suppliers.all,
+    queryFn: () => suppliersApi.getAll(),
   });
 
   const createMutation = useMutation({
@@ -349,10 +358,15 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     setEditingCostPrice("");
   };
 
-  const handleRemoveSkill = (skillId: number, skillName: string) => {
+  const handleRemoveSkill = async (skillId: number, skillName: string) => {
     if (isEditing && employee) {
-      // Existing employee - remove from database
-      if (window.confirm(`Remove "${skillName}" from this employee?`)) {
+      const confirmed = await confirmDialog({
+        title: "Remove Skill",
+        message: `Remove "${skillName}" from this employee?`,
+        confirmText: "Remove",
+        variant: "warning",
+      });
+      if (confirmed) {
         removeSkillMutation.mutate(skillId);
       }
     } else {
@@ -433,6 +447,30 @@ export default function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
             value={formData.name}
             onChange={handleChange}
             placeholder="Enter full name"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="supplier">Supplier</Label>
+          <Select
+            id="supplier"
+            options={[
+              { value: "", label: "No supplier" },
+              ...suppliers.map((supplier) => ({
+                value: String(supplier.id),
+                label: supplier.name,
+              })),
+            ]}
+            value={
+              formData.supplierId != null ? String(formData.supplierId) : ""
+            }
+            onChange={(value) =>
+              setFormData((prev) => ({
+                ...prev,
+                supplierId: value ? Number(value) : null,
+              }))
+            }
+            placeholder="Select supplier"
           />
         </div>
 

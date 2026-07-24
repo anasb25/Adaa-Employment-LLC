@@ -20,6 +20,7 @@ import {
   PlusIcon,
 } from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
+import { useConfirmDialog } from "../../providers/ConfirmDialogProvider";
 import { Skill } from "../../types/skill";
 import PermissionGuard from "../auth/PermissionGuard";
 
@@ -34,6 +35,7 @@ export default function SkillList({
   onEditSkill,
   totalSkills = 0,
 }: SkillListProps) {
+  const confirmDialog = useConfirmDialog();
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
@@ -96,12 +98,18 @@ export default function SkillList({
   );
 
   const handleDelete = useCallback(
-    (skillId: number) => {
-      if (window.confirm("Are you sure you want to delete this skill?")) {
+    async (skillId: number) => {
+      const confirmed = await confirmDialog({
+        title: "Delete Skill",
+        message: "Are you sure you want to delete this skill?",
+        confirmText: "Delete",
+        variant: "warning",
+      });
+      if (confirmed) {
         deleteMutation.mutate(skillId);
       }
     },
-    [deleteMutation],
+    [confirmDialog, deleteMutation],
   );
 
   const handleClearSearch = useCallback(() => {

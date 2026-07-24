@@ -17,11 +17,13 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { toast } from "sonner";
+import { useConfirmDialog } from "../providers/ConfirmDialogProvider";
 import { Client, CreateClientRequest, PaymentTerms } from "../types/client";
 import { AlertIcon as SearchIcon, PlusIcon } from "../icons";
 import { useSearch } from "../hooks/useDebounce";
 
 export default function ClientManagement() {
+  const confirmDialog = useConfirmDialog();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -157,8 +159,14 @@ export default function ClientManagement() {
     }
   };
 
-  const remove = (id: number) => {
-    if (window.confirm("Delete this client?")) {
+  const remove = async (id: number) => {
+    const confirmed = await confirmDialog({
+      title: "Delete Client",
+      message: "Delete this client?",
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteMutation.mutate(id);
     }
   };
@@ -185,9 +193,15 @@ export default function ClientManagement() {
     });
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
-    if (window.confirm(`Are you sure you want to delete ${selectedIds.size} client(s)?`)) {
+    const confirmed = await confirmDialog({
+      title: "Delete Clients",
+      message: `Are you sure you want to delete ${selectedIds.size} client(s)?`,
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteManyMutation.mutate(Array.from(selectedIds));
     }
   };

@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { toast } from "sonner";
+import { useConfirmDialog } from "../providers/ConfirmDialogProvider";
 import {
   Project,
   CreateProjectRequest,
@@ -35,6 +36,7 @@ import { AlertIcon as SearchIcon, PlusIcon, TrashBinIcon } from "../icons";
 import { useSearch } from "../hooks/useDebounce";
 
 export default function ProjectManagement() {
+  const confirmDialog = useConfirmDialog();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
@@ -203,8 +205,14 @@ export default function ProjectManagement() {
     }
   };
 
-  const remove = (id: number) => {
-    if (window.confirm("Delete this project?")) {
+  const remove = async (id: number) => {
+    const confirmed = await confirmDialog({
+      title: "Delete Project",
+      message: "Delete this project?",
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteMutation.mutate(id);
     }
   };
@@ -231,9 +239,15 @@ export default function ProjectManagement() {
     });
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
-    if (window.confirm(`Are you sure you want to delete ${selectedIds.size} project(s)?`)) {
+    const confirmed = await confirmDialog({
+      title: "Delete Projects",
+      message: `Are you sure you want to delete ${selectedIds.size} project(s)?`,
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteManyMutation.mutate(Array.from(selectedIds));
     }
   };

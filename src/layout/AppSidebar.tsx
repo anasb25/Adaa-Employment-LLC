@@ -40,6 +40,7 @@ const navItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Dashboard",
     subItems: [
+      { name: "Overview", path: "/", pro: false },
       { name: "Document Expiry Alerts", path: "/expiry-alerts", pro: false },
     ],
   },
@@ -51,6 +52,12 @@ const navItems: NavItem[] = [
       {
         name: "Employees",
         path: "/employees",
+        pro: false,
+        permission: "employee:read",
+      },
+      {
+        name: "Suppliers",
+        path: "/suppliers",
         pro: false,
         permission: "employee:read",
       },

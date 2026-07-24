@@ -16,6 +16,8 @@ import Button from "../components/ui/button/Button";
 import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
 import Select from "../components/form/Select";
+import MonthPicker from "../components/form/MonthPicker";
+import { useConfirmDialog } from "../providers/ConfirmDialogProvider";
 import {
   FileIcon,
   DownloadIcon,
@@ -37,6 +39,7 @@ const STATUS_COLORS: Record<InvoiceStatus, string> = {
 
 export default function InvoiceManagement() {
   const queryClient = useQueryClient();
+  const confirmDialog = useConfirmDialog();
 
   // Get current month as default
   const currentDate = new Date();
@@ -133,24 +136,39 @@ export default function InvoiceManagement() {
     generateMutation.mutate(generateForm);
   };
 
-  const handleApprove = (id: number) => {
-    if (window.confirm("Are you sure you want to approve this invoice?")) {
+  const handleApprove = async (id: number) => {
+    const confirmed = await confirmDialog({
+      title: "Approve Invoice",
+      message: "Are you sure you want to approve this invoice?",
+      confirmText: "Approve",
+      variant: "info",
+    });
+    if (confirmed) {
       approveMutation.mutate(id);
     }
   };
 
-  const handleMarkAsSent = (id: number) => {
-    if (window.confirm("Are you sure you want to mark this invoice as sent?")) {
+  const handleMarkAsSent = async (id: number) => {
+    const confirmed = await confirmDialog({
+      title: "Mark Invoice as Sent",
+      message: "Are you sure you want to mark this invoice as sent?",
+      confirmText: "Mark as Sent",
+      variant: "info",
+    });
+    if (confirmed) {
       sendMutation.mutate(id);
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this invoice? This action cannot be undone."
-      )
-    ) {
+  const handleDelete = async (id: number) => {
+    const confirmed = await confirmDialog({
+      title: "Delete Invoice",
+      message:
+        "Are you sure you want to delete this invoice? This action cannot be undone.",
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteMutation.mutate(id);
     }
   };
@@ -179,9 +197,15 @@ export default function InvoiceManagement() {
     });
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
-    if (window.confirm(`Are you sure you want to delete ${selectedIds.size} invoice(s)?`)) {
+    const confirmed = await confirmDialog({
+      title: "Delete Invoices",
+      message: `Are you sure you want to delete ${selectedIds.size} invoice(s)?`,
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteManyMutation.mutate(Array.from(selectedIds));
     }
   };
@@ -263,10 +287,9 @@ export default function InvoiceManagement() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div>
                 <Label>Month</Label>
-                <Input
-                  type="month"
+                <MonthPicker
                   value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  onChange={setSelectedMonth}
                 />
               </div>
 
@@ -544,7 +567,7 @@ export default function InvoiceManagement() {
 
         {/* Generate Invoice Modal */}
         {isGenerateModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 z-999999 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
                 Generate Invoice
@@ -571,13 +594,13 @@ export default function InvoiceManagement() {
 
                 <div>
                   <Label htmlFor="month">Month *</Label>
-                  <Input
-                    type="month"
+                  <MonthPicker
+                    id="generate-month"
                     value={generateForm.month}
-                    onChange={(e) =>
+                    onChange={(month) =>
                       setGenerateForm({
                         ...generateForm,
-                        month: e.target.value,
+                        month,
                       })
                     }
                   />

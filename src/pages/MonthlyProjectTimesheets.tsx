@@ -16,6 +16,8 @@ import PageMeta from "../components/common/PageMeta";
 import PermissionGuard from "../components/auth/PermissionGuard";
 import Button from "../components/ui/button/Button";
 import Label from "../components/form/Label";
+import Select from "../components/form/Select";
+import MonthPicker from "../components/form/MonthPicker";
 import HoursInput from "../components/form/HoursInput";
 import { formatDecimalHours } from "../utils/timeUtils";
 import TimesheetExportModal from "../components/timesheets/TimesheetExportModal";
@@ -720,19 +722,15 @@ export default function MonthlyProjectTimesheets() {
             <div className="flex flex-wrap items-end gap-4">
               <div className="w-64">
                 <Label htmlFor="month">Month</Label>
-                <input
+                <MonthPicker
                   id="month"
-                  type="month"
                   value={selectedMonth}
-                  onChange={(e) => {
-                    setSelectedMonth(e.target.value);
+                  onChange={(month) => {
+                    setSelectedMonth(month);
                     setProjectEdits({});
                     setHasUnsavedChanges(new Set());
                     setExpandedProjects(new Set());
                   }}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                           focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
               </div>
               <div className="flex-1 min-w-[200px] max-w-md">
@@ -1176,35 +1174,25 @@ export default function MonthlyProjectTimesheets() {
                                             // Show status dropdown when double-clicked
                                             if (isEditingStatus) {
                                               return (
-                                                <select
+                                                <Select
                                                   autoFocus
+                                                  size="sm"
+                                                  className="text-xs"
+                                                  options={jobStatusOptions}
                                                   value={statusValue}
-                                                  onChange={(e) =>
+                                                  onChange={(value) =>
                                                     handleStatusChange(
                                                       projectId,
                                                       employee.employeeId,
                                                       dailyHour.date,
-                                                      e.target.value,
+                                                      value,
                                                     )
                                                   }
                                                   onBlur={() =>
                                                     setEditingStatusCell(null)
                                                   }
-                                                  className="w-full px-0.5 py-0.5 text-xs border border-brand-500 dark:border-brand-400 rounded
-                                                       bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                                       focus:ring-1 focus:ring-brand-500 focus:border-brand-500"
-                                                >
-                                                  {jobStatusOptions.map(
-                                                    (opt) => (
-                                                      <option
-                                                        key={opt.value}
-                                                        value={opt.value}
-                                                      >
-                                                        {opt.label}
-                                                      </option>
-                                                    ),
-                                                  )}
-                                                </select>
+                                                  placeholder="Status"
+                                                />
                                               );
                                             }
 
@@ -1490,7 +1478,7 @@ export default function MonthlyProjectTimesheets() {
 
       {/* Unlock Confirmation Modal */}
       {unlockConfirmProjectId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-999999 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">

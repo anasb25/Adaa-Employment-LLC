@@ -12,6 +12,7 @@ import Select from "../form/Select";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import { TrashBinIcon } from "../../icons";
+import { useConfirmDialog } from "../../providers/ConfirmDialogProvider";
 
 interface EmployeeSkillManagerProps {
   employeeId: number;
@@ -22,6 +23,7 @@ export default function EmployeeSkillManager({
   employeeId,
   initialSkills = [],
 }: EmployeeSkillManagerProps) {
+  const confirmDialog = useConfirmDialog();
   const queryClient = useQueryClient();
   const [selectedSkillId, setSelectedSkillId] = useState<string>("");
   const [rating, setRating] = useState<string>("0");
@@ -137,8 +139,14 @@ export default function EmployeeSkillManager({
     }
   };
 
-  const handleRemoveSkill = (skillId: number, skillName: string) => {
-    if (window.confirm(`Remove "${skillName}" from this employee?`)) {
+  const handleRemoveSkill = async (skillId: number, skillName: string) => {
+    const confirmed = await confirmDialog({
+      title: "Remove Skill",
+      message: `Remove "${skillName}" from this employee?`,
+      confirmText: "Remove",
+      variant: "warning",
+    });
+    if (confirmed) {
       removeMutation.mutate(skillId);
     }
   };

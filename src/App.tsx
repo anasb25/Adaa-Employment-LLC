@@ -20,12 +20,14 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
+import ExpiryAlerts from "./pages/Dashboard/ExpiryAlerts";
 import RoleManagement from "./pages/RoleManagement";
 import UserManagement from "./pages/UserManagement";
 import AdminInvitationsDemo from "./pages/AdminInvitationsDemo";
 import EmployeeManagement from "./pages/EmployeeManagement";
 import SkillManagement from "./pages/SkillManagement";
 import SkillTypesManagement from "./pages/SkillTypesManagement";
+import SupplierManagement from "./pages/SupplierManagement";
 import ClientManagement from "./pages/ClientManagement";
 import ProjectManagement from "./pages/ProjectManagement";
 import SpecialDaysManagement from "./pages/SpecialDaysManagement";
@@ -57,11 +59,12 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/expiry-alerts" element={<Home />} />
+            <Route path="/expiry-alerts" element={<ExpiryAlerts />} />
             <Route index path="/" element={<Home />} />
 
             {/* Main Pages */}
             <Route path="/employees" element={<EmployeeManagement />} />
+            <Route path="/suppliers" element={<SupplierManagement />} />
             <Route path="/skills" element={<SkillManagement />} />
             <Route path="/clients" element={<ClientManagement />} />
             <Route path="/projects" element={<ProjectManagement />} />

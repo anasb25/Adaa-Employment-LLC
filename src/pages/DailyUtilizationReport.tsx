@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
@@ -76,6 +76,7 @@ export default function DailyUtilizationReport() {
         "LOCATION",
         "FAT",
         "TRADE IN SITE",
+        "SUPPLIER",
         "HEAD COUNT",
         "TOTAL",
       ]);
@@ -113,6 +114,7 @@ export default function DailyUtilizationReport() {
 
             // Add trade and head count
             row.push(trade.tradeInSite.toUpperCase());
+            row.push(trade.supplier.toUpperCase());
             row.push(trade.headCount);
 
             // Add TOTAL only for first trade
@@ -142,6 +144,7 @@ export default function DailyUtilizationReport() {
         "",
         "TOTAL MANPOWER",
         reportData.totalManpower,
+        "",
       ]);
 
       const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -162,9 +165,11 @@ export default function DailyUtilizationReport() {
       return;
     }
 
+    let toastId: string | number | undefined;
+
     try {
       setIsDownloading(true);
-      const toastId = toast.loading("Generating PDF...");
+      toastId = toast.loading("Generating PDF...");
 
       const pdf = new jsPDF("l", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -176,7 +181,7 @@ export default function DailyUtilizationReport() {
       pdf.setFont("helvetica", "normal");
       pdf.text(formatDisplayDate(selectedDate), pageWidth / 2, 22, { align: "center" });
 
-      const headers = [["SR NO", "CLIENT NAME", "PROJECT NAME", "LOCATION", "FAT", "TRADE IN SITE", "HEAD COUNT", "TOTAL"]];
+      const headers = [["SR NO", "CLIENT NAME", "PROJECT NAME", "LOCATION", "FAT", "TRADE IN SITE", "SUPPLIER", "HEAD COUNT", "TOTAL"]];
 
       const body: any[][] = [];
       const merges: { row: number; col: number; rowSpan: number }[] = [];
@@ -198,6 +203,7 @@ export default function DailyUtilizationReport() {
               tradeIndex === 0 ? (project.location?.toUpperCase() || "-") : "",
               tradeIndex === 0 ? (project.fat?.toUpperCase() || "-") : "",
               trade.tradeInSite.toUpperCase(),
+              trade.supplier.toUpperCase(),
               String(trade.headCount),
               tradeIndex === 0 ? String(projectTotal) : "",
             ]);
@@ -208,7 +214,7 @@ export default function DailyUtilizationReport() {
             merges.push({ row: projectStartRow, col: 2, rowSpan: project.trades.length });
             merges.push({ row: projectStartRow, col: 3, rowSpan: project.trades.length });
             merges.push({ row: projectStartRow, col: 4, rowSpan: project.trades.length });
-            merges.push({ row: projectStartRow, col: 7, rowSpan: project.trades.length });
+            merges.push({ row: projectStartRow, col: 8, rowSpan: project.trades.length });
           }
         });
 
@@ -219,7 +225,7 @@ export default function DailyUtilizationReport() {
       });
 
       body.push([
-        { content: "TOTAL MANPOWER", colSpan: 7, styles: { halign: "right", fontStyle: "bold", fillColor: [243, 244, 246] } },
+        { content: "TOTAL MANPOWER", colSpan: 8, styles: { halign: "right", fontStyle: "bold", fillColor: [243, 244, 246] } },
         { content: String(reportData.totalManpower), styles: { halign: "center", fontStyle: "bold", fillColor: [243, 244, 246] } },
       ]);
 
@@ -257,21 +263,22 @@ export default function DailyUtilizationReport() {
           fontSize: 8,
         },
         columnStyles: {
-          0: { cellWidth: 14, halign: "center", fontStyle: "bold" },
-          1: { cellWidth: 38, fontStyle: "bold" },
-          2: { cellWidth: 55 },
-          3: { cellWidth: 30 },
-          4: { cellWidth: 20, halign: "center" },
-          5: { cellWidth: 52 },
-          6: { cellWidth: 24, halign: "center", fontStyle: "bold" },
+          0: { cellWidth: 12, halign: "center", fontStyle: "bold" },
+          1: { cellWidth: 34, fontStyle: "bold" },
+          2: { cellWidth: 48 },
+          3: { cellWidth: 26 },
+          4: { cellWidth: 18, halign: "center" },
+          5: { cellWidth: 42 },
+          6: { cellWidth: 34 },
           7: { cellWidth: 20, halign: "center", fontStyle: "bold" },
+          8: { cellWidth: 18, halign: "center", fontStyle: "bold" },
         },
         didParseCell: (data) => {
           if (data.section !== "body") return;
           if (data.row.index >= body.length - 1) return;
 
           const color = rowToColor[data.row.index];
-          if (color && (data.column.index === 6 || data.column.index === 7)) {
+          if (color && (data.column.index === 7 || data.column.index === 8)) {
             data.cell.styles.fillColor = color as [number, number, number];
           }
 
@@ -307,14 +314,11 @@ export default function DailyUtilizationReport() {
 
   return (
     <>
-      <PageMeta title="Daily Utilization Report | ADAA Employment" />
-      <PageBreadcrumb
-        title="Daily Utilization Report"
-        pages={[
-          { name: "Dashboard", path: "/" },
-          { name: "Daily Report", path: "/daily-report" },
-        ]}
+      <PageMeta
+        title="Daily Utilization Report | ADAA Employment LLC"
+        description="ADAA Employment LLC - Daily utilization report by client, project, trade, and supplier"
       />
+      <PageBreadcrumb pageTitle="Daily Utilization Report" />
 
       <div className="space-y-6">
         {/* Date Selection Controls */}
@@ -423,14 +427,15 @@ export default function DailyUtilizationReport() {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-xs" style={{ tableLayout: "fixed" }}>
                   <colgroup>
-                    <col style={{ width: "5%" }} />
-                    <col style={{ width: "14%" }} />
-                    <col style={{ width: "22%" }} />
+                    <col style={{ width: "4%" }} />
                     <col style={{ width: "12%" }} />
-                    <col style={{ width: "8%" }} />
-                    <col style={{ width: "21%" }} />
+                    <col style={{ width: "18%" }} />
                     <col style={{ width: "10%" }} />
-                    <col style={{ width: "8%" }} />
+                    <col style={{ width: "6%" }} />
+                    <col style={{ width: "18%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "9%" }} />
+                    <col style={{ width: "9%" }} />
                   </colgroup>
                   <thead>
                     <tr className="border-b-2 border-gray-900 bg-yellow-100 dark:border-gray-600 dark:bg-yellow-900">
@@ -452,6 +457,9 @@ export default function DailyUtilizationReport() {
                       <th className="border border-gray-400 px-2 py-2 text-left font-bold dark:border-gray-600 dark:text-white">
                         TRADE IN SITE
                       </th>
+                      <th className="border border-gray-400 px-2 py-2 text-left font-bold dark:border-gray-600 dark:text-white">
+                        SUPPLIER
+                      </th>
                       <th className="border border-gray-400 px-2 py-2 text-center font-bold dark:border-gray-600 dark:text-white">
                         HEAD COUNT
                       </th>
@@ -464,7 +472,7 @@ export default function DailyUtilizationReport() {
                     {reportData.clients.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={8}
+                          colSpan={9}
                           className="border border-gray-400 px-2 py-6 text-center text-gray-500 dark:border-gray-600 dark:text-gray-400"
                         >
                           No mobilized employees found for this date.
@@ -474,7 +482,7 @@ export default function DailyUtilizationReport() {
                       (() => {
                         let globalProjectIndex = 0;
                         return reportData.clients.map((client, clientIndex) => {
-                          const clientRows: JSX.Element[] = [];
+                          const clientRows: ReactElement[] = [];
                           let srNo = clientIndex + 1;
 
                           client.projects.forEach((project, projectIndex) => {
@@ -492,7 +500,7 @@ export default function DailyUtilizationReport() {
 
                               clientRows.push(
                                 <tr
-                                  key={`${client.clientId}-${project.projectId}-${trade.tradeInSite}`}
+                                  key={`${client.clientId}-${project.projectId}-${trade.tradeInSite}-${trade.supplier}`}
                                 >
                                   {isFirstRowOfClient && (
                                     <td
@@ -549,6 +557,10 @@ export default function DailyUtilizationReport() {
                                     {trade.tradeInSite.toUpperCase()}
                                   </td>
 
+                                  <td className="border border-gray-400 px-2 py-1.5 dark:border-gray-600 dark:text-white">
+                                    {trade.supplier.toUpperCase()}
+                                  </td>
+
                                   <td
                                     className={`border border-gray-400 px-2 py-1.5 text-center font-semibold ${projectBgColor}`}
                                   >
@@ -580,7 +592,7 @@ export default function DailyUtilizationReport() {
                     {reportData.totalManpower > 0 && (
                       <tr className="bg-gray-100 dark:bg-gray-800">
                         <td
-                          colSpan={7}
+                          colSpan={8}
                           className="border border-gray-400 px-2 py-2 text-right font-bold dark:border-gray-600 dark:text-white"
                         >
                           TOTAL MANPOWER

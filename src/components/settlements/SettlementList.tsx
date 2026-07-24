@@ -22,6 +22,7 @@ import {
   FileIcon as EyeIcon,
 } from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
+import { useConfirmDialog } from "../../providers/ConfirmDialogProvider";
 import { Settlement, SettlementStatus } from "../../types/settlement";
 import PermissionGuard from "../auth/PermissionGuard";
 
@@ -38,6 +39,7 @@ export default function SettlementList({
   onViewSettlement,
   totalSettlements = 0,
 }: SettlementListProps) {
+  const confirmDialog = useConfirmDialog();
   const [page, setPage] = useState(1);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -151,14 +153,18 @@ export default function SettlementList({
   );
 
   const handleDelete = useCallback(
-    (settlementId: number) => {
-      if (
-        window.confirm("Are you sure you want to delete this settlement?")
-      ) {
+    async (settlementId: number) => {
+      const confirmed = await confirmDialog({
+        title: "Delete Settlement",
+        message: "Are you sure you want to delete this settlement?",
+        confirmText: "Delete",
+        variant: "warning",
+      });
+      if (confirmed) {
         deleteMutation.mutate(settlementId);
       }
     },
-    [deleteMutation]
+    [confirmDialog, deleteMutation],
   );
 
   const deleteManyMutation = useMutation({
@@ -186,33 +192,47 @@ export default function SettlementList({
     });
   }, []);
 
-  const handleDeleteSelected = useCallback(() => {
+  const handleDeleteSelected = useCallback(async () => {
     if (selectedIds.size === 0) return;
-    if (window.confirm(`Are you sure you want to delete ${selectedIds.size} settlement(s)?`)) {
+    const confirmed = await confirmDialog({
+      title: "Delete Settlements",
+      message: `Are you sure you want to delete ${selectedIds.size} settlement(s)?`,
+      confirmText: "Delete",
+      variant: "warning",
+    });
+    if (confirmed) {
       deleteManyMutation.mutate(Array.from(selectedIds));
     }
-  }, [selectedIds, deleteManyMutation]);
+  }, [confirmDialog, selectedIds, deleteManyMutation]);
 
   const handleApprove = useCallback(
-    (settlementId: number) => {
-      if (
-        window.confirm("Are you sure you want to approve this settlement?")
-      ) {
+    async (settlementId: number) => {
+      const confirmed = await confirmDialog({
+        title: "Approve Settlement",
+        message: "Are you sure you want to approve this settlement?",
+        confirmText: "Approve",
+        variant: "info",
+      });
+      if (confirmed) {
         approveMutation.mutate(settlementId);
       }
     },
-    [approveMutation]
+    [confirmDialog, approveMutation],
   );
 
   const handleMarkPaid = useCallback(
-    (settlementId: number) => {
-      if (
-        window.confirm("Are you sure you want to mark this settlement as paid?")
-      ) {
+    async (settlementId: number) => {
+      const confirmed = await confirmDialog({
+        title: "Mark Settlement as Paid",
+        message: "Are you sure you want to mark this settlement as paid?",
+        confirmText: "Mark as Paid",
+        variant: "info",
+      });
+      if (confirmed) {
         markPaidMutation.mutate(settlementId);
       }
     },
-    [markPaidMutation]
+    [confirmDialog, markPaidMutation],
   );
 
   const handleClearSearch = useCallback(() => {

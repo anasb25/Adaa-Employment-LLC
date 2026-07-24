@@ -51,6 +51,10 @@ export const QUERY_KEYS = {
   skillTypes: {
     all: ["skillTypes"] as const,
   },
+  suppliers: {
+    all: ["suppliers"] as const,
+    detail: (id: number) => ["suppliers", id] as const,
+  },
   allocations: {
     all: ["allocations"] as const,
     detail: (id: number) => ["allocations", id] as const,
@@ -85,6 +89,10 @@ export const QUERY_KEYS = {
     search: ["settlements", "search"] as const,
     byEmployee: (employeeId: number) =>
       ["settlements", "employee", employeeId] as const,
+  },
+  dashboard: {
+    stats: (month?: string) => ["dashboard", "stats", month ?? "current"] as const,
+    expiringDocuments: ["dashboard", "expiring-documents"] as const,
   },
 } as const;
 
