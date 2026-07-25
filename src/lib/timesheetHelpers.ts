@@ -150,8 +150,15 @@ export function isUtcSundayDate(dateStr: string): boolean {
 
 /**
  * Idle + annual-leave virtual sheet (`IDLE_PROJECT_ID`): Sundays default to forced
- * "off" for idle/non-leave rows only; annual_leave periods include Sundays.
+ * "off" for idle/non-leave rows only; annual_leave and urgent_leave periods include Sundays.
  */
+export function isIdleSheetPersistentLeaveStatus(
+  status: string | null | undefined,
+): boolean {
+  const normalized = String(status || "").toLowerCase();
+  return normalized === "annual_leave" || normalized === "urgent_leave";
+}
+
 export function isIdleSheetSundayForcedOff(
   projectId: number,
   dateStr: string | undefined,
@@ -164,7 +171,7 @@ export function isIdleSheetSundayForcedOff(
   ) {
     return false;
   }
-  return resolvedJobStatus?.toLowerCase() !== "annual_leave";
+  return !isIdleSheetPersistentLeaveStatus(resolvedJobStatus);
 }
 
 export interface TimesheetDayEdit {
