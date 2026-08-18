@@ -147,8 +147,9 @@ export default function DashboardOverview() {
           accent="orange"
         />
         <StatCard
-          label="Mobilized Workforce"
+          label="Active Workforce"
           value={isLoading ? "…" : data?.workforce.total ?? 0}
+          subtitle={`${data?.workforce.active ?? 0} active on projects`}
           icon={<TaskIcon className="h-6 w-6" />}
           href="/mobilizations/daily"
           accent="green"

@@ -24,7 +24,6 @@ import TimesheetExportModal from "../components/timesheets/TimesheetExportModal"
 import {
   isUtcSundayDate,
   isIdleSheetSundayForcedOff,
-  isIdleSheetPersistentLeaveStatus,
   buildTimesheetSaveEntries,
 } from "../lib/timesheetHelpers";
 import {
@@ -315,7 +314,7 @@ export default function MonthlyProjectTimesheets() {
     if (
       projectId === IDLE_PROJECT_ID &&
       isUtcSundayDate(date) &&
-      !isIdleSheetPersistentLeaveStatus(currentStatus)
+      currentStatus !== "annual_leave"
     )
       return;
     const key = `${projectId}-${employeeId}-${date}`;
@@ -346,7 +345,7 @@ export default function MonthlyProjectTimesheets() {
     if (
       projectId === IDLE_PROJECT_ID &&
       isUtcSundayDate(date) &&
-      !isIdleSheetPersistentLeaveStatus(currentStatus)
+      currentStatus !== "annual_leave"
     )
       return;
     const key = `${employeeId}-${date}`;
@@ -1213,7 +1212,7 @@ export default function MonthlyProjectTimesheets() {
                                               return (
                                                 <span
                                                   className="text-xs font-medium text-orange-800 dark:text-orange-200"
-                                                  title="Sunday — off for idle rows only; annual leave and urgent leave include Sundays."
+                                                  title="Sunday — off for idle rows only; annual leave includes Sundays."
                                                 >
                                                   Off
                                                 </span>
