@@ -24,6 +24,10 @@ export const selectValueTextClasses =
 export const selectDropdownPanelClasses =
   "absolute z-[9999] mt-1 max-h-60 w-full overflow-y-auto custom-scrollbar rounded-lg border border-gray-200 bg-white py-1 shadow-theme-lg dark:border-gray-700 dark:bg-gray-900";
 
+/** Portaled dropdown panel — escapes overflow/scroll containers */
+export const selectDropdownPanelPortalClasses =
+  "fixed z-[99999] max-h-60 overflow-y-auto custom-scrollbar rounded-lg border border-gray-200 bg-white py-1 shadow-theme-lg dark:border-gray-700 dark:bg-gray-900";
+
 export const selectDropdownEmptyClasses =
   "px-4 py-3 text-sm text-gray-500 dark:text-gray-400";
 

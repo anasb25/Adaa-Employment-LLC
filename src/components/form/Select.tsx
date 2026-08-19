@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect, useRef, useId } from "react";
+import { createPortal } from "react-dom";
 import { SelectChevron } from "./SelectChevron";
 import {
   buildSelectTriggerClassName,
   selectDropdownItemClasses,
   selectDropdownPanelClasses,
+  selectDropdownPanelPortalClasses,
   selectPlaceholderTextClasses,
   selectValueTextClasses,
 } from "./selectStyles";
@@ -26,6 +28,8 @@ interface SelectProps {
   size?: "md" | "sm";
   autoFocus?: boolean;
   onBlur?: () => void;
+  /** Render dropdown in a body portal (use inside overflow/scroll containers). */
+  menuPortal?: boolean;
 }
 
 const Select: React.FC<SelectProps> = ({
@@ -41,12 +45,14 @@ const Select: React.FC<SelectProps> = ({
   size = "md",
   autoFocus = false,
   onBlur,
+  menuPortal = false,
 }) => {
   const [internalValue, setInternalValue] = useState<string>(
     value ?? defaultValue,
   );
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -81,14 +87,46 @@ const Select: React.FC<SelectProps> = ({
     triggerRef.current?.focus();
   }, [autoFocus, disabled]);
 
+  const updateDropdownPosition = useCallback(() => {
+    if (!menuPortal || !triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    const maxHeight = 240;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < maxHeight && rect.top > spaceBelow;
+
+    setDropdownStyle({
+      left: rect.left,
+      width: rect.width,
+      ...(openUpward
+        ? { bottom: window.innerHeight - rect.top + 4 }
+        : { top: rect.top + rect.height + 4 }),
+    });
+  }, [menuPortal]);
+
+  useEffect(() => {
+    if (!isOpen || !menuPortal) return;
+
+    updateDropdownPosition();
+    window.addEventListener("scroll", updateDropdownPosition, true);
+    window.addEventListener("resize", updateDropdownPosition);
+
+    return () => {
+      window.removeEventListener("scroll", updateDropdownPosition, true);
+      window.removeEventListener("resize", updateDropdownPosition);
+    };
+  }, [isOpen, menuPortal, updateDropdownPosition]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        closeDropdown(true);
+      const target = event.target as Node;
+      if (containerRef.current?.contains(target)) {
+        return;
       }
+      if (menuPortal && listRef.current?.contains(target)) {
+        return;
+      }
+      closeDropdown(true);
     };
 
     if (isOpen) {
@@ -96,7 +134,7 @@ const Select: React.FC<SelectProps> = ({
       return () =>
         document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [isOpen, closeDropdown]);
+  }, [isOpen, closeDropdown, menuPortal]);
 
   useEffect(() => {
     if (focusedIndex >= 0 && listRef.current) {
@@ -107,6 +145,9 @@ const Select: React.FC<SelectProps> = ({
 
   const openDropdown = () => {
     if (disabled) return;
+    if (menuPortal) {
+      updateDropdownPosition();
+    }
     setIsOpen(true);
     setFocusedIndex(
       Math.max(
@@ -167,6 +208,37 @@ const Select: React.FC<SelectProps> = ({
 
   const displayLabel = selectedOption?.label ?? placeholder;
 
+  const dropdownPanel = isOpen ? (
+    <div
+      ref={listRef}
+      id={listboxId}
+      role="listbox"
+      className={
+        menuPortal ? selectDropdownPanelPortalClasses : selectDropdownPanelClasses
+      }
+      style={menuPortal ? dropdownStyle : undefined}
+    >
+      {options.map((option, index) => {
+        const isSelected = option.value === selectedValue;
+        const isFocused = index === focusedIndex;
+
+        return (
+          <div
+            key={option.value || "__empty__"}
+            data-option
+            role="option"
+            aria-selected={isSelected}
+            className={selectDropdownItemClasses({ isSelected, isFocused })}
+            onMouseEnter={() => setFocusedIndex(index)}
+            onClick={() => handleSelect(option.value)}
+          >
+            {option.label}
+          </div>
+        );
+      })}
+    </div>
+  ) : null;
+
   return (
     <div ref={containerRef} className={`relative w-full ${wrapperClassName}`}>
       <button
@@ -199,33 +271,9 @@ const Select: React.FC<SelectProps> = ({
         />
       </button>
 
-      {isOpen && (
-        <div
-          ref={listRef}
-          id={listboxId}
-          role="listbox"
-          className={selectDropdownPanelClasses}
-        >
-          {options.map((option, index) => {
-            const isSelected = option.value === selectedValue;
-            const isFocused = index === focusedIndex;
-
-            return (
-              <div
-                key={option.value || "__empty__"}
-                data-option
-                role="option"
-                aria-selected={isSelected}
-                className={selectDropdownItemClasses({ isSelected, isFocused })}
-                onMouseEnter={() => setFocusedIndex(index)}
-                onClick={() => handleSelect(option.value)}
-              >
-                {option.label}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {menuPortal && dropdownPanel
+        ? createPortal(dropdownPanel, document.body)
+        : dropdownPanel}
     </div>
   );
 };

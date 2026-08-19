@@ -1176,6 +1176,7 @@ export default function MonthlyProjectTimesheets() {
                                               return (
                                                 <Select
                                                   autoFocus
+                                                  menuPortal
                                                   size="sm"
                                                   className="text-xs"
                                                   options={jobStatusOptions}
