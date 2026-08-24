@@ -135,17 +135,42 @@ export function getStatusFullName(status: string | null): string {
   return statusNames[status] || status;
 }
 
+/** Matches backend DEFAULT_PROJECT_OFF_DAYS. */
+export const DEFAULT_PROJECT_OFF_DAYS = ["Sunday"];
+
+export function getEffectiveProjectOffDays(
+  offDays?: string[] | null,
+): string[] {
+  if (offDays && offDays.length > 0) {
+    return offDays;
+  }
+  return DEFAULT_PROJECT_OFF_DAYS;
+}
+
+export function getUtcDayOfWeekName(dateStr: string): string {
+  const days = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  return days[new Date(`${dateStr}T00:00:00.000Z`).getUTCDay()];
+}
+
+export function isProjectCalendarOffDay(
+  dateStr: string,
+  projectOffDays?: string[] | null,
+): boolean {
+  return getEffectiveProjectOffDays(projectOffDays).includes(
+    getUtcDayOfWeekName(dateStr),
+  );
+}
 /** YYYY-MM-DD as UTC calendar date — Sunday is 0 (matches backend parseDateOnly). */
 export function isUtcSundayDate(dateStr: string): boolean {
-  const parts = dateStr.split("-");
-  if (parts.length !== 3) return false;
-  const year = Number(parts[0]);
-  const month = Number(parts[1]) - 1;
-  const day = Number(parts[2]);
-  if (Number.isNaN(year) || Number.isNaN(month + 1) || Number.isNaN(day)) {
-    return false;
-  }
-  return new Date(Date.UTC(year, month, day)).getUTCDay() === 0;
+  return getUtcDayOfWeekName(dateStr) === "Sunday";
 }
 
 /**
@@ -165,6 +190,58 @@ export function isIdleSheetSundayForcedOff(
     return false;
   }
   return resolvedJobStatus?.toLowerCase() !== "annual_leave";
+}
+
+/**
+ * Project sheets: backend marks calendar off days with isOffDay. When stale
+ * auto-sync rows still have active + default hours, show Off in the UI.
+ */
+export function shouldDisplayProjectOffDay(
+  dailyHours: {
+    isOffDay?: boolean;
+    jobStatus?: string | null;
+    hoursWorked?: number;
+    date?: string;
+  },
+  resolvedStatus: string | null | undefined,
+  hasUserEdit: boolean,
+  projectOffDays?: string[] | null,
+): boolean {
+  const isCalendarOff =
+    dailyHours.isOffDay ||
+    (dailyHours.date != null &&
+      isProjectCalendarOffDay(dailyHours.date, projectOffDays));
+
+  if (hasUserEdit || !isCalendarOff) {
+    return false;
+  }
+
+  const status = String(
+    resolvedStatus ?? dailyHours.jobStatus ?? "active",
+  ).toLowerCase();
+
+  const leaveStatuses = new Set([
+    "absent",
+    "sick_leave",
+    "casual_leave",
+    "urgent_leave",
+    "annual_leave",
+  ]);
+
+  if (leaveStatuses.has(status)) {
+    return false;
+  }
+
+  if (["cancelled", "absconded", "resigned"].includes(status)) {
+    return false;
+  }
+
+  if (status === "off") {
+    return true;
+  }
+
+  // Auto-materialized working row on a configured project off day.
+  return status === "active" || status === "notice_period";
 }
 
 export interface TimesheetDayEdit {

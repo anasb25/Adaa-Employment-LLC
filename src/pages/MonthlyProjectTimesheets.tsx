@@ -24,6 +24,7 @@ import TimesheetExportModal from "../components/timesheets/TimesheetExportModal"
 import {
   isUtcSundayDate,
   isIdleSheetSundayForcedOff,
+  shouldDisplayProjectOffDay,
   buildTimesheetSaveEntries,
 } from "../lib/timesheetHelpers";
 import {
@@ -374,6 +375,9 @@ export default function MonthlyProjectTimesheets() {
     setHasUnsavedChanges((prev) => new Set(prev).add(projectId));
   };
 
+  const getProjectOffDays = (projectId: number): string[] | null | undefined =>
+    timesheetsByProject.get(projectId)?.project?.offDays;
+
   const getHoursValue = (
     projectId: number,
     employeeId: number,
@@ -381,6 +385,7 @@ export default function MonthlyProjectTimesheets() {
   ): number => {
     const key = `${employeeId}-${dailyHours.date}`;
     const edits = projectEdits[projectId];
+    const hasUserEdit = edits?.has(key) ?? false;
     const resolvedStatus = edits?.has(key)
       ? edits.get(key)!.status
       : dailyHours.jobStatus;
@@ -389,6 +394,16 @@ export default function MonthlyProjectTimesheets() {
       : dailyHours.hoursWorked;
     if (
       isIdleSheetSundayForcedOff(projectId, dailyHours.date, resolvedStatus)
+    ) {
+      return 0;
+    }
+    if (
+      shouldDisplayProjectOffDay(
+        dailyHours,
+        resolvedStatus,
+        hasUserEdit,
+        getProjectOffDays(projectId),
+      )
     ) {
       return 0;
     }
@@ -416,6 +431,7 @@ export default function MonthlyProjectTimesheets() {
   ): string => {
     const key = `${employeeId}-${dailyHours.date}`;
     const edits = projectEdits[projectId];
+    const hasUserEdit = edits?.has(key) ?? false;
     const editStatus = edits?.has(key) ? edits.get(key)!.status : undefined;
     const resolved =
       editStatus ||
@@ -425,6 +441,16 @@ export default function MonthlyProjectTimesheets() {
       "active";
 
     if (isIdleSheetSundayForcedOff(projectId, dailyHours.date, resolved)) {
+      return "off";
+    }
+    if (
+      shouldDisplayProjectOffDay(
+        dailyHours,
+        resolved,
+        hasUserEdit,
+        getProjectOffDays(projectId),
+      )
+    ) {
       return "off";
     }
     const hours = getHoursValue(projectId, employeeId, dailyHours);

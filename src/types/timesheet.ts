@@ -75,6 +75,7 @@ export interface MonthlyProjectTimesheetData {
     id: number;
     name: string;
     fat?: string | null;
+    offDays?: string[] | null;
     client: {
       id: number;
       name: string;
