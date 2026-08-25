@@ -17,4 +17,12 @@ export const dashboardApi = {
     );
     return response.data;
   },
+
+  downloadActiveWorkforce: async (): Promise<Blob> => {
+    const response = await axiosInstance.get(
+      `${API_BASE_URL}/dashboard/active-workforce/export`,
+      { responseType: "blob" },
+    );
+    return response.data;
+  },
 };

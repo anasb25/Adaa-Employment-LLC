@@ -1,4 +1,12 @@
 import { Link } from "react-router";
+import { ExcelIcon } from "../../icons";
+
+type StatCardAction = {
+  label: string;
+  onClick: () => void;
+  loading?: boolean;
+  variant?: "default" | "excel";
+};
 
 type StatCardProps = {
   label: string;
@@ -7,6 +15,7 @@ type StatCardProps = {
   icon: React.ReactNode;
   href?: string;
   onClick?: () => void;
+  action?: StatCardAction;
   accent?: "brand" | "green" | "orange" | "red" | "purple" | "blue";
 };
 
@@ -26,14 +35,38 @@ export default function StatCard({
   icon,
   href,
   onClick,
+  action,
   accent = "brand",
 }: StatCardProps) {
   const content = (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
-      <div
-        className={`flex h-12 w-12 items-center justify-center rounded-xl ${accentStyles[accent]}`}
-      >
-        {icon}
+      <div className="flex items-center justify-between gap-3">
+        <div
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${accentStyles[accent]}`}
+        >
+          {icon}
+        </div>
+        {action && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              action.onClick();
+            }}
+            disabled={action.loading}
+            className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              action.variant === "excel"
+                ? "border border-[#217346] bg-[#217346] text-white hover:bg-[#1a5c38] dark:border-[#217346] dark:bg-[#217346] dark:hover:bg-[#1a5c38]"
+                : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+            }`}
+          >
+            {action.variant === "excel" && (
+              <ExcelIcon className="h-4 w-4 shrink-0 text-white" />
+            )}
+            {action.loading ? "Downloading…" : action.label}
+          </button>
+        )}
       </div>
       <div className="mt-5">
         <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>

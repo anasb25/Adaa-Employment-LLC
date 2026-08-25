@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import PageMeta from "../../components/common/PageMeta";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import StatCard from "../../components/dashboard/StatCard";
@@ -25,6 +26,7 @@ import {
 import { formatAedAmount } from "../../utils/currency";
 import MonthPicker from "../../components/form/MonthPicker";
 import { getCurrentMonth } from "../../utils/monthUtils";
+import { downloadFile } from "../../utils/excelValidator";
 
 export default function DashboardOverview() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
@@ -35,6 +37,17 @@ export default function DashboardOverview() {
     queryKey: QUERY_KEYS.dashboard.stats(selectedMonth),
     queryFn: () => dashboardApi.getStats(selectedMonth),
     refetchInterval: 5 * 60 * 1000,
+  });
+
+  const downloadActiveWorkforceMutation = useMutation({
+    mutationFn: () => dashboardApi.downloadActiveWorkforce(),
+    onSuccess: (blob) => {
+      downloadFile(blob, `active_workforce_${new Date().toISOString().split("T")[0]}.xlsx`);
+      toast.success("Active workforce downloaded");
+    },
+    onError: () => {
+      toast.error("Failed to download active workforce");
+    },
   });
 
   const monthLabel = useMemo(() => {
@@ -153,6 +166,12 @@ export default function DashboardOverview() {
           icon={<TaskIcon className="h-6 w-6" />}
           href="/mobilizations/daily"
           accent="green"
+          action={{
+            label: "Download as Excel",
+            onClick: () => downloadActiveWorkforceMutation.mutate(),
+            loading: downloadActiveWorkforceMutation.isPending,
+            variant: "excel",
+          }}
         />
       </div>
 

@@ -13,6 +13,7 @@ import { ReactComponent as VideoIcon } from "./videos.svg?react";
 import { ReactComponent as AudioIcon } from "./audio.svg?react";
 import { ReactComponent as GridIcon } from "./grid.svg?react";
 import { ReactComponent as FileIcon } from "./file.svg?react";
+import ExcelIcon from "../components/icons/ExcelIcon";
 import { ReactComponent as DownloadIcon } from "./download.svg?react";
 import { ReactComponent as ArrowRightIcon } from "./arrow-right.svg?react";
 import { ReactComponent as GroupIcon } from "./group.svg?react";
@@ -61,6 +62,7 @@ export {
   ErrorHexaIcon,
   AlertHexaIcon,
   MoreDotIcon,
+  ExcelIcon,
   DownloadIcon,
   FileIcon,
   GridIcon,
