@@ -236,6 +236,15 @@ export function shouldDisplayProjectOffDay(
     return false;
   }
 
+  const hours = Number(dailyHours.hoursWorked) || 0;
+  // Backend persisted worked hours on an off day — show them after save/reload.
+  if (
+    hours > 0 &&
+    (status === "active" || status === "notice_period")
+  ) {
+    return false;
+  }
+
   if (status === "off") {
     return true;
   }
@@ -259,6 +268,7 @@ export function buildTimesheetSaveEntries(
     }>;
   },
   edits: Map<string, TimesheetDayEdit>,
+  projectOffDays?: string[] | null,
 ) {
   const entries: {
     employeeId: number;
@@ -282,6 +292,16 @@ export function buildTimesheetSaveEntries(
     if (isIdleSheetSundayForcedOff(projectId, date, status)) {
       hours = 0;
       status = "off";
+    }
+
+    // Project off day only: hours on Off means active work.
+    if (
+      projectId !== IDLE_PROJECT_ID &&
+      hours > 0 &&
+      status === "off" &&
+      isProjectCalendarOffDay(date, projectOffDays)
+    ) {
+      status = "active";
     }
 
     const employee = timesheetData.employees?.find(

@@ -24,6 +24,7 @@ import TimesheetExportModal from "../components/timesheets/TimesheetExportModal"
 import {
   isUtcSundayDate,
   isIdleSheetSundayForcedOff,
+  isProjectCalendarOffDay,
   shouldDisplayProjectOffDay,
   buildTimesheetSaveEntries,
 } from "../lib/timesheetHelpers";
@@ -342,6 +343,7 @@ export default function MonthlyProjectTimesheets() {
     date: string,
     hours: number,
     currentStatus: string,
+    isProjectOffDay = false,
   ) => {
     if (
       projectId === IDLE_PROJECT_ID &&
@@ -355,9 +357,15 @@ export default function MonthlyProjectTimesheets() {
       const projectMap = new Map(prev[projectId] || new Map());
       const existing = projectMap.get(key);
       const priorStatus = existing?.status || currentStatus;
+      const priorLower = String(priorStatus || "").toLowerCase();
       // Typing hours on a leave day = worked → switch to active.
+      // Project off day only: typing hours on Off = worked → switch to active.
       const nextStatus =
-        hours > 0 && isLeaveStatus(priorStatus) ? "active" : priorStatus;
+        hours > 0 && isLeaveStatus(priorStatus)
+          ? "active"
+          : hours > 0 && priorLower === "off" && isProjectOffDay
+            ? "active"
+            : priorStatus;
       const nextHours =
         isLeaveStatus(nextStatus) ||
         ["cancelled", "absconded", "resigned"].includes(
@@ -476,7 +484,12 @@ export default function MonthlyProjectTimesheets() {
       }
 
       const edits = projectEdits[projectId] || new Map();
-      const entries = buildTimesheetSaveEntries(projectId, timesheetData, edits);
+      const entries = buildTimesheetSaveEntries(
+        projectId,
+        timesheetData,
+        edits,
+        timesheetData.project?.offDays,
+      );
 
       if (entries.length === 0) {
         return;
@@ -518,6 +531,7 @@ export default function MonthlyProjectTimesheets() {
           projectId,
           timesheetData,
           edits,
+          timesheetData.project?.offDays,
         );
 
         if (entries.length > 0) {
@@ -1299,6 +1313,12 @@ export default function MonthlyProjectTimesheets() {
                                                     dailyHour.date,
                                                     val,
                                                     statusValue,
+                                                    projectId !== IDLE_PROJECT_ID &&
+                                                      (Boolean(dailyHour.isOffDay) ||
+                                                        isProjectCalendarOffDay(
+                                                          dailyHour.date,
+                                                          getProjectOffDays(projectId),
+                                                        )),
                                                   )
                                                 }
                                                 onBlur={() => {
