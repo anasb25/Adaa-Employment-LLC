@@ -109,7 +109,7 @@ export default function SettlementManagementPage() {
           title="Final Settlement Computation"
           size="4xl"
         >
-          <div className="p-6 max-h-[90vh] overflow-y-auto">
+          <div className="settlement-view-modal-body p-6 max-h-[90vh] overflow-y-auto">
             {viewingSettlement && (
               <SettlementView
                 settlement={viewingSettlement}

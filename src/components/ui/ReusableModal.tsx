@@ -7,7 +7,7 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   className?: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "4xl";
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -50,11 +50,12 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
-  const sizeClasses = {
+  const sizeClasses: Record<NonNullable<ModalProps["size"]>, string> = {
     sm: "max-w-md",
     md: "max-w-lg",
     lg: "max-w-2xl",
     xl: "max-w-4xl",
+    "4xl": "max-w-6xl",
   };
 
   return createPortal(

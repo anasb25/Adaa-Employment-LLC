@@ -1,6 +1,4 @@
-import { useRef, useState } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { useCallback, useRef, useState } from "react";
 import { Settlement } from "../../types/settlement";
 import { formatDecimalHours } from "../../utils/timeUtils";
 import Button from "../ui/button/Button";
@@ -12,6 +10,17 @@ interface SettlementViewProps {
   onClose: () => void;
 }
 
+/** A4 page and inner padding (mm) — must match print CSS. */
+const A4_WIDTH_MM = 210;
+const A4_HEIGHT_MM = 297;
+const A4_PADDING_X_MM = 4;
+const A4_PADDING_Y_MM = 2;
+const A4_CONTENT_WIDTH_MM = A4_WIDTH_MM - A4_PADDING_X_MM * 2;
+const A4_CONTENT_HEIGHT_MM = A4_HEIGHT_MM - A4_PADDING_Y_MM * 2;
+/** Slightly narrower than viewport so print scale can grow and fill page height. */
+const PRINT_SHEET_WIDTH_MM = A4_CONTENT_WIDTH_MM * 0.88;
+const MM_TO_PX = 96 / 25.4;
+
 export default function SettlementView({
   settlement,
   onClose,
@@ -19,135 +28,98 @@ export default function SettlementView({
   const printRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const handleDownloadPDF = async () => {
-    const element = printRef.current;
-    if (!element) {
-      toast.error("Content not available for PDF generation");
+  const fitSettlementToA4Page = useCallback((printRoot: HTMLDivElement) => {
+    const sheet = printRoot.querySelector(
+      ".settlement-print-sheet"
+    ) as HTMLElement | null;
+    const scaler = printRoot.querySelector(
+      ".settlement-print-scaler"
+    ) as HTMLElement | null;
+    if (!sheet || !scaler) {
       return;
     }
 
-    try {
-      setIsDownloading(true);
+    const viewWidthPx = A4_CONTENT_WIDTH_MM * MM_TO_PX;
+    const viewHeightPx = A4_CONTENT_HEIGHT_MM * MM_TO_PX;
 
-      const images = Array.from(
-        element.querySelectorAll("img")
-      ) as HTMLImageElement[];
-      await Promise.all(
-        images.map((img) => {
-          if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
-          return new Promise<void>((resolve) => {
-            const onLoad = () => {
-              cleanup();
-              resolve();
-            };
-            const onError = () => {
-              cleanup();
-              resolve();
-            };
-            const cleanup = () => {
-              img.removeEventListener("load", onLoad);
-              img.removeEventListener("error", onError);
-            };
-            img.addEventListener("load", onLoad);
-            img.addEventListener("error", onError);
-          });
-        })
-      );
+    scaler.style.transform = "none";
+    const contentWidth = sheet.offsetWidth;
+    const contentHeight = sheet.scrollHeight;
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
-        onclone: (doc) => {
-          const style = doc.createElement("style");
-          style.innerHTML = `
-            [data-pdf-root], [data-pdf-root] * {
-              color: #000 !important;
-              border-color: #000 !important;
-              background-color: transparent !important;
-              box-shadow: none !important;
-            }
-            [data-pdf-root] {
-              background-color: #fff !important;
-            }
-            [data-pdf-root] table th {
-              background-color: #f0f0f0 !important;
-            }
-            [data-pdf-root] [data-pdf-bg="gray"] {
-              background-color: #f0f0f0 !important;
-            }
-            [data-pdf-root] [data-pdf-bg="yellow"] {
-              background-color: #fff3cd !important;
-            }
-            [data-pdf-root] [data-pdf-bg="yellow-strong"] {
-              background-color: #facc15 !important;
-            }
-            [data-pdf-root] [data-pdf-bg="blue"] {
-              background-color: #e0f2fe !important;
-            }
-            [data-pdf-root] [data-pdf-bg="green"] {
-              background-color: #16a34a !important;
-              color: #fff !important;
-            }
-            [data-pdf-root] .border-b {
-              padding-bottom: 16px !important;
-              border-bottom-width: 1px !important;
-            }
-            [data-pdf-root] [data-pdf-section="employee-info"] .flex {
-              align-items: baseline !important;
-            }
-            [data-pdf-root] [data-pdf-section="employee-info"] .border-b {
-              display: inline-block !important;
-              width: 100% !important;
-              line-height: 1.3 !important;
-              min-height: 14px !important;
-              padding-bottom: 4px !important;
-              box-sizing: border-box !important;
-            }
-          `;
-          doc.head.appendChild(style);
-        },
-      });
+    const scaleW = viewWidthPx / contentWidth;
+    const scaleH = viewHeightPx / contentHeight;
+    let scale = Math.min(scaleW, scaleH);
 
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const margin = 10;
-      const pageWidth = pdf.internal.pageSize.getWidth() - margin * 2;
-      const pageHeight = pdf.internal.pageSize.getHeight() - margin * 2;
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      let heightLeft = imgHeight;
-      let position = margin;
-
-      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        pdf.addPage();
-        position = heightLeft - imgHeight + margin;
-        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save(`Settlement-${settlement.empCode}-${settlement.id}.pdf`);
-      toast.success("PDF downloaded successfully");
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      toast.error(`Failed to generate PDF: ${errorMessage}`);
-    } finally {
-      setIsDownloading(false);
+    // Grow scale until height is filled or width would clip (reduces empty bottom).
+    while (
+      scale + 0.005 <= 1.45 &&
+      contentHeight * (scale + 0.005) <= viewHeightPx &&
+      contentWidth * (scale + 0.005) <= viewWidthPx
+    ) {
+      scale += 0.005;
     }
-  };
+
+    const clamped = Math.max(0.35, scale);
+    printRoot.style.setProperty("--settlement-print-scale", clamped.toFixed(4));
+    scaler.style.transform = `scale(${clamped})`;
+
+    sheet.style.display = "flex";
+    sheet.style.flexDirection = "column";
+    sheet.style.minHeight = `${viewHeightPx / clamped}px`;
+    sheet.style.paddingBottom = "";
+  }, []);
+
+  /** Native OS print dialog — A4 page, content scaled to fit printable area. */
+  const handlePrint = useCallback(() => {
+    const printRoot = printRef.current;
+    if (!printRoot) {
+      toast.error("Content not available for printing");
+      return;
+    }
+
+    const root = document.documentElement;
+
+    const resetPrintLayout = () => {
+      printRoot.style.removeProperty("--settlement-print-scale");
+      const scaler = printRoot.querySelector(
+        ".settlement-print-scaler"
+      ) as HTMLElement | null;
+      const sheet = printRoot.querySelector(
+        ".settlement-print-sheet"
+      ) as HTMLElement | null;
+      if (scaler) {
+        scaler.style.transform = "";
+      }
+      if (sheet) {
+        sheet.style.paddingBottom = "";
+        sheet.style.display = "";
+        sheet.style.flexDirection = "";
+        sheet.style.minHeight = "";
+      }
+    };
+
+    const onBeforePrint = () => {
+      fitSettlementToA4Page(printRoot);
+    };
+
+    const restore = () => {
+      root.classList.remove("settlement-printing");
+      resetPrintLayout();
+      window.removeEventListener("beforeprint", onBeforePrint);
+      window.removeEventListener("afterprint", restore);
+    };
+
+    resetPrintLayout();
+    root.classList.add("settlement-printing");
+    window.addEventListener("beforeprint", onBeforePrint);
+    window.addEventListener("afterprint", restore);
+    window.setTimeout(restore, 120_000);
+
+    window.requestAnimationFrame(() => {
+      fitSettlementToA4Page(printRoot);
+      window.print();
+    });
+  }, [fitSettlementToA4Page]);
 
   const handleDownloadExcel = async () => {
     try {
@@ -182,16 +154,12 @@ export default function SettlementView({
   return (
     <div className="space-y-4">
       {/* Download Controls */}
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-end gap-3 settlement-no-print">
         <Button variant="outline" onClick={onClose}>
           Close
         </Button>
-        <Button 
-          onClick={handleDownloadPDF} 
-          disabled={isDownloading}
-          variant="primary"
-        >
-          {isDownloading ? "Downloading..." : "Download PDF"}
+        <Button onClick={handlePrint} variant="primary">
+          Print
         </Button>
         <Button 
           onClick={handleDownloadExcel} 
@@ -203,8 +171,15 @@ export default function SettlementView({
       </div>
 
       {/* Settlement Document */}
-      <div ref={printRef} className="bg-white text-black" data-pdf-root>
-        <div className="max-w-4xl mx-auto border-2 border-black p-8 print:border-2">
+      <div
+        ref={printRef}
+        className="settlement-a4-page bg-white text-black settlement-print-document"
+        data-settlement-print-root
+        data-pdf-root
+      >
+        <div className="settlement-print-viewport">
+          <div className="settlement-print-scaler">
+          <div className="settlement-print-sheet max-w-4xl mx-auto border-2 border-black p-8 print:border-2">
           {/* Header */}
           <div className="flex justify-between items-center border-b-4 border-black pb-4 mb-6">
             <h1 className="text-xl font-bold text-orange-600">
@@ -523,8 +498,8 @@ export default function SettlementView({
             </div>
           </div>
 
-          {/* Signatures */}
-          <div className="grid grid-cols-3 gap-8 mb-6 text-xs">
+          {/* Signatures — margin-top auto in print spreads block to page bottom */}
+          <div className="settlement-print-signatures grid grid-cols-3 gap-8 mb-6 text-xs">
             <div className="text-center">
               <div className="border-t-2 border-black mt-12 pt-2 font-bold">
                 Prepared By:<br />
@@ -591,8 +566,251 @@ export default function SettlementView({
           <div className="text-xs text-gray-600 italic mt-4">
             <p>Cc File & Accounts</p>
           </div>
+          </div>
+          </div>
         </div>
       </div>
+
+      <style>{`
+        html.settlement-printing .settlement-a4-page {
+          width: ${A4_WIDTH_MM}mm;
+          height: ${A4_HEIGHT_MM}mm;
+          box-sizing: border-box;
+          padding: ${A4_PADDING_Y_MM}mm ${A4_PADDING_X_MM}mm;
+          margin: 0 auto;
+          overflow: hidden;
+          background: #fff;
+        }
+
+        html.settlement-printing .settlement-print-viewport {
+          width: ${A4_CONTENT_WIDTH_MM}mm;
+          height: ${A4_CONTENT_HEIGHT_MM}mm;
+          display: flex;
+          align-items: flex-start;
+          justify-content: center;
+          overflow: hidden;
+        }
+
+        html.settlement-printing [data-settlement-print-root] {
+          --settlement-print-scale: 1;
+        }
+
+        html.settlement-printing .settlement-print-scaler {
+          transform: scale(var(--settlement-print-scale));
+          transform-origin: top center;
+        }
+
+        html.settlement-printing .settlement-print-sheet {
+          width: ${PRINT_SHEET_WIDTH_MM}mm;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 2mm 2.5mm !important;
+          box-sizing: border-box;
+        }
+
+        html.settlement-printing .settlement-print-signatures {
+          margin-top: auto !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .mb-6 {
+          margin-bottom: 0.35rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .mb-4 {
+          margin-bottom: 0.25rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .mb-3 {
+          margin-bottom: 0.2rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .mb-2 {
+          margin-bottom: 0.15rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .mt-4 {
+          margin-top: 0.25rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .mt-8 {
+          margin-top: 0.35rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .mt-12 {
+          margin-top: 0.75rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .pb-4 {
+          padding-bottom: 0.25rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .p-2 {
+          padding: 0.15rem 0.25rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .p-3 {
+          padding: 0.25rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .p-4 {
+          padding: 0.35rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .gap-8 {
+          gap: 0.35rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .gap-y-3 {
+          row-gap: 0.15rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .space-y-3 > * + * {
+          margin-top: 0.15rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet table th,
+        html.settlement-printing .settlement-print-sheet table td {
+          padding: 0.18rem 0.3rem !important;
+          font-size: 10px !important;
+          line-height: 1.2 !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .text-xs {
+          font-size: 10px !important;
+          line-height: 1.25 !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .text-sm {
+          font-size: 11px !important;
+          line-height: 1.25 !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .text-lg {
+          font-size: 12px !important;
+          line-height: 1.25 !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .text-xl {
+          font-size: 14px !important;
+          line-height: 1.25 !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet img {
+          width: 40px !important;
+          height: 40px !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .h-8 {
+          height: 1rem !important;
+        }
+
+        html.settlement-printing .settlement-print-sheet .leading-relaxed {
+          line-height: 1.25 !important;
+        }
+
+        @media print {
+          @page {
+            size: ${A4_WIDTH_MM}mm ${A4_HEIGHT_MM}mm;
+            margin: 0;
+          }
+
+          html.settlement-printing #root {
+            display: none !important;
+          }
+
+          html.settlement-printing body {
+            background: #fff !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          html.settlement-printing .settlement-a4-page {
+            width: ${A4_WIDTH_MM}mm !important;
+            height: ${A4_HEIGHT_MM}mm !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+
+          html.settlement-printing .settlement-no-print {
+            display: none !important;
+          }
+
+          html.settlement-printing .settlement-view-modal-body {
+            padding: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+          }
+
+          html.settlement-printing body > div.fixed {
+            position: static !important;
+            display: block !important;
+            inset: auto !important;
+            padding: 0 !important;
+            background: transparent !important;
+          }
+
+          html.settlement-printing body > div.fixed > div.absolute {
+            display: none !important;
+          }
+
+          html.settlement-printing body > div.fixed > div.relative {
+            max-height: none !important;
+            overflow: visible !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            width: ${A4_WIDTH_MM}mm !important;
+            max-width: ${A4_WIDTH_MM}mm !important;
+            background: #fff !important;
+            margin: 0 auto !important;
+          }
+
+          html.settlement-printing body > div.fixed > div.relative > div:first-of-type {
+            display: none !important;
+          }
+
+          html.settlement-printing body > div.fixed > div.relative > div.min-h-0 {
+            overflow: visible !important;
+            max-height: none !important;
+          }
+
+          html.settlement-printing [data-settlement-print-root],
+          html.settlement-printing [data-settlement-print-root] * {
+            color: #000 !important;
+            border-color: #000 !important;
+            box-shadow: none !important;
+          }
+
+          html.settlement-printing [data-settlement-print-root] {
+            background-color: #fff !important;
+          }
+
+          html.settlement-printing [data-settlement-print-root] table th,
+          html.settlement-printing [data-settlement-print-root] [data-pdf-bg="gray"] {
+            background-color: #f0f0f0 !important;
+          }
+
+          html.settlement-printing [data-settlement-print-root] [data-pdf-bg="yellow"] {
+            background-color: #fff3cd !important;
+          }
+
+          html.settlement-printing [data-settlement-print-root] [data-pdf-bg="yellow-strong"] {
+            background-color: #facc15 !important;
+          }
+
+          html.settlement-printing [data-settlement-print-root] [data-pdf-bg="blue"] {
+            background-color: #e0f2fe !important;
+          }
+
+          html.settlement-printing [data-settlement-print-root] [data-pdf-bg="green"] {
+            background-color: #16a34a !important;
+            color: #fff !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
