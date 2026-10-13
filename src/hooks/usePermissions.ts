@@ -1,36 +1,13 @@
 import { useAuth } from "./useAuth";
+import { checkPermission, getRolePermissions } from "../utils/permissionCheck";
 
 export const usePermissions = () => {
   const { user } = useAuth();
 
-  const hasPermission = (permission: string): boolean => {
-    if (!user?.role?.permissions) return false;
+  const permissionRecords = getRolePermissions(user);
 
-    const userPermissions = user.role.permissions.map((p) => p.name);
-
-    // Check for exact match
-    if (userPermissions.includes(permission)) {
-      return true;
-    }
-
-    // Check for wildcard permissions
-    const permissionParts = permission.split(":");
-    if (permissionParts.length >= 2) {
-      const resource = permissionParts[0];
-
-      // Check for resource:all permission
-      if (userPermissions.includes(`${resource}:all`)) {
-        return true;
-      }
-
-      // Check for global:all permission
-      if (userPermissions.includes("global:all")) {
-        return true;
-      }
-    }
-
-    return false;
-  };
+  const hasPermission = (permission: string): boolean =>
+    checkPermission(user, permission);
 
   const hasRole = (roleName: string): boolean => {
     return user?.role?.name === roleName;
@@ -49,7 +26,7 @@ export const usePermissions = () => {
   };
 
   const getUserPermissions = (): string[] => {
-    return user?.role?.permissions?.map((p) => p.name) || [];
+    return permissionRecords.map((p) => p.name);
   };
 
   const getUserRole = (): string | null => {
@@ -65,6 +42,6 @@ export const usePermissions = () => {
     getUserPermissions,
     getUserRole,
     userRole: user?.role,
-    userPermissions: user?.role?.permissions || [],
+    userPermissions: permissionRecords,
   };
 };

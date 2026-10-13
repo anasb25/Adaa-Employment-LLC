@@ -84,4 +84,29 @@ export const usersApi = {
     );
     return response.data;
   },
+
+  updateUser: async (
+    id: number,
+    data: {
+      email: string;
+      firstName: string;
+      lastName: string;
+      roleId: number;
+      password?: string;
+    },
+  ): Promise<User> => {
+    const response = await axiosInstance.put<User>(`/users/${id}`, data);
+    return response.data;
+  },
+
+  createUser: async (data: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    password: string;
+    roleId: number;
+  }): Promise<User> => {
+    const response = await axiosInstance.post<User>("/users", data);
+    return response.data;
+  },
 };

@@ -136,19 +136,10 @@ const navItems: NavItem[] = [
     }, // Admin section requires either user or role read permission
     subItems: [
       {
-        name: "User Invitations",
-        path: "/admin/invitations",
-        pro: false,
-        permission: "user:create", // Simple permission - invitations require user create permission
-      },
-      {
         name: "Role Management",
         path: "/admin/roles",
         pro: false,
-        permission: {
-          permissions: ["role:read", "role:create"],
-          operator: "all",
-        }, // Role management requires BOTH role read AND create permissions
+        permission: "role:read",
       },
       {
         name: "User Management",
@@ -160,13 +151,13 @@ const navItems: NavItem[] = [
         name: "Special Days",
         path: "/special-days",
         pro: false,
-        permission: "user:read", // Special days management
+        permission: "special-day:read",
       },
       {
         name: "Rate Variants",
         path: "/rate-variants",
         pro: false,
-        permission: "user:read", // Rate variants management
+        permission: "rate-variant:read",
       },
     ],
   },

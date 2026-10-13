@@ -10,9 +10,13 @@ interface UserCardProps {
   availableRoles: Role[];
   onToggleStatus: (userId: number, isActive: boolean) => void;
   onRoleChange: (userId: number, roleId: number) => void;
+  onEdit?: (user: User) => void;
   isUpdating?: boolean;
   isRoleUpdating?: boolean;
   currentUserId?: number;
+  canEdit?: boolean;
+  canAssignRole?: boolean;
+  canUpdateStatus?: boolean;
 }
 
 export default memo(function UserCard({
@@ -20,9 +24,13 @@ export default memo(function UserCard({
   availableRoles,
   onToggleStatus,
   onRoleChange,
+  onEdit,
   isUpdating,
   isRoleUpdating,
   currentUserId,
+  canEdit = false,
+  canAssignRole = false,
+  canUpdateStatus = false,
 }: UserCardProps) {
   const isCurrentUser =
     currentUserId !== undefined && user.id === currentUserId;
@@ -85,12 +93,18 @@ export default memo(function UserCard({
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
             Role
           </p>
-          <RoleDropdown
-            currentRole={user.role}
-            availableRoles={availableRoles}
-            onRoleChange={handleRoleChange}
-            isUpdating={isRoleUpdating}
-          />
+          {canAssignRole ? (
+            <RoleDropdown
+              currentRole={user.role}
+              availableRoles={availableRoles}
+              onRoleChange={handleRoleChange}
+              isUpdating={isRoleUpdating}
+            />
+          ) : (
+            <p className="text-sm text-gray-900 dark:text-white capitalize">
+              {user.role?.name || "-"}
+            </p>
+          )}
         </div>
         <div>
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -118,9 +132,17 @@ export default memo(function UserCard({
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          {user.role.permissions?.length || 0} permissions
+          {user.role?.name?.toLowerCase().replace(/\s+/g, "") === "superadmin"
+            ? "Full access (super admin)"
+            : `${user.role?.permissions?.length || 0} permissions`}
         </div>
-        {!shouldHideDeactivateButton && (
+        <div className="flex items-center gap-2">
+        {canEdit && onEdit && (
+          <Button variant="outline" size="sm" onClick={() => onEdit(user)}>
+            Edit
+          </Button>
+        )}
+        {canUpdateStatus && !shouldHideDeactivateButton && (
           <Button
             variant="outline"
             size="sm"
@@ -139,6 +161,7 @@ export default memo(function UserCard({
               : "Activate"}
           </Button>
         )}
+        </div>
       </div>
     </div>
   );

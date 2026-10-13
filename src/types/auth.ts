@@ -32,6 +32,8 @@ export interface User {
   firstName: string;
   lastName: string;
   role: Role;
+  /** Individual permissions. Starts as a copy of the role and can be changed per user. */
+  permissions?: Permission[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

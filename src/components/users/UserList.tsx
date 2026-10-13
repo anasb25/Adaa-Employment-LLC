@@ -11,19 +11,28 @@ import Pagination from "../ui/pagination/Pagination";
 import { AlertIcon as SearchIcon } from "../../icons";
 import { useSearch } from "../../hooks/useDebounce";
 import { useAuth } from "../../hooks/useAuth";
+import { usePermissions } from "../../hooks/usePermissions";
+import AddUserModal from "./AddUserModal";
+import EditUserModal from "./EditUserModal";
+import { User } from "../../types/auth";
 
 interface UserListProps {
-  onCreateUser?: () => void;
   totalUsers?: number;
 }
 
 export default function UserList({
-  onCreateUser,
   totalUsers = 0,
 }: UserListProps) {
   const [page, setPage] = useState(1);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
+  const { hasPermission } = usePermissions();
+  const canAddUser = hasPermission("user:create");
+  const canEditUser = hasPermission("user:update");
+  const canAssignRole = hasPermission("user:assign-roles");
+  const canUpdateStatus = hasPermission("user:update");
 
   const limit = 10;
 
@@ -40,9 +49,11 @@ export default function UserList({
   });
 
   // Fetch roles for dropdown
+  const needsRoles = canAddUser || canEditUser || canAssignRole;
   const { data: roles = [] } = useQuery({
     queryKey: QUERY_KEYS.roles.all,
     queryFn: () => rolesApi.getRoles(),
+    enabled: needsRoles,
   });
 
   // Fetch users with pagination
@@ -156,6 +167,11 @@ export default function UserList({
           <div className="text-sm text-gray-500 dark:text-gray-400">
             Total Users: {totalUsers}
           </div>
+          {canAddUser && (
+            <Button onClick={() => setAddOpen(true)} size="sm">
+              Add user
+            </Button>
+          )}
         </div>
       </div>
 
@@ -201,8 +217,8 @@ export default function UserList({
                 Clear Search
               </Button>
             ) : (
-              onCreateUser && (
-                <Button onClick={onCreateUser}>Create First User</Button>
+              canAddUser && (
+                <Button onClick={() => setAddOpen(true)}>Add user</Button>
               )
             )}
           </div>
@@ -231,6 +247,10 @@ export default function UserList({
                     updateRoleMutation.variables?.userId === user.id
                   }
                   currentUserId={currentUser?.id}
+                  canEdit={canEditUser}
+                  onEdit={setEditUser}
+                  canAssignRole={canAssignRole}
+                  canUpdateStatus={canUpdateStatus}
                 />
               ))}
             </div>
@@ -245,6 +265,17 @@ export default function UserList({
             />
           </>
         )}
+      <AddUserModal
+        isOpen={addOpen}
+        onClose={() => setAddOpen(false)}
+        roles={roles}
+      />
+      <EditUserModal
+        user={editUser}
+        isOpen={!!editUser}
+        onClose={() => setEditUser(null)}
+        roles={roles}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { PlusIcon, PencilIcon, TrashBinIcon } from "../icons";
 import { rateVariantsApi } from "../services/api/rateVariantsApi";
 import { RateVariant, CreateRateVariantRequest } from "../types/rate-variant";
 import { useConfirmDialog } from "../providers/ConfirmDialogProvider";
+import PermissionGuard from "../components/auth/PermissionGuard";
 
 const RateVariantsManagement = () => {
   const confirmDialog = useConfirmDialog();
@@ -105,6 +106,21 @@ const RateVariantsManagement = () => {
   };
 
   return (
+    <PermissionGuard
+      permission="rate-variant:read"
+      fallback={
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Access Denied
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              You don&apos;t have permission to access rate variants management.
+            </p>
+          </div>
+        </div>
+      }
+    >
     <div className="p-6">
       <div className="mb-6 flex justify-between items-center">
         <div>
@@ -115,13 +131,15 @@ const RateVariantsManagement = () => {
             Manage rate types (Regular, Overtime, Night Shift, etc.)
           </p>
         </div>
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          <PlusIcon className="w-5 h-5" />
-          Add Rate Variant
-        </button>
+        <PermissionGuard permission="rate-variant:create">
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            <PlusIcon className="w-5 h-5" />
+            Add Rate Variant
+          </button>
+        </PermissionGuard>
       </div>
 
       {loading ? (
@@ -405,6 +423,7 @@ const RateVariantsManagement = () => {
         </div>
       )}
     </div>
+    </PermissionGuard>
   );
 };
 

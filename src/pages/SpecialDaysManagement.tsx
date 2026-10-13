@@ -10,6 +10,7 @@ import { PlusIcon, PencilIcon, TrashBinIcon } from "../icons";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import { useConfirmDialog } from "../providers/ConfirmDialogProvider";
+import PermissionGuard from "../components/auth/PermissionGuard";
 
 export default function SpecialDaysManagement() {
   const queryClient = useQueryClient();
@@ -170,6 +171,21 @@ export default function SpecialDaysManagement() {
         title="Special Days Management"
         description="Manage public holidays, Ramadan days, and other special occasions"
       />
+      <PermissionGuard
+        permission="special-day:read"
+        fallback={
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                Access Denied
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                You don&apos;t have permission to access special days management.
+              </p>
+            </div>
+          </div>
+        }
+      >
       <PageBreadcrumb pageTitle="Special Days Management" />
 
       <div className="space-y-6">
@@ -184,9 +200,11 @@ export default function SpecialDaysManagement() {
                 Manage public holidays, Ramadan, and other special occasions
               </p>
             </div>
-            <Button onClick={openCreate} startIcon={<PlusIcon />}>
-              Add Special Day
-            </Button>
+            <PermissionGuard permission="special-day:create">
+              <Button onClick={openCreate} startIcon={<PlusIcon />}>
+                Add Special Day
+              </Button>
+            </PermissionGuard>
           </div>
 
           {/* Filters */}
@@ -715,6 +733,7 @@ export default function SpecialDaysManagement() {
           </div>
         </div>
       )}
+      </PermissionGuard>
     </>
   );
 }

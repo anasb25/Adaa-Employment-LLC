@@ -23,7 +23,6 @@ import Home from "./pages/Dashboard/Home";
 import ExpiryAlerts from "./pages/Dashboard/ExpiryAlerts";
 import RoleManagement from "./pages/RoleManagement";
 import UserManagement from "./pages/UserManagement";
-import AdminInvitationsDemo from "./pages/AdminInvitationsDemo";
 import EmployeeManagement from "./pages/EmployeeManagement";
 import SkillManagement from "./pages/SkillManagement";
 import SkillTypesManagement from "./pages/SkillTypesManagement";
@@ -98,10 +97,6 @@ export default function App() {
             <Route path="/settlements" element={<SettlementManagement />} />
 
             {/* Admin Pages */}
-            <Route
-              path="/admin/invitations"
-              element={<AdminInvitationsDemo />}
-            />
             <Route path="/admin/roles" element={<RoleManagement />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route
