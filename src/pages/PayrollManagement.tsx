@@ -281,6 +281,8 @@ export default function PayrollManagement() {
       const row: Record<string, string | number> = {
         "Employee Name": payroll.employee?.name || "N/A",
         "Employee Code": payroll.employee?.adaa_emp_code || "N/A",
+        "Site Name": payroll.siteName || "",
+        "Labor Trade": payroll.laborTrade || "",
         Month: payroll.month,
         "Regular Hours": formatHours(payroll.totalHours || 0),
         "OT Hours": formatHours(payroll.totalOtHours || 0),
@@ -315,6 +317,8 @@ export default function PayrollManagement() {
     const columnWidths = [
       { wch: 20 },
       { wch: 15 },
+      { wch: 28 },
+      { wch: 18 },
       { wch: 10 },
       { wch: 12 },
       { wch: 12 },

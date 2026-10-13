@@ -50,6 +50,10 @@ export interface Payroll {
   netSalary?: number | null;
   createdAt: string;
   updatedAt: string;
+  /** Project / site name(s) for the payroll month (from approved timesheets). */
+  siteName?: string;
+  /** Mobilized labor trade for the payroll month. */
+  laborTrade?: string;
   employee?: {
     id: number;
     name: string;
