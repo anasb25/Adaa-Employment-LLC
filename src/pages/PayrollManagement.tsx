@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { payrollApi } from "../services/api/payrollApi";
-import { formatDecimalHours } from "../utils/timeUtils";
+import { formatDecimalHours, roundDecimalHours } from "../utils/timeUtils";
 import { formatAedAmount, formatAedRate } from "../utils/currency";
 import { QUERY_KEYS } from "../lib/constants";
 import { Payroll } from "../types/payroll";
@@ -256,6 +256,56 @@ export default function PayrollManagement() {
     );
   };
 
+  const roundMoney = (value: number | null | undefined): number =>
+    Math.round((Number(value) || 0) * 100) / 100;
+
+  const PAYROLL_EXCEL_HOUR_COLUMNS = new Set([
+    "Regular Hours",
+    "OT Hours",
+    "Off-Days Hours",
+    "Idle Hours",
+  ]);
+
+  const PAYROLL_EXCEL_MONEY_COLUMNS = new Set([
+    "Additional Allowances",
+    "Absent Days Deduction",
+    "Other Deductions",
+    "Base Hourly Rate",
+    "Total Gross Salary",
+    "Net Salary",
+  ]);
+
+  const applyPayrollExcelNumberFormats = (worksheet: XLSX.WorkSheet): void => {
+    if (!worksheet["!ref"]) return;
+    const range = XLSX.utils.decode_range(worksheet["!ref"]);
+    const headerByCol = new Map<number, string>();
+
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c })];
+      if (cell && typeof cell.v === "string") {
+        headerByCol.set(c, cell.v);
+      }
+    }
+
+    for (let r = range.s.r + 1; r <= range.e.r; r++) {
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const header = headerByCol.get(c);
+        const ref = XLSX.utils.encode_cell({ r, c });
+        const cell = worksheet[ref];
+        if (!cell || typeof cell.v !== "number") continue;
+
+        cell.t = "n";
+        if (header && PAYROLL_EXCEL_HOUR_COLUMNS.has(header)) {
+          cell.z = "0.##";
+        } else if (header === "Air Ticket Used") {
+          cell.z = "0";
+        } else if (header && PAYROLL_EXCEL_MONEY_COLUMNS.has(header)) {
+          cell.z = "#,##0.00";
+        }
+      }
+    }
+  };
+
   const handleExportToExcel = () => {
     if (!adaaPayrollData.length) {
       toast.error("No data to export");
@@ -284,34 +334,31 @@ export default function PayrollManagement() {
         "Site Name": payroll.siteName || "",
         "Labor Trade": payroll.laborTrade || "",
         Month: payroll.month,
-        "Regular Hours": formatHours(payroll.totalHours || 0),
-        "OT Hours": formatHours(payroll.totalOtHours || 0),
-        "Off-Days Hours": formatHours(payroll.totalOffdaysWorkedHours || 0),
-        "Idle Hours": formatHours(payroll.totalIdleDayHours || 0),
-        "Additional Allowances": sumJsonValues(payroll.allowances).toFixed(2),
+        "Regular Hours": roundDecimalHours(payroll.totalHours || 0),
+        "OT Hours": roundDecimalHours(payroll.totalOtHours || 0),
+        "Off-Days Hours": roundDecimalHours(payroll.totalOffdaysWorkedHours || 0),
+        "Idle Hours": roundDecimalHours(payroll.totalIdleDayHours || 0),
+        "Additional Allowances": roundMoney(sumJsonValues(payroll.allowances)),
         "Allowances Detail": formatJsonDisplay(payroll.allowances),
-        "Absent Days Deduction": Number(
-          payroll.absentDaysDeductible || 0,
-        ).toFixed(2),
+        "Absent Days Deduction": roundMoney(payroll.absentDaysDeductible),
       };
       if (anyAirTicketUsed) {
-        row["Air Ticket Used"] = airUsed > 0 ? airUsed : "";
+        row["Air Ticket Used"] = airUsed > 0 ? airUsed : 0;
       }
-      row["Other Deductions"] = sumJsonValues(
-        payroll.otherDeductions,
-      ).toFixed(2);
+      row["Other Deductions"] = roundMoney(
+        sumJsonValues(payroll.otherDeductions),
+      );
       row["Deductions Detail"] = formatJsonDisplay(payroll.otherDeductions);
-      row["Base Hourly Rate"] = Number(payroll.baseHourlyRate || 0).toFixed(2);
-      row["Total Gross Salary"] = Number(
-        payroll.totalGrossSalary || 0,
-      ).toFixed(2);
-      row["Net Salary"] = Number(payroll.netSalary || 0).toFixed(2);
+      row["Base Hourly Rate"] = roundMoney(payroll.baseHourlyRate);
+      row["Total Gross Salary"] = roundMoney(payroll.totalGrossSalary);
+      row["Net Salary"] = roundMoney(payroll.netSalary);
       row.Notes = payroll.notes || "";
       return row;
     });
 
-    // Create worksheet
+    // Create worksheet (numeric cells are JS numbers so SUM/AVERAGE work in Excel)
     const worksheet = XLSX.utils.json_to_sheet(excelData);
+    applyPayrollExcelNumberFormats(worksheet);
 
     // Set column widths (omit Air Ticket Used when no usage in export)
     const columnWidths = [

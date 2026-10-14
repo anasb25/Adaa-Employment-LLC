@@ -2,9 +2,13 @@
  * Format decimal hours for display (e.g. 10.5 → "10.5", 10 → "10").
  * Rounds to two decimal places; trims trailing zeros.
  */
+export function roundDecimalHours(decimal: number): number {
+  if (decimal == null || isNaN(decimal)) return 0;
+  return Math.round(decimal * 100) / 100;
+}
+
 export function formatDecimalHours(decimal: number): string {
-  if (decimal == null || isNaN(decimal)) return "0";
-  const rounded = Math.round(decimal * 100) / 100;
+  const rounded = roundDecimalHours(decimal);
   return rounded.toFixed(2).replace(/\.?0+$/, "");
 }
 
