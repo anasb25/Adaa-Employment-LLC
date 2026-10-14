@@ -1,6 +1,7 @@
 import {
   IDLE_PROJECT_ID,
   MonthlyProjectTimesheetData,
+  SaveTimesheetEntriesRequest,
 } from "../types/timesheet";
 
 /**
@@ -272,14 +273,8 @@ export function buildTimesheetSaveEntries(
   },
   edits: Map<string, TimesheetDayEdit>,
   projectOffDays?: string[] | null,
-) {
-  const entries: {
-    employeeId: number;
-    date: string;
-    hoursWorked: number;
-    jobStatus: string;
-    notes?: string | null;
-  }[] = [];
+): SaveTimesheetEntriesRequest["entries"] {
+  const entries: SaveTimesheetEntriesRequest["entries"] = [];
 
   edits.forEach((edit, key) => {
     const match = key.match(/^(\d+)-(\d{4}-\d{2}-\d{2})$/);
@@ -312,12 +307,13 @@ export function buildTimesheetSaveEntries(
     );
     const dailyHour = employee?.dailyHours?.find((d) => d.date === date);
 
+    const notes = dailyHour?.notes;
     entries.push({
       employeeId,
       date,
       hoursWorked: hours,
       jobStatus: status,
-      notes: dailyHour?.notes,
+      ...(notes != null ? { notes } : {}),
     });
   });
 
