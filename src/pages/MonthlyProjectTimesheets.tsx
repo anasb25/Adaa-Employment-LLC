@@ -35,6 +35,7 @@ import {
   patchProjectMonthTimesheetCache,
   projectNeedsTimesheetDetailFetch,
   isProjectTimesheetDetailLoaded,
+  sumProjectTimesheetDisplayHours,
 } from "../lib/timesheetHelpers";
 import {
   ChevronDownIcon,
@@ -710,17 +711,11 @@ export default function MonthlyProjectTimesheets() {
     if (!allTimesheetsData) return 0;
     let total = 0;
     for (const data of allTimesheetsData) {
-      for (const employee of data.employees) {
-        for (const dh of employee.dailyHours) {
-          if (
-            dh.jobStatus &&
-            dh.jobStatus !== "demobilized" &&
-            dh.jobStatus !== null
-          ) {
-            total += getHoursValue(data.project.id, employee.employeeId, dh);
-          }
-        }
-      }
+      total += sumProjectTimesheetDisplayHours(
+        data.project.id,
+        data,
+        getHoursValue,
+      );
     }
     return Math.round(total * 100) / 100;
   }, [allTimesheetsData, projectEdits]);
@@ -940,12 +935,7 @@ export default function MonthlyProjectTimesheets() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 px-6 py-4">
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold text-gray-900 dark:text-white">
-                {                overviewData &&
-                [...timesheetsByProject.values()].filter((d) =>
-                  isProjectTimesheetDetailLoaded(d, d.project.id),
-                ).length < overviewData.length
-                  ? "Grand Total Hours (loaded projects)"
-                  : "Grand Total Hours (All Projects)"}
+                Grand Total Hours (All Projects)
               </span>
               <div className="flex items-center gap-4">
                 <Button
@@ -1008,6 +998,11 @@ export default function MonthlyProjectTimesheets() {
               const canEdit =
                 status !== TimesheetStatus.SUBMITTED &&
                 (!isApproved || isUnlocked);
+              const projectTotalHours = sumProjectTimesheetDisplayHours(
+                projectId,
+                timesheetData,
+                getHoursValue,
+              );
 
               return (
                 <div
@@ -1037,6 +1032,8 @@ export default function MonthlyProjectTimesheets() {
                             : `${timesheetData.project.client.name} • `}
                           {employeesToShow.length} employee
                           {employeesToShow.length !== 1 ? "s" : ""}
+                          {" • "}
+                          {formatDecimalHours(projectTotalHours)} hrs
                         </p>
                       </div>
                     </div>

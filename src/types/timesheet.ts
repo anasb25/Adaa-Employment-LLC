@@ -82,6 +82,8 @@ export interface MonthlyProjectTimesheetData {
     };
   };
   employees: EmployeeTimesheet[];
+  /** Display total hours for the project month (from API overview/detail). */
+  totalHours?: number;
 }
 
 export interface CreateTimesheetRequest {

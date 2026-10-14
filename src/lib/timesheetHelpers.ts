@@ -1,4 +1,5 @@
 import {
+  DailyHours,
   IDLE_PROJECT_ID,
   MonthlyProjectTimesheetData,
   SaveTimesheetEntriesRequest,
@@ -290,6 +291,39 @@ export function projectNeedsTimesheetDetailFetch(
     return true;
   }
   return !data.employees.some((e) => (e.dailyHours?.length ?? 0) > 0);
+}
+
+/** Sum display hours for one project (matches grid total row when detail is loaded). */
+export function sumProjectTimesheetDisplayHours(
+  projectId: number,
+  data: MonthlyProjectTimesheetData | undefined,
+  getHoursValue: (
+    projectId: number,
+    employeeId: number,
+    dailyHour: DailyHours,
+  ) => number,
+): number {
+  if (!data) {
+    return 0;
+  }
+
+  if (isProjectTimesheetDetailLoaded(data, projectId)) {
+    let total = 0;
+    for (const employee of data.employees) {
+      for (const dh of employee.dailyHours) {
+        if (
+          dh.jobStatus &&
+          dh.jobStatus !== "demobilized" &&
+          dh.jobStatus !== null
+        ) {
+          total += getHoursValue(projectId, employee.employeeId, dh);
+        }
+      }
+    }
+    return Math.round(total * 100) / 100;
+  }
+
+  return Math.round((data.totalHours ?? 0) * 100) / 100;
 }
 
 /** Build save payload from edited cells only (avoids sending the full month grid). */
