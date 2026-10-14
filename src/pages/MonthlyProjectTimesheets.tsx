@@ -1,5 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useQueries,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -27,7 +32,7 @@ import {
   isProjectCalendarOffDay,
   shouldDisplayProjectOffDay,
   buildTimesheetSaveEntries,
-  patchAllProjectsTimesheetCache,
+  patchProjectMonthTimesheetCache,
 } from "../lib/timesheetHelpers";
 import {
   ChevronDownIcon,
@@ -79,28 +84,68 @@ export default function MonthlyProjectTimesheets() {
   const [editingHoursCell, setEditingHoursCell] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch ALL project timesheets in a single API call
-  const { data: allTimesheetsData, isLoading: isTimesheetsLoading } = useQuery({
-    queryKey: [...QUERY_KEYS.timesheets.all, "all-projects", selectedMonth],
-    queryFn: () => timesheetsApi.getAllProjectTimesheets(selectedMonth),
+  // Fast index: project list + status (no per-day grid for every project).
+  const { data: overviewData, isLoading: isOverviewLoading } = useQuery({
+    queryKey: QUERY_KEYS.timesheets.overview(selectedMonth),
+    queryFn: () => timesheetsApi.getAllProjectTimesheetsOverview(selectedMonth),
     enabled: !!selectedMonth,
+    staleTime: 60_000,
   });
 
-  // Build a lookup map: projectId -> timesheetData
+  const projectIdsNeedingFetch = useMemo(() => {
+    return [...expandedProjects].filter((projectId) => {
+      if (projectId === IDLE_PROJECT_ID) return false;
+      const shell = overviewData?.find((d) => d.project.id === projectId);
+      return Boolean(shell && shell.employees.length === 0);
+    });
+  }, [expandedProjects, overviewData]);
+
+  const projectDetailQueries = useQueries({
+    queries: projectIdsNeedingFetch.map((projectId) => ({
+      queryKey: QUERY_KEYS.timesheets.projectMonth(projectId, selectedMonth),
+      queryFn: () =>
+        timesheetsApi.getMonthlyProjectTimesheet(projectId, selectedMonth),
+      enabled: !!selectedMonth,
+      staleTime: 60_000,
+    })),
+  });
+
   const timesheetsByProject = useMemo(() => {
     const map = new Map<number, MonthlyProjectTimesheetData>();
-    if (allTimesheetsData) {
-      for (const data of allTimesheetsData) {
+    if (overviewData) {
+      for (const data of overviewData) {
         map.set(data.project.id, data);
       }
     }
+    for (const query of projectDetailQueries) {
+      if (query.data) {
+        map.set(query.data.project.id, query.data);
+      }
+    }
     return map;
-  }, [allTimesheetsData]);
+  }, [overviewData, projectDetailQueries]);
+
+  const allTimesheetsData = useMemo(
+    () => (overviewData ? Array.from(timesheetsByProject.values()) : undefined),
+    [overviewData, timesheetsByProject],
+  );
+
+  const isTimesheetsLoading = isOverviewLoading;
+
+  const isProjectGridLoading = (projectId: number): boolean => {
+    if (projectId === IDLE_PROJECT_ID) return false;
+    const shell = overviewData?.find((d) => d.project.id === projectId);
+    if (!shell || shell.employees.length > 0) return false;
+    if (!expandedProjects.has(projectId)) return false;
+    const idx = projectIdsNeedingFetch.indexOf(projectId);
+    if (idx < 0) return false;
+    return projectDetailQueries[idx]?.isFetching ?? false;
+  };
 
   // Get project IDs from the response (ordered by backend)
   const projectIds = useMemo(
-    () => allTimesheetsData?.map((d) => d.project.id) || [],
-    [allTimesheetsData],
+    () => overviewData?.map((d) => d.project.id) || [],
+    [overviewData],
   );
 
   // Search: match by employee id, name, or project name; compute highlight set
@@ -147,11 +192,46 @@ export default function MonthlyProjectTimesheets() {
     }
   }, [matchingEmployeeIds.size, filteredProjectIds.join(",")]);
 
+  const patchTimesheetStatusInCaches = (
+    projectId: number,
+    timesheetId: number,
+    status: TimesheetStatus,
+  ) => {
+    const patchOne = (
+      old: MonthlyProjectTimesheetData | undefined,
+    ): MonthlyProjectTimesheetData | undefined => {
+      if (!old || old.project.id !== projectId) return old;
+      return {
+        ...old,
+        timesheet: {
+          ...(old.timesheet ?? {}),
+          id: timesheetId,
+          status,
+        } as MonthlyProjectTimesheetData["timesheet"],
+      };
+    };
+
+    queryClient.setQueryData<MonthlyProjectTimesheetData[]>(
+      QUERY_KEYS.timesheets.overview(selectedMonth),
+      (old) => old?.map((d) => patchOne(d) ?? d),
+    );
+    queryClient.setQueryData<MonthlyProjectTimesheetData>(
+      QUERY_KEYS.timesheets.projectMonth(projectId, selectedMonth),
+      patchOne,
+    );
+  };
+
+  const refreshTimesheetOverview = () => {
+    queryClient.invalidateQueries({
+      queryKey: QUERY_KEYS.timesheets.overview(selectedMonth),
+    });
+  };
+
   // Create timesheet mutation
   const createTimesheetMutation = useMutation({
     mutationFn: timesheetsApi.createOrGetTimesheet,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
+      refreshTimesheetOverview();
     },
   });
 
@@ -168,19 +248,20 @@ export default function MonthlyProjectTimesheets() {
     onSuccess: (savedEntries, variables) => {
       toast.success("Timesheet saved successfully!");
 
-      const cacheKey = [
-        ...QUERY_KEYS.timesheets.all,
-        "all-projects",
-        selectedMonth,
-      ] as const;
+      const patches = Array.isArray(savedEntries)
+        ? savedEntries
+        : variables.entries;
 
-      queryClient.setQueryData<MonthlyProjectTimesheetData[]>(
-        cacheKey,
+      queryClient.setQueryData<MonthlyProjectTimesheetData>(
+        QUERY_KEYS.timesheets.projectMonth(
+          variables.projectId,
+          selectedMonth,
+        ),
         (old) =>
-          patchAllProjectsTimesheetCache(
+          patchProjectMonthTimesheetCache(
             old,
             variables.timesheetId,
-            Array.isArray(savedEntries) ? savedEntries : variables.entries,
+            patches,
           ),
       );
 
@@ -195,8 +276,6 @@ export default function MonthlyProjectTimesheets() {
         newSet.delete(variables.projectId);
         return newSet;
       });
-
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to save timesheet");
@@ -205,11 +284,23 @@ export default function MonthlyProjectTimesheets() {
 
   // Submit timesheet mutation
   const submitTimesheetMutation = useMutation({
-    mutationFn: ({ timesheetId, notes }: any) =>
-      timesheetsApi.submitTimesheet(timesheetId, { notes }),
-    onSuccess: () => {
+    mutationFn: ({
+      timesheetId,
+      projectId,
+      notes,
+    }: {
+      timesheetId: number;
+      projectId: number;
+      notes?: string;
+    }) => timesheetsApi.submitTimesheet(timesheetId, { notes }),
+    onSuccess: (_, { timesheetId, projectId }) => {
       toast.success("Timesheet submitted for approval!");
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
+      patchTimesheetStatusInCaches(
+        projectId,
+        timesheetId,
+        TimesheetStatus.SUBMITTED,
+      );
+      refreshTimesheetOverview();
     },
     onError: (error: any) => {
       toast.error(
@@ -220,11 +311,21 @@ export default function MonthlyProjectTimesheets() {
 
   // Approve timesheet mutation
   const approveTimesheetMutation = useMutation({
-    mutationFn: ({ timesheetId, status, notes }: any) =>
-      timesheetsApi.approveTimesheet(timesheetId, { status, notes }),
-    onSuccess: () => {
+    mutationFn: ({
+      timesheetId,
+      projectId,
+      status,
+      notes,
+    }: {
+      timesheetId: number;
+      projectId: number;
+      status: TimesheetStatus.APPROVED | TimesheetStatus.REJECTED;
+      notes?: string;
+    }) => timesheetsApi.approveTimesheet(timesheetId, { status, notes }),
+    onSuccess: (_, { timesheetId, projectId, status }) => {
       toast.success("Timesheet status updated!");
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
+      patchTimesheetStatusInCaches(projectId, timesheetId, status);
+      refreshTimesheetOverview();
     },
     onError: (error: any) => {
       toast.error(
@@ -564,17 +665,22 @@ export default function MonthlyProjectTimesheets() {
       }
 
       // Submit the timesheet
-      await submitTimesheetMutation.mutateAsync({ timesheetId });
+      await submitTimesheetMutation.mutateAsync({ timesheetId, projectId });
     } catch (error) {
       console.error("Error submitting timesheet:", error);
     }
   };
 
   const handleApprove = async (
+    projectId: number,
     timesheetId: number,
     status: TimesheetStatus.APPROVED | TimesheetStatus.REJECTED,
   ) => {
-    await approveTimesheetMutation.mutateAsync({ timesheetId, status });
+    await approveTimesheetMutation.mutateAsync({
+      timesheetId,
+      projectId,
+      status,
+    });
   };
 
   const handleUnlockApproved = (projectId: number) => {
@@ -619,8 +725,18 @@ export default function MonthlyProjectTimesheets() {
     return Math.round(total * 100) / 100;
   }, [allTimesheetsData, projectEdits]);
 
-  const handleExportAllTimesheets = () => {
-    if (!allTimesheetsData || allTimesheetsData.length === 0) {
+  const handleExportAllTimesheets = async () => {
+    const toastId = toast.loading("Loading full timesheet data for export...");
+    let exportSource: MonthlyProjectTimesheetData[];
+    try {
+      exportSource = await timesheetsApi.getAllProjectTimesheets(selectedMonth);
+    } catch {
+      toast.error("Failed to load timesheet data for export", { id: toastId });
+      return;
+    }
+    toast.dismiss(toastId);
+
+    if (!exportSource.length) {
       toast.error("No timesheet data to export");
       return;
     }
@@ -677,7 +793,7 @@ export default function MonthlyProjectTimesheets() {
       let srNo = 1;
       let grandTotal = 0;
 
-      for (const data of allTimesheetsData) {
+      for (const data of exportSource) {
         for (const employee of data.employees) {
           const row: any[] = [
             srNo++,
@@ -824,7 +940,12 @@ export default function MonthlyProjectTimesheets() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 px-6 py-4">
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold text-gray-900 dark:text-white">
-                Grand Total Hours (All Projects)
+                {overviewData &&
+                [...timesheetsByProject.values()].filter(
+                  (d) => d.employees.length > 0,
+                ).length < overviewData.length
+                  ? "Grand Total Hours (loaded projects)"
+                  : "Grand Total Hours (All Projects)"}
               </span>
               <div className="flex items-center gap-4">
                 <Button
@@ -851,7 +972,11 @@ export default function MonthlyProjectTimesheets() {
 
               if (!timesheetData) return null;
               const isIdle = projectId === IDLE_PROJECT_ID;
-              if (!isIdle && timesheetData.employees.length === 0) return null;
+              const isExpanded = expandedProjects.has(projectId);
+              const gridReady =
+                isIdle || timesheetData.employees.length > 0;
+              const gridLoading =
+                isExpanded && isProjectGridLoading(projectId);
 
               // When search matched employees, show only those in this project; otherwise show all
               const employeesToShow =
@@ -861,9 +986,15 @@ export default function MonthlyProjectTimesheets() {
                     )
                   : timesheetData.employees;
 
-              if (!isIdle && employeesToShow.length === 0) return null;
-
-              const isExpanded = expandedProjects.has(projectId);
+              if (
+                isExpanded &&
+                gridReady &&
+                !isIdle &&
+                employeesToShow.length === 0 &&
+                matchingEmployeeIds.size > 0
+              ) {
+                return null;
+              }
               const hasChanges = hasUnsavedChanges.has(projectId);
               const status =
                 timesheetData.timesheet?.status || TimesheetStatus.DRAFT;
@@ -990,6 +1121,7 @@ export default function MonthlyProjectTimesheets() {
                               <Button
                                 onClick={() =>
                                   handleApprove(
+                                    projectId,
                                     timesheetData.timesheet!.id,
                                     TimesheetStatus.REJECTED,
                                   )
@@ -1004,6 +1136,7 @@ export default function MonthlyProjectTimesheets() {
                               <Button
                                 onClick={() =>
                                   handleApprove(
+                                    projectId,
                                     timesheetData.timesheet!.id,
                                     TimesheetStatus.APPROVED,
                                   )
@@ -1020,6 +1153,14 @@ export default function MonthlyProjectTimesheets() {
                         </div>
                       </div>
 
+                      {gridLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600" />
+                          <span className="ml-3 text-gray-600 dark:text-gray-400">
+                            Loading project timesheet...
+                          </span>
+                        </div>
+                      ) : (
                       <div className="overflow-x-auto">
                         <table className="min-w-full border-collapse">
                           <thead className="bg-gray-50 dark:bg-gray-900/50">
@@ -1460,6 +1601,7 @@ export default function MonthlyProjectTimesheets() {
                           </tbody>
                         </table>
                       </div>
+                      )}
                     </div>
                   )}
                 </div>

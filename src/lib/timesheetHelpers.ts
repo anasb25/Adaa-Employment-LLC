@@ -389,3 +389,17 @@ export function patchAllProjectsTimesheetCache(
     return { ...projectData, employees };
   });
 }
+
+/** Patch a single project-month query cache entry after save. */
+export function patchProjectMonthTimesheetCache(
+  data: MonthlyProjectTimesheetData | undefined,
+  timesheetId: number,
+  savedEntries: SavedTimesheetEntryPatch[],
+): MonthlyProjectTimesheetData | undefined {
+  const patched = patchAllProjectsTimesheetCache(
+    data ? [data] : undefined,
+    timesheetId,
+    savedEntries,
+  );
+  return patched?.[0];
+}

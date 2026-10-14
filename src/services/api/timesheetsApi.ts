@@ -43,6 +43,15 @@ export const timesheetsApi = {
    * Get monthly timesheets for ALL projects in a single call
    * @param month Format: YYYY-MM
    */
+  getAllProjectTimesheetsOverview: async (
+    month: string,
+  ): Promise<MonthlyProjectTimesheetData[]> => {
+    const response = await axiosInstance.get(
+      `/timesheets/all-projects/month/${month}/overview`,
+    );
+    return response.data;
+  },
+
   getAllProjectTimesheets: async (
     month: string
   ): Promise<MonthlyProjectTimesheetData[]> => {

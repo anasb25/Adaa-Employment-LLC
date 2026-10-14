@@ -66,6 +66,9 @@ export const QUERY_KEYS = {
   },
   timesheets: {
     all: ["timesheets"] as const,
+    overview: (month: string) => ["timesheets", "overview", month] as const,
+    projectMonth: (projectId: number, month: string) =>
+      ["timesheets", "project-month", projectId, month] as const,
     detail: (id: number) => ["timesheets", id] as const,
     byAllocation: (allocationId: number) =>
       ["timesheets", "allocation", allocationId] as const,
