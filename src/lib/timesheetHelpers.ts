@@ -262,6 +262,36 @@ export interface TimesheetDayEdit {
   status?: string;
 }
 
+/** True when the month grid (daily hours) has been loaded for this project. */
+export function isProjectTimesheetDetailLoaded(
+  data: MonthlyProjectTimesheetData | undefined,
+  projectId: number,
+): boolean {
+  if (!data || projectId === IDLE_PROJECT_ID) {
+    return true;
+  }
+  if (data.employees.length === 0) {
+    return false;
+  }
+  return data.employees.some((e) => (e.dailyHours?.length ?? 0) > 0);
+}
+
+export function projectNeedsTimesheetDetailFetch(
+  data: MonthlyProjectTimesheetData | undefined,
+  projectId: number,
+): boolean {
+  if (projectId === IDLE_PROJECT_ID) {
+    return false;
+  }
+  if (!data) {
+    return false;
+  }
+  if (data.employees.length === 0) {
+    return true;
+  }
+  return !data.employees.some((e) => (e.dailyHours?.length ?? 0) > 0);
+}
+
 /** Build save payload from edited cells only (avoids sending the full month grid). */
 export function buildTimesheetSaveEntries(
   projectId: number,

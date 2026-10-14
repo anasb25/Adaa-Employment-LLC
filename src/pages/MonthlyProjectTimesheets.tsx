@@ -33,6 +33,8 @@ import {
   shouldDisplayProjectOffDay,
   buildTimesheetSaveEntries,
   patchProjectMonthTimesheetCache,
+  projectNeedsTimesheetDetailFetch,
+  isProjectTimesheetDetailLoaded,
 } from "../lib/timesheetHelpers";
 import {
   ChevronDownIcon,
@@ -94,9 +96,8 @@ export default function MonthlyProjectTimesheets() {
 
   const projectIdsNeedingFetch = useMemo(() => {
     return [...expandedProjects].filter((projectId) => {
-      if (projectId === IDLE_PROJECT_ID) return false;
       const shell = overviewData?.find((d) => d.project.id === projectId);
-      return Boolean(shell && shell.employees.length === 0);
+      return projectNeedsTimesheetDetailFetch(shell, projectId);
     });
   }, [expandedProjects, overviewData]);
 
@@ -133,10 +134,9 @@ export default function MonthlyProjectTimesheets() {
   const isTimesheetsLoading = isOverviewLoading;
 
   const isProjectGridLoading = (projectId: number): boolean => {
-    if (projectId === IDLE_PROJECT_ID) return false;
-    const shell = overviewData?.find((d) => d.project.id === projectId);
-    if (!shell || shell.employees.length > 0) return false;
     if (!expandedProjects.has(projectId)) return false;
+    const cached = timesheetsByProject.get(projectId);
+    if (isProjectTimesheetDetailLoaded(cached, projectId)) return false;
     const idx = projectIdsNeedingFetch.indexOf(projectId);
     if (idx < 0) return false;
     return projectDetailQueries[idx]?.isFetching ?? false;
@@ -940,9 +940,9 @@ export default function MonthlyProjectTimesheets() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 px-6 py-4">
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold text-gray-900 dark:text-white">
-                {overviewData &&
-                [...timesheetsByProject.values()].filter(
-                  (d) => d.employees.length > 0,
+                {                overviewData &&
+                [...timesheetsByProject.values()].filter((d) =>
+                  isProjectTimesheetDetailLoaded(d, d.project.id),
                 ).length < overviewData.length
                   ? "Grand Total Hours (loaded projects)"
                   : "Grand Total Hours (All Projects)"}
@@ -973,8 +973,10 @@ export default function MonthlyProjectTimesheets() {
               if (!timesheetData) return null;
               const isIdle = projectId === IDLE_PROJECT_ID;
               const isExpanded = expandedProjects.has(projectId);
-              const gridReady =
-                isIdle || timesheetData.employees.length > 0;
+              const gridReady = isProjectTimesheetDetailLoaded(
+                timesheetData,
+                projectId,
+              );
               const gridLoading =
                 isExpanded && isProjectGridLoading(projectId);
 
