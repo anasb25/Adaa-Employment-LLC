@@ -1,4 +1,7 @@
-import { IDLE_PROJECT_ID } from "../types/timesheet";
+import {
+  IDLE_PROJECT_ID,
+  MonthlyProjectTimesheetData,
+} from "../types/timesheet";
 
 /**
  * Job status abbreviations for timesheet display
@@ -319,4 +322,70 @@ export function buildTimesheetSaveEntries(
   });
 
   return entries;
+}
+
+type SavedTimesheetEntryPatch = {
+  id?: number;
+  employeeId: number;
+  date: string;
+  hoursWorked: number;
+  jobStatus: string;
+};
+
+/** Apply saved entry values to react-query cache so the grid does not flash stale data. */
+export function patchAllProjectsTimesheetCache(
+  data: MonthlyProjectTimesheetData[] | undefined,
+  timesheetId: number,
+  savedEntries: SavedTimesheetEntryPatch[],
+): MonthlyProjectTimesheetData[] | undefined {
+  if (!data?.length || savedEntries.length === 0) {
+    return data;
+  }
+
+  const byEmployeeDate = new Map<string, SavedTimesheetEntryPatch>();
+  for (const entry of savedEntries) {
+    byEmployeeDate.set(`${entry.employeeId}-${entry.date}`, entry);
+  }
+
+  return data.map((projectData) => {
+    if (projectData.timesheet?.id !== timesheetId) {
+      return projectData;
+    }
+
+    const employees = projectData.employees.map((employee) => {
+      let changed = false;
+      const dailyHours = employee.dailyHours.map((dh) => {
+        const saved = byEmployeeDate.get(`${employee.employeeId}-${dh.date}`);
+        if (!saved) return dh;
+        changed = true;
+        return {
+          ...dh,
+          hoursWorked: Number(saved.hoursWorked),
+          jobStatus: String(saved.jobStatus).toLowerCase(),
+          entryId: saved.id ?? dh.entryId,
+        };
+      });
+
+      for (const saved of savedEntries) {
+        if (saved.employeeId !== employee.employeeId) continue;
+        if (dailyHours.some((dh) => dh.date === saved.date)) continue;
+        const day = parseInt(saved.date.slice(8, 10), 10);
+        changed = true;
+        dailyHours.push({
+          date: saved.date,
+          day,
+          hoursWorked: Number(saved.hoursWorked),
+          jobStatus: String(saved.jobStatus).toLowerCase(),
+          notes: null,
+          entryId: saved.id ?? null,
+        });
+      }
+
+      if (!changed) return employee;
+      dailyHours.sort((a, b) => a.day - b.day);
+      return { ...employee, dailyHours };
+    });
+
+    return { ...projectData, employees };
+  });
 }

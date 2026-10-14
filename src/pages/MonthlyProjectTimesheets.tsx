@@ -27,6 +27,7 @@ import {
   isProjectCalendarOffDay,
   shouldDisplayProjectOffDay,
   buildTimesheetSaveEntries,
+  patchAllProjectsTimesheetCache,
 } from "../lib/timesheetHelpers";
 import {
   ChevronDownIcon,
@@ -156,23 +157,45 @@ export default function MonthlyProjectTimesheets() {
 
   // Save entries mutation
   const saveEntriesMutation = useMutation({
-    mutationFn: ({ timesheetId, entries }: any) =>
-      timesheetsApi.saveTimesheetEntries(timesheetId, { entries }),
-    onSuccess: (_, variables) => {
+    mutationFn: ({
+      timesheetId,
+      entries,
+    }: {
+      timesheetId: number;
+      entries: ReturnType<typeof buildTimesheetSaveEntries>;
+      projectId: number;
+    }) => timesheetsApi.saveTimesheetEntries(timesheetId, { entries }),
+    onSuccess: (savedEntries, variables) => {
       toast.success("Timesheet saved successfully!");
-      // Remove from unsaved changes
+
+      const cacheKey = [
+        ...QUERY_KEYS.timesheets.all,
+        "all-projects",
+        selectedMonth,
+      ] as const;
+
+      queryClient.setQueryData<MonthlyProjectTimesheetData[]>(
+        cacheKey,
+        (old) =>
+          patchAllProjectsTimesheetCache(
+            old,
+            variables.timesheetId,
+            Array.isArray(savedEntries) ? savedEntries : variables.entries,
+          ),
+      );
+
+      setProjectEdits((prev) => {
+        const next = { ...prev };
+        delete next[variables.projectId];
+        return next;
+      });
+
       setHasUnsavedChanges((prev) => {
         const newSet = new Set(prev);
-        // Find project ID from timesheet
-        if (allTimesheetsData) {
-          for (const data of allTimesheetsData) {
-            if (data.timesheet?.id === variables.timesheetId) {
-              newSet.delete(data.project.id);
-            }
-          }
-        }
+        newSet.delete(variables.projectId);
         return newSet;
       });
+
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.timesheets.all });
     },
     onError: (error: any) => {
@@ -495,13 +518,10 @@ export default function MonthlyProjectTimesheets() {
         return;
       }
 
-      await saveEntriesMutation.mutateAsync({ timesheetId, entries });
-
-      // Clear edits for this project
-      setProjectEdits((prev) => {
-        const newEdits = { ...prev };
-        delete newEdits[projectId];
-        return newEdits;
+      await saveEntriesMutation.mutateAsync({
+        timesheetId,
+        entries,
+        projectId,
       });
     } catch (error) {
       console.error("Error saving timesheet:", error);
@@ -535,15 +555,12 @@ export default function MonthlyProjectTimesheets() {
         );
 
         if (entries.length > 0) {
-          await saveEntriesMutation.mutateAsync({ timesheetId, entries });
+          await saveEntriesMutation.mutateAsync({
+            timesheetId,
+            entries,
+            projectId,
+          });
         }
-
-        // Clear edits for this project
-        setProjectEdits((prev) => {
-          const newEdits = { ...prev };
-          delete newEdits[projectId];
-          return newEdits;
-        });
       }
 
       // Submit the timesheet
