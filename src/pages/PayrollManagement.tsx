@@ -352,7 +352,6 @@ export default function PayrollManagement() {
       row["Base Hourly Rate"] = roundMoney(payroll.baseHourlyRate);
       row["Total Gross Salary"] = roundMoney(payroll.totalGrossSalary);
       row["Net Salary"] = roundMoney(payroll.netSalary);
-      row.Notes = payroll.notes || "";
       return row;
     });
 
@@ -380,7 +379,6 @@ export default function PayrollManagement() {
       { wch: 16 },
       { wch: 18 },
       { wch: 14 },
-      { wch: 40 },
     ];
     worksheet["!cols"] = columnWidths;
 
