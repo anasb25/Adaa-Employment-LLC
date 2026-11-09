@@ -95,6 +95,7 @@ export const QUERY_KEYS = {
   },
   dashboard: {
     stats: (month?: string) => ["dashboard", "stats", month ?? "current"] as const,
+    insights: (date: string) => ["dashboard", "insights", date] as const,
     expiringDocuments: ["dashboard", "expiring-documents"] as const,
   },
 } as const;

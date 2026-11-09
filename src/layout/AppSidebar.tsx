@@ -41,6 +41,7 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     subItems: [
       { name: "Overview", path: "/", pro: false },
+      { name: "Insights", path: "/insights", pro: false },
       { name: "Document Expiry Alerts", path: "/expiry-alerts", pro: false },
     ],
   },

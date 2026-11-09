@@ -1,5 +1,9 @@
 import axiosInstance from "../../lib/axios";
-import { DashboardStats, EmployeeWithExpiringDocs } from "../../types/dashboard";
+import {
+  DashboardStats,
+  EmployeeWithExpiringDocs,
+  WorkforceInsights,
+} from "../../types/dashboard";
 import { API_BASE_URL } from "../../lib/constants";
 
 export const dashboardApi = {
@@ -7,6 +11,14 @@ export const dashboardApi = {
     const response = await axiosInstance.get<DashboardStats>(
       `${API_BASE_URL}/dashboard/stats`,
       { params: month ? { month } : undefined },
+    );
+    return response.data;
+  },
+
+  getInsights: async (date: string): Promise<WorkforceInsights> => {
+    const response = await axiosInstance.get<WorkforceInsights>(
+      `${API_BASE_URL}/dashboard/insights`,
+      { params: { date } },
     );
     return response.data;
   },

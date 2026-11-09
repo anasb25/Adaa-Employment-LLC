@@ -13,6 +13,29 @@ export interface EmployeeWithExpiringDocs {
   expiringDocuments: ExpiringDocument[];
 }
 
+export interface WorkforceInsightRow {
+  label: string;
+  count: number;
+  percent: number;
+}
+
+export interface ClientFatInsightRow {
+  client: string;
+  adaa: number;
+  clientFat: number;
+  total: number;
+}
+
+export interface WorkforceInsights {
+  asOf: string;
+  total: number;
+  fat: WorkforceInsightRow[];
+  trades: WorkforceInsightRow[];
+  clients: WorkforceInsightRow[];
+  clientsByFat: ClientFatInsightRow[];
+  fatTotals: { adaa: number; client: number };
+}
+
 export interface DashboardStats {
   asOf: string;
   month: string;

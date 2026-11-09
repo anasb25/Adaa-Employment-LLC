@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import PageMeta from "../../components/common/PageMeta";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
+import DashboardTabs from "../../components/dashboard/DashboardTabs";
 import StatCard from "../../components/dashboard/StatCard";
 import WorkforceChart from "../../components/dashboard/WorkforceChart";
 import TimesheetStatusChart from "../../components/dashboard/TimesheetStatusChart";
@@ -76,6 +77,7 @@ export default function DashboardOverview() {
         description="ADAA Employment LLC dashboard overview"
       />
       <PageBreadcrumb pageTitle="Dashboard" />
+      <DashboardTabs />
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
