@@ -21,6 +21,7 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import DashboardInsights from "./pages/Dashboard/DashboardInsights";
+import DashboardInsightsHours from "./pages/Dashboard/DashboardInsightsHours";
 import ExpiryAlerts from "./pages/Dashboard/ExpiryAlerts";
 import RoleManagement from "./pages/RoleManagement";
 import UserManagement from "./pages/UserManagement";
@@ -62,6 +63,7 @@ export default function App() {
             <Route path="/expiry-alerts" element={<ExpiryAlerts />} />
             <Route index path="/" element={<Home />} />
             <Route path="/insights" element={<DashboardInsights />} />
+            <Route path="/insights/hours" element={<DashboardInsightsHours />} />
 
             {/* Main Pages */}
             <Route path="/employees" element={<EmployeeManagement />} />

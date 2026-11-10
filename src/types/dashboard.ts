@@ -17,23 +17,81 @@ export interface WorkforceInsightRow {
   label: string;
   count: number;
   percent: number;
+  hours: number;
+  hoursPercent: number;
 }
 
 export interface ClientFatInsightRow {
   client: string;
   adaa: number;
+  adaaHours: number;
   clientFat: number;
+  clientHours: number;
+  total: number;
+  totalHours: number;
+}
+
+export interface StatusInsightRow {
+  label: string;
+  count: number;
+  hours: number;
+}
+
+export interface IdleTradeInsightRow {
+  trade: string;
+  count: number;
+  hours: number;
+}
+
+export interface MonthlyHoursInsightRow {
+  month: string;
+  label: string;
+  headcount: number;
+  hours: number;
+}
+
+export interface MonthlyMoneyInsightRow {
+  month: string;
+  label: string;
+  headcount: number;
+  hours: number;
+  amount: number;
+}
+
+export interface ExpiryInsightBucket {
+  visa: number;
+  eid: number;
+  workPermit: number;
+  passport: number;
   total: number;
 }
 
 export interface WorkforceInsights {
   asOf: string;
+  periodStart: string;
+  periodEnd: string;
+  period: "month" | "year";
   total: number;
+  totalHours: number;
   fat: WorkforceInsightRow[];
   trades: WorkforceInsightRow[];
   clients: WorkforceInsightRow[];
   clientsByFat: ClientFatInsightRow[];
-  fatTotals: { adaa: number; client: number };
+  fatTotals: {
+    adaa: number;
+    client: number;
+    adaaHours: number;
+    clientHours: number;
+  };
+  idleByTrade: IdleTradeInsightRow[];
+  idleTotals: { count: number; hours: number };
+  status: StatusInsightRow[];
+  monthlyHours: MonthlyHoursInsightRow[];
+  monthlyPayroll: MonthlyMoneyInsightRow[];
+  expiry: {
+    next15: ExpiryInsightBucket;
+    oneMonth: ExpiryInsightBucket;
+  };
 }
 
 export interface DashboardStats {

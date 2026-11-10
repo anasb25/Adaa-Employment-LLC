@@ -15,10 +15,13 @@ export const dashboardApi = {
     return response.data;
   },
 
-  getInsights: async (date: string): Promise<WorkforceInsights> => {
+  getInsights: async (
+    year: string,
+    month: string,
+  ): Promise<WorkforceInsights> => {
     const response = await axiosInstance.get<WorkforceInsights>(
       `${API_BASE_URL}/dashboard/insights`,
-      { params: { date } },
+      { params: { year, month } },
     );
     return response.data;
   },

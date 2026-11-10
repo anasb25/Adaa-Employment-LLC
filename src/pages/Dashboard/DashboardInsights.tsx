@@ -3,271 +3,194 @@ import { useQuery } from "@tanstack/react-query";
 import PageMeta from "../../components/common/PageMeta";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import DashboardTabs from "../../components/dashboard/DashboardTabs";
+import StatCard from "../../components/dashboard/StatCard";
+import InsightsBoard, {
+  InsightsVariant,
+} from "../../components/dashboard/insights/InsightsBoard";
 import Label from "../../components/form/Label";
+import Select from "../../components/form/Select";
 import { dashboardApi } from "../../services/api/dashboardApi";
 import { QUERY_KEYS } from "../../lib/constants";
+import { AlertIcon, GroupIcon, TaskIcon, TimeIcon } from "../../icons";
 import {
-  ClientFatInsightRow,
-  WorkforceInsightRow,
-} from "../../types/dashboard";
+  MONTH_SHORT_LABELS,
+  formatDateValue,
+  formatMonthLabel,
+  formatMonthValue,
+  lastDateOfMonth,
+  monthStartDate,
+  parseMonthValue,
+} from "../../utils/monthUtils";
 
-function todayInputValue(): string {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
-}
+const ALL_MONTHS = "all";
 
-function formatAsOn(date: string): string {
+function formatDisplayDate(date: string): string {
   const [year, month, day] = date.split("-");
   if (!year || !month || !day) return date;
   return `${day}-${month}-${year}`;
 }
 
-function formatPercent(value: number, digits = 2): string {
-  return `${value.toFixed(digits)}%`;
+function currentPeriod() {
+  const today = formatDateValue(new Date());
+  const { year, month } = parseMonthValue(today);
+  return { today, year, month };
 }
 
-function InsightTable({
-  title,
-  rows,
-  total,
-  percentDigits = 2,
-}: {
-  title: string;
-  rows: WorkforceInsightRow[];
-  total: number;
-  percentDigits?: number;
-}) {
+function formatHours(value: number): string {
+  const amount = Number(value) || 0;
+  const isWhole = Number.isInteger(amount);
+  return amount.toLocaleString(undefined, {
+    minimumFractionDigits: isWhole ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function InsightsSkeleton() {
   return (
-    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-800 dark:text-white">
-          {title}
-        </h3>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-36 animate-pulse rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03]"
+          />
+        ))}
       </div>
-      <div className="max-h-[460px] overflow-auto">
-        <table className="min-w-full text-sm">
-          <thead className="sticky top-0 bg-[#e7f0c8] text-gray-800 dark:bg-emerald-900/40 dark:text-emerald-100">
-            <tr>
-              <th className="px-4 py-2.5 text-left font-semibold">{title}</th>
-              <th className="px-4 py-2.5 text-right font-semibold">Head count</th>
-              <th className="px-4 py-2.5 text-right font-semibold">Share</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr
-                key={row.label}
-                className={
-                  index % 2 === 1
-                    ? "bg-[#efe6f7] dark:bg-violet-950/30"
-                    : "bg-white dark:bg-transparent"
-                }
-              >
-                <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">
-                  {row.label}
-                </td>
-                <td className="px-4 py-2 text-right tabular-nums text-gray-900 dark:text-white">
-                  <div className="ml-auto flex max-w-[140px] items-center justify-end gap-2">
-                    <span
-                      className="hidden h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100 sm:block dark:bg-gray-800"
-                      aria-hidden
-                    >
-                      <span
-                        className="block h-full rounded-full bg-brand-500"
-                        style={{ width: `${Math.min(row.percent, 100)}%` }}
-                      />
-                    </span>
-                    {row.count.toLocaleString()}
-                  </div>
-                </td>
-                <td className="px-4 py-2 text-right tabular-nums text-gray-600 dark:text-gray-300">
-                  {formatPercent(row.percent, percentDigits)}
-                </td>
-              </tr>
-            ))}
-            {rows.length === 0 && (
-              <tr>
-                <td
-                  colSpan={3}
-                  className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
-                >
-                  No mobilized headcount for this date.
-                </td>
-              </tr>
-            )}
-          </tbody>
-          <tfoot>
-            <tr className="bg-[#d9e8a8] font-semibold text-gray-900 dark:bg-emerald-900/50 dark:text-emerald-50">
-              <td className="px-4 py-2.5">Grand total</td>
-              <td className="px-4 py-2.5 text-right tabular-nums">
-                {total.toLocaleString()}
-              </td>
-              <td className="px-4 py-2.5 text-right tabular-nums">
-                {total > 0 ? "100%" : "0%"}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-80 animate-pulse rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03]"
+          />
+        ))}
       </div>
-    </section>
+    </div>
   );
 }
 
-function ClientSplitTable({
-  rows,
-  adaa,
-  client,
-  total,
+export default function DashboardInsights({
+  variant = "headcount",
 }: {
-  rows: ClientFatInsightRow[];
-  adaa: number;
-  client: number;
-  total: number;
+  variant?: InsightsVariant;
 }) {
-  return (
-    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-800 dark:text-white">
-          Clients by FAT
-        </h3>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Headcount split between ADAA and client projects
-        </p>
-      </div>
-      <div className="max-h-[460px] overflow-auto">
-        <table className="min-w-full text-sm">
-          <thead className="sticky top-0 bg-[#e7f0c8] text-gray-800 dark:bg-emerald-900/40 dark:text-emerald-100">
-            <tr>
-              <th className="px-4 py-2.5 text-left font-semibold">Clients</th>
-              <th className="px-4 py-2.5 text-right font-semibold">ADAA</th>
-              <th className="px-4 py-2.5 text-right font-semibold">Client</th>
-              <th className="px-4 py-2.5 text-right font-semibold">Grand total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr
-                key={row.client}
-                className={
-                  index % 2 === 1
-                    ? "bg-[#efe6f7] dark:bg-violet-950/30"
-                    : "bg-white dark:bg-transparent"
-                }
-              >
-                <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">
-                  {row.client}
-                </td>
-                <td className="px-4 py-2 text-right tabular-nums">
-                  {row.adaa || ""}
-                </td>
-                <td className="px-4 py-2 text-right tabular-nums">
-                  {row.clientFat || ""}
-                </td>
-                <td className="px-4 py-2 text-right font-medium tabular-nums">
-                  {row.total.toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="bg-[#d9e8a8] font-semibold text-gray-900 dark:bg-emerald-900/50 dark:text-emerald-50">
-              <td className="px-4 py-2.5">Grand total</td>
-              <td className="px-4 py-2.5 text-right tabular-nums">{adaa}</td>
-              <td className="px-4 py-2.5 text-right tabular-nums">{client}</td>
-              <td className="px-4 py-2.5 text-right tabular-nums">
-                {total.toLocaleString()}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </section>
-  );
-}
+  const [initial] = useState(currentPeriod);
+  const [year, setYear] = useState(initial.year);
+  const [month, setMonth] = useState<string>(String(initial.month));
+  const isHours = variant === "hours";
+  const yearLabel = String(year);
+  const isFullYear = month === ALL_MONTHS;
+  const selectedMonth = isFullYear ? undefined : formatMonthValue(year, Number(month));
+  const periodStart = isFullYear
+    ? `${year}-01-01`
+    : monthStartDate(year, Number(month));
+  const periodEnd = isFullYear
+    ? `${year}-12-31`
+    : lastDateOfMonth(year, Number(month));
 
-export default function DashboardInsights() {
-  const [asOf, setAsOf] = useState(todayInputValue);
+  const yearOptions = useMemo(() => {
+    const currentYear = initial.year;
+    return Array.from({ length: 10 }, (_, index) => {
+      const value = String(currentYear - index);
+      return { value, label: value };
+    });
+  }, [initial.year]);
+
+  const monthOptions = useMemo(() => {
+    const months = MONTH_SHORT_LABELS.map((label, index) => {
+      const value = index + 1;
+      if (year === initial.year && value > initial.month) {
+        return null;
+      }
+      return { value: String(value), label };
+    }).filter((option): option is { value: string; label: string } =>
+      Boolean(option),
+    );
+    return [{ value: ALL_MONTHS, label: "All months" }, ...months];
+  }, [year, initial.year, initial.month]);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: QUERY_KEYS.dashboard.insights(asOf),
-    queryFn: () => dashboardApi.getInsights(asOf),
-    enabled: !!asOf,
+    queryKey: QUERY_KEYS.dashboard.insights(yearLabel, month),
+    queryFn: () => dashboardApi.getInsights(yearLabel, month),
+    enabled: !!yearLabel && !!month,
   });
 
   const adaa = data?.fatTotals.adaa ?? 0;
   const client = data?.fatTotals.client ?? 0;
   const total = data?.total ?? 0;
+  const totalHours = data?.totalHours ?? 0;
+  const adaaHours = data?.fatTotals.adaaHours ?? 0;
+  const clientHours = data?.fatTotals.clientHours ?? 0;
+  const idleCount = data?.idleTotals.count ?? 0;
+  const idleHours = data?.idleTotals.hours ?? 0;
   const adaaShare = total ? Math.round((adaa / total) * 100) : 0;
   const clientShare = total ? Math.round((client / total) * 100) : 0;
+  const adaaHoursShare = totalHours
+    ? Math.round((adaaHours / totalHours) * 100)
+    : 0;
+  const clientHoursShare = totalHours
+    ? Math.round((clientHours / totalHours) * 100)
+    : 0;
 
-  const headingDate = useMemo(() => formatAsOn(asOf), [asOf]);
+  const periodLabel = isFullYear
+    ? yearLabel
+    : formatMonthLabel(formatMonthValue(year, Number(month)));
 
   return (
     <>
       <PageMeta
-        title="Insights | ADAA Employment LLC"
-        description="Workforce headcount insights by FAT, trade, and client"
+        title={
+          isHours
+            ? "Insights by Hours | ADAA Employment LLC"
+            : "Insights | ADAA Employment LLC"
+        }
+        description={
+          isHours
+            ? "Workforce hours insights by FAT, trade, and client"
+            : "Workforce headcount and hours insights by FAT, trade, and client"
+        }
       />
       <PageBreadcrumb pageTitle="Dashboard" />
       <DashboardTabs />
 
-      <div className="mb-6 overflow-hidden rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white dark:border-sky-900/40 dark:from-sky-950/40 dark:to-gray-900">
-        <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
+            {isHours ? "Insights by hours" : "Insights"}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {periodLabel}: {formatDisplayDate(periodStart)} to{" "}
+            {formatDisplayDate(periodEnd)}
+          </p>
+        </div>
+        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:w-auto lg:min-w-[24rem]">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">
-              ADAA Employment LLC
-            </p>
-            <h2 className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
-              Dashboard
-            </h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              As on {headingDate}
-            </p>
+            <Label>Year</Label>
+            <Select
+              options={yearOptions}
+              value={yearLabel}
+              onChange={(value) => {
+                const nextYear = Number(value) || initial.year;
+                setYear(nextYear);
+                if (month !== ALL_MONTHS) {
+                  const nextMonth = Number(month) || initial.month;
+                  const maxMonth =
+                    nextYear === initial.year ? initial.month : 12;
+                  setMonth(String(Math.min(nextMonth, maxMonth)));
+                }
+              }}
+              menuPortal
+            />
           </div>
-          <div className="w-full sm:w-52">
-            <Label>As on</Label>
-            <input
-              type="date"
-              value={asOf}
-              onChange={(event) => setAsOf(event.target.value)}
-              className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          <div>
+            <Label>Month</Label>
+            <Select
+              options={monthOptions}
+              value={month}
+              onChange={setMonth}
+              menuPortal
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-px bg-sky-100 sm:grid-cols-3 dark:bg-sky-900/40">
-          <div className="bg-white/80 px-6 py-4 dark:bg-gray-900/80">
-            <p className="text-xs uppercase tracking-wide text-gray-500">Headcount</p>
-            <p className="mt-1 text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">
-              {isLoading ? "…" : total.toLocaleString()}
-            </p>
-          </div>
-          <div className="bg-white/80 px-6 py-4 dark:bg-gray-900/80">
-            <p className="text-xs uppercase tracking-wide text-gray-500">ADAA</p>
-            <p className="mt-1 text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">
-              {isLoading ? "…" : adaa.toLocaleString()}
-              <span className="ml-2 text-base font-medium text-gray-500">
-                {adaaShare}%
-              </span>
-            </p>
-          </div>
-          <div className="bg-white/80 px-6 py-4 dark:bg-gray-900/80">
-            <p className="text-xs uppercase tracking-wide text-gray-500">Client</p>
-            <p className="mt-1 text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">
-              {isLoading ? "…" : client.toLocaleString()}
-              <span className="ml-2 text-base font-medium text-gray-500">
-                {clientShare}%
-              </span>
-            </p>
-          </div>
-        </div>
-        {total > 0 && (
-          <div className="flex h-2 w-full overflow-hidden">
-            <div className="bg-brand-500" style={{ width: `${adaaShare}%` }} />
-            <div className="bg-violet-400" style={{ width: `${clientShare}%` }} />
-          </div>
-        )}
       </div>
 
       {error && (
@@ -276,22 +199,77 @@ export default function DashboardInsights() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <InsightTable
-          title="FAT by"
-          rows={data?.fat ?? []}
-          total={total}
-          percentDigits={0}
-        />
-        <InsightTable title="Trades" rows={data?.trades ?? []} total={total} />
-        <InsightTable title="Clients" rows={data?.clients ?? []} total={total} />
-        <ClientSplitTable
-          rows={data?.clientsByFat ?? []}
-          adaa={adaa}
-          client={client}
-          total={total}
-        />
-      </div>
+      {isLoading ? (
+        <InsightsSkeleton />
+      ) : (
+        <>
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
+            <StatCard
+              label={isHours ? "Total hours" : "On-site headcount"}
+              value={isHours ? formatHours(totalHours) : total.toLocaleString()}
+              subtitle={
+                isHours
+                  ? `${total.toLocaleString()} people in this period`
+                  : `${formatHours(totalHours)} hrs in this period`
+              }
+              icon={
+                isHours ? (
+                  <TimeIcon className="h-6 w-6" />
+                ) : (
+                  <GroupIcon className="h-6 w-6" />
+                )
+              }
+              accent="brand"
+            />
+            <StatCard
+              label="ADAA"
+              value={
+                isHours ? formatHours(adaaHours) : adaa.toLocaleString()
+              }
+              subtitle={`${isHours ? adaaHoursShare : adaaShare}% · ${
+                isHours
+                  ? `${adaa.toLocaleString()} people`
+                  : `${formatHours(adaaHours)} hrs`
+              }`}
+              icon={<TaskIcon className="h-6 w-6" />}
+              accent="blue"
+            />
+            <StatCard
+              label="Client"
+              value={
+                isHours ? formatHours(clientHours) : client.toLocaleString()
+              }
+              subtitle={`${isHours ? clientHoursShare : clientShare}% · ${
+                isHours
+                  ? `${client.toLocaleString()} people`
+                  : `${formatHours(clientHours)} hrs`
+              }`}
+              icon={<GroupIcon className="h-6 w-6" />}
+              accent="purple"
+            />
+            <StatCard
+              label={isHours ? "Idle hours" : "Idle headcount"}
+              value={
+                isHours ? formatHours(idleHours) : idleCount.toLocaleString()
+              }
+              subtitle={
+                isHours
+                  ? `${idleCount.toLocaleString()} idle people`
+                  : `${formatHours(idleHours)} idle hrs`
+              }
+              icon={<AlertIcon className="h-6 w-6" />}
+              accent={idleCount > 0 ? "orange" : "green"}
+            />
+          </div>
+
+          <InsightsBoard
+            data={data}
+            variant={variant}
+            selectedMonth={selectedMonth}
+            yearLabel={yearLabel}
+          />
+        </>
+      )}
     </>
   );
 }

@@ -2,12 +2,13 @@ import { NavLink } from "react-router";
 
 const tabs = [
   { to: "/", label: "Overview", end: true },
-  { to: "/insights", label: "Insights", end: false },
+  { to: "/insights", label: "Insights", end: true },
+  { to: "/insights/hours", label: "Insights by Hours", end: true },
 ];
 
 export default function DashboardTabs() {
   return (
-    <div className="mb-6 inline-flex rounded-xl bg-gray-100 p-1 dark:bg-white/5">
+    <div className="mb-6 inline-flex flex-wrap rounded-xl bg-gray-100 p-1 dark:bg-white/5">
       {tabs.map((tab) => (
         <NavLink
           key={tab.to}

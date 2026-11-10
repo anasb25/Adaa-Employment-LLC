@@ -23,6 +23,36 @@ export function formatMonthLabel(value: string): string {
   });
 }
 
+export function padDatePart(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+export function lastDateOfMonth(year: number, month: number): string {
+  const day = new Date(year, month, 0).getDate();
+  return `${year}-${padDatePart(month)}-${padDatePart(day)}`;
+}
+
+export function monthStartDate(year: number, month: number): string {
+  return `${year}-${padDatePart(month)}-01`;
+}
+
+export function clampDateToMonth(
+  date: string,
+  year: number,
+  month: number,
+  today = formatDateValue(new Date()),
+): string {
+  const day = Number(date?.split("-")[2]) || 1;
+  const lastDay = Number(lastDateOfMonth(year, month).slice(-2));
+  const candidate = `${year}-${padDatePart(month)}-${padDatePart(Math.min(day, lastDay))}`;
+  const cap = lastDateOfMonth(year, month) > today ? today : lastDateOfMonth(year, month);
+  return candidate > cap ? cap : candidate;
+}
+
+export function formatDateValue(date: Date): string {
+  return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`;
+}
+
 export const MONTH_SHORT_LABELS = [
   "Jan",
   "Feb",
