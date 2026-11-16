@@ -43,11 +43,15 @@ export interface IdleTradeInsightRow {
   hours: number;
 }
 
-export interface MonthlyHoursInsightRow {
-  month: string;
-  label: string;
-  headcount: number;
+export interface CountryInsightRow {
+  country: string;
+  isoCode: string | null;
+  lat: number | null;
+  lng: number | null;
+  count: number;
+  percent: number;
   hours: number;
+  hoursPercent: number;
 }
 
 export interface MonthlyMoneyInsightRow {
@@ -86,7 +90,7 @@ export interface WorkforceInsights {
   idleByTrade: IdleTradeInsightRow[];
   idleTotals: { count: number; hours: number };
   status: StatusInsightRow[];
-  monthlyHours: MonthlyHoursInsightRow[];
+  countries: CountryInsightRow[];
   monthlyPayroll: MonthlyMoneyInsightRow[];
   expiry: {
     next15: ExpiryInsightBucket;

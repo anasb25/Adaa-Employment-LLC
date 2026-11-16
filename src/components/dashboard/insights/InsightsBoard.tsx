@@ -2,14 +2,15 @@ import type { ReactNode } from "react";
 import { formatAedAmount } from "../../../utils/currency";
 import {
   ClientFatInsightRow,
+  CountryInsightRow,
   ExpiryInsightBucket,
   IdleTradeInsightRow,
-  MonthlyHoursInsightRow,
   MonthlyMoneyInsightRow,
   StatusInsightRow,
   WorkforceInsightRow,
   WorkforceInsights,
 } from "../../../types/dashboard";
+import InsightsCountryMap from "./InsightsCountryMap";
 
 export type InsightsVariant = "headcount" | "hours";
 
@@ -576,53 +577,55 @@ function monthRowClass(month: string, selectedMonth?: string): string {
     : "hover:bg-gray-50/80 dark:hover:bg-white/[0.02]";
 }
 
-function MonthlyHoursTable({
+function CountryHeadcountTable({
   rows,
-  selectedMonth,
-  yearLabel,
+  total,
 }: {
-  rows: MonthlyHoursInsightRow[];
-  selectedMonth?: string;
-  yearLabel?: string;
+  rows: CountryInsightRow[];
+  total: number;
 }) {
+  const sorted = [...rows].sort(
+    (a, b) => b.count - a.count || a.country.localeCompare(b.country),
+  );
+
   return (
     <InsightPanel
-      title="Monthly hours"
-      description={
-        yearLabel
-          ? `Timesheet hours and unique people in ${yearLabel}`
-          : "Timesheet hours and unique people by month"
-      }
+      title="Headcount by country"
+      description="Employees grouped by nationality for the selected period"
     >
-      {rows.length === 0 ? (
-        <EmptyState message="No timesheet hours yet." />
+      {sorted.length === 0 ? (
+        <EmptyState message="No nationality data for this period." />
       ) : (
         <table className="min-w-full text-sm">
           <thead className="sticky top-0 bg-gray-50 text-gray-600 dark:bg-white/[0.04] dark:text-gray-300">
             <tr>
-              <th className="px-5 py-3 text-left font-medium">Month</th>
+              <th className="px-5 py-3 text-left font-medium">Country</th>
               <th className="px-5 py-3 text-right font-medium">Headcount</th>
-              <th className="px-5 py-3 text-right font-medium">Hours</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {rows.map((row) => (
+            {sorted.map((row) => (
               <tr
-                key={row.month}
-                className={monthRowClass(row.month, selectedMonth)}
+                key={row.isoCode || row.country}
+                className="hover:bg-gray-50/80 dark:hover:bg-white/[0.02]"
               >
                 <td className="px-5 py-2.5 font-medium text-gray-800 dark:text-gray-100">
-                  {row.label}
+                  {row.country}
                 </td>
-                <td className="px-5 py-2.5 text-right tabular-nums">
-                  {formatCount(row.headcount)}
-                </td>
-                <td className="px-5 py-2.5 text-right tabular-nums">
-                  {formatHours(row.hours)}
+                <td className="px-5 py-2.5 text-right tabular-nums text-gray-800 dark:text-white/90">
+                  {formatCount(row.count)}
                 </td>
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr className="border-t border-gray-200 bg-gray-50 font-medium text-gray-800 dark:border-gray-800 dark:bg-white/[0.04] dark:text-white/90">
+              <td className="px-5 py-3">Total</td>
+              <td className="px-5 py-3 text-right tabular-nums">
+                {formatCount(total)}
+              </td>
+            </tr>
+          </tfoot>
         </table>
       )}
     </InsightPanel>
@@ -792,30 +795,45 @@ export default function InsightsBoard({
       </Section>
 
       <Section
+        title="Headcount by country"
+        description="Nationality mix for the selected period, plotted on the map"
+      >
+        <div className="grid grid-cols-1 items-stretch gap-6 xl:grid-cols-2">
+          <InsightPanel
+            title="Country map"
+            description="Marker size reflects headcount in each country"
+          >
+            <div className="p-3">
+              <InsightsCountryMap rows={data?.countries ?? []} />
+            </div>
+          </InsightPanel>
+          <div className="min-h-[22rem]">
+            <CountryHeadcountTable
+              rows={data?.countries ?? []}
+              total={total}
+            />
+          </div>
+        </div>
+      </Section>
+
+      <Section
         title="Monthly totals"
         description={
           yearLabel
-            ? `Hours and ADAA payroll for ${yearLabel}`
-            : "Hours and ADAA payroll by month"
+            ? `ADAA payroll for ${yearLabel}`
+            : "ADAA payroll by month"
         }
       >
-        <div className="grid grid-cols-1 items-stretch gap-6 xl:grid-cols-2">
-          <MonthlyHoursTable
-            rows={data?.monthlyHours ?? []}
-            selectedMonth={selectedMonth}
-            yearLabel={yearLabel}
-          />
-          <MonthlyMoneyTable
-            title="Payroll"
-            description={
-              yearLabel
-                ? `ADAA gross payroll in ${yearLabel}`
-                : "ADAA gross payroll by month"
-            }
-            rows={data?.monthlyPayroll ?? []}
-            selectedMonth={selectedMonth}
-          />
-        </div>
+        <MonthlyMoneyTable
+          title="Payroll"
+          description={
+            yearLabel
+              ? `ADAA gross payroll in ${yearLabel}`
+              : "ADAA gross payroll by month"
+          }
+          rows={data?.monthlyPayroll ?? []}
+          selectedMonth={selectedMonth}
+        />
       </Section>
     </div>
   );
