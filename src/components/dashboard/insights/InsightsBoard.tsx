@@ -720,7 +720,7 @@ export default function InsightsBoard({
     <div className="space-y-8">
       <Section
         title="Workforce mix"
-        description="Headcount and hours for the selected period by FAT, trade, and client"
+        description="On-site people (assigned to a project ≥1 day) and hours for the selected period"
       >
         <div className="grid grid-cols-1 items-stretch gap-6 xl:grid-cols-2">
           <div className="min-h-[22rem]">
@@ -776,7 +776,7 @@ export default function InsightsBoard({
 
       <Section
         title="Status and documents"
-        description="Job status and document expiries at the end of the selected period"
+        description="Job status snapshot and document expiries as of the period end (excludes cancelled / absconded)"
       >
         <StatusGrid rows={data?.status ?? []} />
         <div className="grid grid-cols-1 items-stretch gap-6 xl:grid-cols-2">

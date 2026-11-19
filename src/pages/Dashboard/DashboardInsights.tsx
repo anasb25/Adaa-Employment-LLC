@@ -205,12 +205,12 @@ export default function DashboardInsights({
         <>
           <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
             <StatCard
-              label={isHours ? "Total hours" : "On-site headcount"}
+              label={isHours ? "Total hours" : "On-site in period"}
               value={isHours ? formatHours(totalHours) : total.toLocaleString()}
               subtitle={
                 isHours
-                  ? `${total.toLocaleString()} people in this period`
-                  : `${formatHours(totalHours)} hrs in this period`
+                  ? `${total.toLocaleString()} on-site people`
+                  : `${formatHours(totalHours)} hrs · assigned to a project ≥1 day`
               }
               icon={
                 isHours ? (
@@ -248,14 +248,14 @@ export default function DashboardInsights({
               accent="purple"
             />
             <StatCard
-              label={isHours ? "Idle hours" : "Idle headcount"}
+              label={isHours ? "Idle hours" : "Idle in period"}
               value={
                 isHours ? formatHours(idleHours) : idleCount.toLocaleString()
               }
               subtitle={
                 isHours
-                  ? `${idleCount.toLocaleString()} idle people`
-                  : `${formatHours(idleHours)} idle hrs`
+                  ? `${idleCount.toLocaleString()} people on idle sheet`
+                  : `${formatHours(idleHours)} idle hrs · idle sheet in period`
               }
               icon={<AlertIcon className="h-6 w-6" />}
               accent={idleCount > 0 ? "orange" : "green"}
