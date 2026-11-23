@@ -141,7 +141,11 @@ function StackedValue({
 const fatColors: Record<string, string> = {
   ADAA: "bg-brand-500",
   CLIENT: "bg-violet-500",
-  UNSPECIFIED: "bg-gray-400",
+};
+
+const fatDisplayLabel: Record<string, string> = {
+  ADAA: "ADAA",
+  CLIENT: "Client",
 };
 
 function FatMix({
@@ -157,24 +161,28 @@ function FatMix({
 }) {
   const hoursFirst = variant === "hours";
 
+  const fatRows = rows.filter(
+    (row) => row.label === "ADAA" || row.label === "CLIENT",
+  );
+
   return (
     <InsightPanel
       title="FAT mix"
-      description="Share of on-site workforce between ADAA and client projects"
+      description="ADAA vs Client by employee supplier for on-site people in this period"
     >
-      {rows.length === 0 ? (
+      {fatRows.length === 0 ? (
         <EmptyState message="No data for this period." />
       ) : (
         <div className="flex h-full flex-col justify-between gap-8 p-5">
           <div className="space-y-5">
-            {rows.map((row) => {
+            {fatRows.map((row) => {
               const share = hoursFirst ? row.hoursPercent : row.percent;
               return (
                 <div key={row.label}>
                   <div className="mb-2 flex items-start justify-between gap-4">
                     <div>
                       <p className="font-medium text-gray-800 dark:text-white/90">
-                        {row.label}
+                        {fatDisplayLabel[row.label] ?? row.label}
                       </p>
                       <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
                         {formatCount(row.count)} people · {formatHours(row.hours)}{" "}
@@ -316,8 +324,8 @@ function ClientSplitTable({
 }) {
   return (
     <InsightPanel
-      title="Clients by FAT"
-      description="How each client’s on-site team is split between ADAA and client FAT"
+      title="Clients by supplier"
+      description="How each client’s on-site team splits between ADAA and Client suppliers"
     >
       {rows.length === 0 ? (
         <EmptyState message="No client data for this period." />
@@ -327,7 +335,7 @@ function ClientSplitTable({
             <tr>
               <th className="px-5 py-3 text-left font-medium">Client</th>
               <th className="px-5 py-3 text-right font-medium">ADAA</th>
-              <th className="px-5 py-3 text-right font-medium">Client FAT</th>
+              <th className="px-5 py-3 text-right font-medium">Client</th>
               <th className="px-5 py-3 text-right font-medium">Total</th>
             </tr>
           </thead>

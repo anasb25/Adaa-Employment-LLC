@@ -102,8 +102,13 @@ export default function DashboardInsights({
         return null;
       }
       return { value: String(value), label };
-    }).filter((option): option is { value: string; label: string } =>
-      Boolean(option),
+    }).filter(
+      (
+        option,
+      ): option is {
+        value: string;
+        label: (typeof MONTH_SHORT_LABELS)[number];
+      } => option != null,
     );
     return [{ value: ALL_MONTHS, label: "All months" }, ...months];
   }, [year, initial.year, initial.month]);
@@ -226,10 +231,10 @@ export default function DashboardInsights({
               value={
                 isHours ? formatHours(adaaHours) : adaa.toLocaleString()
               }
-              subtitle={`${isHours ? adaaHoursShare : adaaShare}% · ${
+              subtitle={`${isHours ? adaaHoursShare : adaaShare}% · ADAA supplier${
                 isHours
-                  ? `${adaa.toLocaleString()} people`
-                  : `${formatHours(adaaHours)} hrs`
+                  ? ` · ${adaa.toLocaleString()} people`
+                  : ` · ${formatHours(adaaHours)} hrs`
               }`}
               icon={<TaskIcon className="h-6 w-6" />}
               accent="blue"
@@ -239,10 +244,10 @@ export default function DashboardInsights({
               value={
                 isHours ? formatHours(clientHours) : client.toLocaleString()
               }
-              subtitle={`${isHours ? clientHoursShare : clientShare}% · ${
+              subtitle={`${isHours ? clientHoursShare : clientShare}% · Client supplier${
                 isHours
-                  ? `${client.toLocaleString()} people`
-                  : `${formatHours(clientHours)} hrs`
+                  ? ` · ${client.toLocaleString()} people`
+                  : ` · ${formatHours(clientHours)} hrs`
               }`}
               icon={<GroupIcon className="h-6 w-6" />}
               accent="purple"
