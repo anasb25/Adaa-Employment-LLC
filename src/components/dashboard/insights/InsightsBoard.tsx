@@ -149,28 +149,48 @@ const fatDisplayLabel: Record<string, string> = {
 };
 
 function FatMix({
-  rows,
-  total,
-  totalHours,
+  adaa,
+  client,
+  adaaHours,
+  clientHours,
   variant,
 }: {
-  rows: WorkforceInsightRow[];
-  total: number;
-  totalHours: number;
+  adaa: number;
+  client: number;
+  adaaHours: number;
+  clientHours: number;
   variant: InsightsVariant;
 }) {
   const hoursFirst = variant === "hours";
+  // Unique active headcount: ADAA + Client (no multi-site duplicates).
+  const uniqueTotal = adaa + client;
+  const uniqueHours = adaaHours + clientHours;
+  const shareOf = (part: number, whole: number) =>
+    whole === 0 ? 0 : Math.round((part / whole) * 10000) / 100;
 
-  const fatRows = rows.filter(
-    (row) => row.label === "ADAA" || row.label === "CLIENT",
-  );
+  const fatRows = [
+    {
+      label: "ADAA",
+      count: adaa,
+      hours: adaaHours,
+      percent: shareOf(adaa, uniqueTotal),
+      hoursPercent: shareOf(adaaHours, uniqueHours),
+    },
+    {
+      label: "CLIENT",
+      count: client,
+      hours: clientHours,
+      percent: shareOf(client, uniqueTotal),
+      hoursPercent: shareOf(clientHours, uniqueHours),
+    },
+  ];
 
   return (
     <InsightPanel
       title="FAT mix"
-      description="ADAA vs Client by employee supplier for on-site people in this period"
+      description="Unique active employees by project Client FAT (ADAA / Client). Multi-site workers counted once."
     >
-      {fatRows.length === 0 ? (
+      {uniqueTotal === 0 && uniqueHours === 0 ? (
         <EmptyState message="No data for this period." />
       ) : (
         <div className="flex h-full flex-col justify-between gap-8 p-5">
@@ -190,7 +210,9 @@ function FatMix({
                       </p>
                     </div>
                     <p className="text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">
-                      {hoursFirst ? formatHours(row.hours) : formatCount(row.count)}
+                      {hoursFirst
+                        ? formatHours(row.hours)
+                        : formatCount(row.count)}
                     </p>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
@@ -200,7 +222,8 @@ function FatMix({
                     />
                   </div>
                   <p className="mt-1.5 text-xs tabular-nums text-gray-500 dark:text-gray-400">
-                    {formatPercent(share, 0)} of {hoursFirst ? "hours" : "headcount"}
+                    {formatPercent(share, 0)} of{" "}
+                    {hoursFirst ? "hours" : "headcount"}
                   </p>
                 </div>
               );
@@ -208,10 +231,10 @@ function FatMix({
           </div>
           <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-sm dark:border-gray-800">
             <span className="font-medium text-gray-700 dark:text-gray-200">
-              Total
+              Total (unique active)
             </span>
             <span className="tabular-nums text-gray-800 dark:text-white/90">
-              {formatCount(total)} people · {formatHours(totalHours)} hrs
+              {formatCount(uniqueTotal)} people · {formatHours(uniqueHours)} hrs
             </span>
           </div>
         </div>
@@ -324,8 +347,8 @@ function ClientSplitTable({
 }) {
   return (
     <InsightPanel
-      title="Clients by supplier"
-      description="How each client’s on-site team splits between ADAA and Client suppliers"
+      title="Clients by FAT"
+      description="Unique active employees per client by project Client FAT. Multi-site workers counted once."
     >
       {rows.length === 0 ? (
         <EmptyState message="No client data for this period." />
@@ -728,14 +751,15 @@ export default function InsightsBoard({
     <div className="space-y-8">
       <Section
         title="Workforce mix"
-        description="On-site people (assigned to a project ≥1 day) and hours for the selected period"
+        description="Unique active employees and hours for the selected period"
       >
         <div className="grid grid-cols-1 items-stretch gap-6 xl:grid-cols-2">
           <div className="min-h-[22rem]">
             <FatMix
-              rows={data?.fat ?? []}
-              total={total}
-              totalHours={totalHours}
+              adaa={data?.fatTotals.adaa ?? 0}
+              client={data?.fatTotals.client ?? 0}
+              adaaHours={data?.fatTotals.adaaHours ?? 0}
+              clientHours={data?.fatTotals.clientHours ?? 0}
               variant={variant}
             />
           </div>
@@ -754,7 +778,7 @@ export default function InsightsBoard({
           <div className="min-h-[22rem]">
             <MixTable
               title="Clients"
-              description="On-site people and hours by client"
+              description="Active people and hours by client (unique headcount)"
               labelHeader="Client"
               rows={sortedMix(data?.clients ?? [], variant)}
               total={total}

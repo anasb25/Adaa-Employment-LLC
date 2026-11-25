@@ -210,12 +210,12 @@ export default function DashboardInsights({
         <>
           <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
             <StatCard
-              label={isHours ? "Total hours" : "On-site in period"}
+              label={isHours ? "Total hours" : "Active in period"}
               value={isHours ? formatHours(totalHours) : total.toLocaleString()}
               subtitle={
                 isHours
-                  ? `${total.toLocaleString()} on-site people`
-                  : `${formatHours(totalHours)} hrs · assigned to a project ≥1 day`
+                  ? `${total.toLocaleString()} active people`
+                  : `${formatHours(totalHours)} hrs · unique active · no multi-site duplicates`
               }
               icon={
                 isHours ? (
@@ -231,7 +231,7 @@ export default function DashboardInsights({
               value={
                 isHours ? formatHours(adaaHours) : adaa.toLocaleString()
               }
-              subtitle={`${isHours ? adaaHoursShare : adaaShare}% · ADAA supplier${
+              subtitle={`${isHours ? adaaHoursShare : adaaShare}% · ADAA Client FAT${
                 isHours
                   ? ` · ${adaa.toLocaleString()} people`
                   : ` · ${formatHours(adaaHours)} hrs`
@@ -244,7 +244,7 @@ export default function DashboardInsights({
               value={
                 isHours ? formatHours(clientHours) : client.toLocaleString()
               }
-              subtitle={`${isHours ? clientHoursShare : clientShare}% · Client supplier${
+              subtitle={`${isHours ? clientHoursShare : clientShare}% · Client FAT${
                 isHours
                   ? ` · ${client.toLocaleString()} people`
                   : ` · ${formatHours(clientHours)} hrs`

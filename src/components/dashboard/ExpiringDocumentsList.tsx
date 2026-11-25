@@ -24,7 +24,7 @@ const STATUS_OPTIONS = [
   { value: "expires_today", label: "Expires Today" },
   { value: "urgent", label: "Urgent (1-3 days)" },
   { value: "warning", label: "Warning (4-7 days)" },
-  { value: "expiring_soon", label: "Expiring Soon (8-15 days)" },
+  { value: "expiring_soon", label: "Expiring Soon (8-60 days)" },
 ];
 
 type ExpiringDocumentsListProps = {
@@ -432,7 +432,7 @@ export default function ExpiringDocumentsList({
             All Clear!
           </h4>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            No expired or expiring documents in the next 15 days
+            No expired or expiring documents in the next 60 days
           </p>
         </div>
       ) : filteredTableData.length === 0 ? (

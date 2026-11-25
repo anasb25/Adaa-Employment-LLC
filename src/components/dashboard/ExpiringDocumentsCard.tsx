@@ -8,7 +8,7 @@ export default function ExpiringDocumentsCard() {
           Document Expiry Alerts
         </h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Passport, visa, Emirates ID, and work permit expiring within 15 days
+          Passport, visa, Emirates ID, and work permit expired or expiring within 60 days
         </p>
       </div>
       <div className="p-6">

@@ -383,7 +383,7 @@ export default function SettlementView({
                 if (item.description === "GRATUITY" && item.forDays) {
                   particularText = `FOR ${item.forDays.toFixed(2)} DAYS OF SERVICE`;
                 } else if (item.description === "LEAVE SALARY" && item.forDays) {
-                  particularText = `BASIC × ${item.forDays.toFixed(2)} YEARS OF SERVICE`;
+                  particularText = `FOR ${item.forDays.toFixed(2)} DAYS LEAVE BALANCE (BASIC/30)`;
                 } else if (isLastMonthSalary) {
                   particularText = "FOR 0 PAID";
                 } else if (isCurrentMonthSalary) {

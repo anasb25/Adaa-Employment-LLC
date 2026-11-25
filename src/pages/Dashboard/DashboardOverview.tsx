@@ -106,22 +106,22 @@ export default function DashboardOverview() {
         <button
           type="button"
           onClick={() => setAlertsModalOpen(true)}
-          className="mb-6 flex w-full items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 text-left transition hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-900/20 dark:hover:bg-orange-900/30"
+          className="mb-6 flex w-full items-center gap-3 rounded-2xl border border-yellow-300 bg-yellow-50 px-5 py-4 text-left transition hover:bg-yellow-100 dark:border-yellow-700/60 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-300">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-200 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300">
             <AlertIcon className="h-5 w-5" />
           </div>
           <div className="flex-1">
-            <p className="font-medium text-orange-900 dark:text-orange-200">
-              {data.counts.expiringDocuments} employees have documents expiring
-              soon
+            <p className="font-medium text-yellow-950 dark:text-yellow-100">
+              {data.counts.expiringDocuments} employees have documents expired
+              or expiring within 60 days
             </p>
-            <p className="text-sm text-orange-700 dark:text-orange-300/80">
+            <p className="text-sm text-yellow-800 dark:text-yellow-300/80">
               Click to review passport, visa, Emirates ID, and work permit
               alerts
             </p>
           </div>
-          <span className="hidden rounded-lg bg-orange-200 px-3 py-1.5 text-xs font-semibold text-orange-900 sm:inline dark:bg-orange-900/50 dark:text-orange-100">
+          <span className="hidden rounded-lg bg-yellow-200 px-3 py-1.5 text-xs font-semibold text-yellow-950 sm:inline dark:bg-yellow-900/50 dark:text-yellow-100">
             View alerts
           </span>
         </button>
@@ -233,7 +233,7 @@ export default function DashboardOverview() {
         <StatCard
           label="Document Alerts"
           value={isLoading ? "…" : data?.counts.expiringDocuments ?? 0}
-          subtitle="Expiring within 15 days · click to view"
+          subtitle="Expired or within 60 days · click to view"
           icon={<AlertIcon className="h-6 w-6" />}
           onClick={() => setAlertsModalOpen(true)}
           accent={data && data.counts.expiringDocuments > 0 ? "red" : "green"}

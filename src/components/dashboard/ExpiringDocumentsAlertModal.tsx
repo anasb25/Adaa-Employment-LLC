@@ -32,12 +32,12 @@ export default function ExpiringDocumentsAlertModal({
       onClose={onClose}
       title="Document Expiry Alerts"
       size="xl"
-      className="border border-orange-200/60 dark:border-orange-900/40"
+      className="border border-yellow-200/70 dark:border-yellow-900/40"
     >
-      <div className="border-b border-gray-100 bg-gradient-to-r from-orange-50 via-amber-50 to-white px-6 py-5 dark:border-gray-800 dark:from-orange-950/30 dark:via-amber-950/20 dark:to-gray-800">
+      <div className="border-b border-gray-100 bg-gradient-to-r from-yellow-50 via-amber-50 to-white px-6 py-5 dark:border-gray-800 dark:from-yellow-950/30 dark:via-amber-950/20 dark:to-gray-800">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-300">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-yellow-200 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300">
               <AlertIcon className="h-6 w-6" />
             </div>
             <div>
@@ -47,8 +47,8 @@ export default function ExpiringDocumentsAlertModal({
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                 {summary.employees} employee
                 {summary.employees === 1 ? "" : "s"} with {summary.documents}{" "}
-                document{summary.documents === 1 ? "" : "s"} expiring within 15
-                days
+                document{summary.documents === 1 ? "" : "s"} expired or
+                expiring within 60 days
               </p>
             </div>
           </div>
@@ -61,6 +61,11 @@ export default function ExpiringDocumentsAlertModal({
             {summary.urgent > 0 && (
               <span className="rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white">
                 {summary.urgent} urgent
+              </span>
+            )}
+            {summary.expiringSoon > 0 && (
+              <span className="rounded-lg bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-yellow-950">
+                {summary.expiringSoon} expiring soon
               </span>
             )}
           </div>
