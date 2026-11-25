@@ -259,8 +259,8 @@ export default function DashboardInsights({
               }
               subtitle={
                 isHours
-                  ? `${idleCount.toLocaleString()} people on idle sheet`
-                  : `${formatHours(idleHours)} idle hrs · idle sheet in period`
+                  ? `${idleCount.toLocaleString()} people with IDLE status`
+                  : `${formatHours(idleHours)} idle hrs · IDLE status in period`
               }
               icon={<AlertIcon className="h-6 w-6" />}
               accent={idleCount > 0 ? "orange" : "green"}

@@ -439,7 +439,7 @@ function IdleTable({
   return (
     <InsightPanel
       title="Idle by trade"
-      description="Idle employees in the selected period, grouped by trade"
+      description="Employees with IDLE status in the selected period, grouped by trade"
     >
       {sorted.length === 0 ? (
         <EmptyState message="No idle employees in this period." />
