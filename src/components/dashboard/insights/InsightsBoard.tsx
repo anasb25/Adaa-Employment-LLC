@@ -3,10 +3,8 @@ import { formatAedAmount } from "../../../utils/currency";
 import {
   ClientFatInsightRow,
   CountryInsightRow,
-  ExpiryInsightBucket,
   IdleTradeInsightRow,
   MonthlyMoneyInsightRow,
-  StatusInsightRow,
   WorkforceInsightRow,
   WorkforceInsights,
 } from "../../../types/dashboard";
@@ -497,111 +495,6 @@ function IdleTable({
   );
 }
 
-const statusStyles: Record<
-  string,
-  { wrap: string; icon: string; label: string }
-> = {
-  ACTIVE: {
-    wrap: "border-emerald-200 bg-emerald-50/70 dark:border-emerald-900/40 dark:bg-emerald-950/20",
-    icon: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-    label: "Active",
-  },
-  IDLE: {
-    wrap: "border-amber-200 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/20",
-    icon: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-    label: "Idle",
-  },
-  HOLD: {
-    wrap: "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40",
-    icon: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-    label: "Hold",
-  },
-  ABSENT: {
-    wrap: "border-rose-200 bg-rose-50/70 dark:border-rose-900/40 dark:bg-rose-950/20",
-    icon: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
-    label: "Absent",
-  },
-};
-
-function StatusGrid({ rows }: { rows: StatusInsightRow[] }) {
-  return (
-    <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-      {rows.map((row) => {
-        const style = statusStyles[row.label] ?? statusStyles.HOLD;
-        return (
-          <article
-            key={row.label}
-            className={`rounded-2xl border p-5 ${style.wrap}`}
-          >
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              {style.label}
-            </p>
-            <p className="mt-3 text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">
-              {formatCount(row.count)}
-            </p>
-            <p className="mt-1 text-sm tabular-nums text-gray-500 dark:text-gray-400">
-              {formatHours(row.hours)} hrs
-            </p>
-          </article>
-        );
-      })}
-    </div>
-  );
-}
-
-function ExpiryCard({
-  title,
-  description,
-  bucket,
-  urgent,
-}: {
-  title: string;
-  description: string;
-  bucket: ExpiryInsightBucket;
-  urgent?: boolean;
-}) {
-  const items = [
-    { label: "Visa", value: bucket.visa },
-    { label: "Emirates ID", value: bucket.eid },
-    { label: "Insurance", value: bucket.workPermit },
-    { label: "Passport", value: bucket.passport },
-  ];
-
-  return (
-    <InsightPanel title={title} description={description}>
-      <div className="flex h-full flex-col p-5">
-        <div className="mb-5 flex items-end justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Documents</p>
-          <p
-            className={`text-3xl font-semibold tabular-nums ${
-              urgent && bucket.total > 0
-                ? "text-orange-600 dark:text-orange-400"
-                : "text-gray-900 dark:text-white"
-            }`}
-          >
-            {formatCount(bucket.total)}
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {items.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-3 dark:border-gray-800 dark:bg-white/[0.03]"
-            >
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {item.label}
-              </p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-gray-800 dark:text-white/90">
-                {formatCount(item.value)}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </InsightPanel>
-  );
-}
-
 function monthRowClass(month: string, selectedMonth?: string): string {
   return month === selectedMonth
     ? "bg-brand-50 dark:bg-brand-500/10"
@@ -739,13 +632,6 @@ export default function InsightsBoard({
 }) {
   const total = data?.total ?? 0;
   const totalHours = data?.totalHours ?? 0;
-  const emptyExpiry: ExpiryInsightBucket = {
-    visa: 0,
-    eid: 0,
-    workPermit: 0,
-    passport: 0,
-    total: 0,
-  };
 
   return (
     <div className="space-y-8">
@@ -804,26 +690,6 @@ export default function InsightsBoard({
           total={total}
           totalHours={totalHours}
         />
-      </Section>
-
-      <Section
-        title="Status and documents"
-        description="Job status snapshot and document expiries as of the period end (excludes cancelled / absconded)"
-      >
-        <StatusGrid rows={data?.status ?? []} />
-        <div className="grid grid-cols-1 items-stretch gap-6 xl:grid-cols-2">
-          <ExpiryCard
-            title="Expiring in 15 days"
-            description="Documents already expired or due within 15 days"
-            bucket={data?.expiry.next15 ?? emptyExpiry}
-            urgent
-          />
-          <ExpiryCard
-            title="Expiring in one month"
-            description="Documents due between 16 and 30 days"
-            bucket={data?.expiry.oneMonth ?? emptyExpiry}
-          />
-        </div>
       </Section>
 
       <Section
