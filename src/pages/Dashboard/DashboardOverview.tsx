@@ -1,4 +1,5 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState } from "react";
+import { Link } from "react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import PageMeta from "../../components/common/PageMeta";
@@ -12,7 +13,6 @@ import TopProjectsChart from "../../components/dashboard/TopProjectsChart";
 import SupplierEmployeesChart from "../../components/dashboard/SupplierEmployeesChart";
 import InvoiceStatusChart from "../../components/dashboard/InvoiceStatusChart";
 import QuickActions from "../../components/dashboard/QuickActions";
-import ExpiringDocumentsAlertModal from "../../components/dashboard/ExpiringDocumentsAlertModal";
 import { dashboardApi } from "../../services/api/dashboardApi";
 import { QUERY_KEYS } from "../../lib/constants";
 import {
@@ -31,8 +31,6 @@ import { downloadFile } from "../../utils/excelValidator";
 
 export default function DashboardOverview() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-  const [alertsModalOpen, setAlertsModalOpen] = useState(false);
-  const hasAutoOpenedAlerts = useRef(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: QUERY_KEYS.dashboard.stats(selectedMonth),
@@ -58,17 +56,6 @@ export default function DashboardOverview() {
       { month: "long", year: "numeric" },
     );
   }, [selectedMonth]);
-
-  useEffect(() => {
-    if (
-      data &&
-      data.counts.expiringDocuments > 0 &&
-      !hasAutoOpenedAlerts.current
-    ) {
-      setAlertsModalOpen(true);
-      hasAutoOpenedAlerts.current = true;
-    }
-  }, [data]);
 
   return (
     <>
@@ -103,9 +90,8 @@ export default function DashboardOverview() {
       )}
 
       {data && data.counts.expiringDocuments > 0 && (
-        <button
-          type="button"
-          onClick={() => setAlertsModalOpen(true)}
+        <Link
+          to="/expiry-alerts"
           className="mb-6 flex w-full items-center gap-3 rounded-2xl border border-yellow-300 bg-yellow-50 px-5 py-4 text-left transition hover:bg-yellow-100 dark:border-yellow-700/60 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-200 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300">
@@ -117,20 +103,15 @@ export default function DashboardOverview() {
               or expiring within 60 days
             </p>
             <p className="text-sm text-yellow-800 dark:text-yellow-300/80">
-              Click to review passport, visa, Emirates ID, and work permit
-              alerts
+              Open Document Expiry Alerts to review passport, visa, Emirates ID,
+              and work permit
             </p>
           </div>
           <span className="hidden rounded-lg bg-yellow-200 px-3 py-1.5 text-xs font-semibold text-yellow-950 sm:inline dark:bg-yellow-900/50 dark:text-yellow-100">
             View alerts
           </span>
-        </button>
+        </Link>
       )}
-
-      <ExpiringDocumentsAlertModal
-        isOpen={alertsModalOpen}
-        onClose={() => setAlertsModalOpen(false)}
-      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
         <StatCard
@@ -235,7 +216,7 @@ export default function DashboardOverview() {
           value={isLoading ? "…" : data?.counts.expiringDocuments ?? 0}
           subtitle="Expired or within 60 days · click to view"
           icon={<AlertIcon className="h-6 w-6" />}
-          onClick={() => setAlertsModalOpen(true)}
+          href="/expiry-alerts"
           accent={data && data.counts.expiringDocuments > 0 ? "red" : "green"}
         />
       </div>

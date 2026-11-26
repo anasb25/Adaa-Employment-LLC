@@ -187,6 +187,23 @@ export default function PayrollManagement() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    const ids = adaaPayrollData.map((p) => p.id).filter(Boolean);
+    if (ids.length === 0) {
+      toast.error("No payroll entries to delete for this month");
+      return;
+    }
+    const confirmed = await confirmDialog({
+      title: "Delete All Payrolls",
+      message: `Are you sure you want to delete all ${ids.length} payroll(s) for ${selectedMonth}? This action cannot be undone.`,
+      confirmText: "Delete All",
+      variant: "warning",
+    });
+    if (confirmed) {
+      deleteManyMutation.mutate(ids);
+    }
+  };
+
   const handleCalculatePayroll = async () => {
     const confirmed = await confirmDialog({
       title: "Calculate Payroll",
@@ -468,13 +485,28 @@ export default function PayrollManagement() {
 
               <PermissionGuard permissions={["payroll:delete"]}>
                 {!isSelectMode ? (
-                  <Button
-                    variant="outline"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
-                    onClick={() => setIsSelectMode(true)}
-                  >
-                    Delete Multiple
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                      onClick={() => setIsSelectMode(true)}
+                      disabled={!adaaPayrollData.length}
+                    >
+                      Delete Multiple
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                      onClick={handleDeleteAll}
+                      disabled={
+                        !adaaPayrollData.length || deleteManyMutation.isPending
+                      }
+                    >
+                      {deleteManyMutation.isPending
+                        ? "Deleting..."
+                        : "Delete All"}
+                    </Button>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600 dark:text-gray-400">
