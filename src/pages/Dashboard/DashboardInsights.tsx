@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import PageMeta from "../../components/common/PageMeta";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import DashboardTabs from "../../components/dashboard/DashboardTabs";
@@ -9,9 +10,17 @@ import InsightsBoard, {
 } from "../../components/dashboard/insights/InsightsBoard";
 import Label from "../../components/form/Label";
 import Select from "../../components/form/Select";
+import Button from "../../components/ui/button/Button";
 import { dashboardApi } from "../../services/api/dashboardApi";
 import { QUERY_KEYS } from "../../lib/constants";
-import { AlertIcon, GroupIcon, TaskIcon, TimeIcon } from "../../icons";
+import {
+  AlertIcon,
+  DownloadIcon,
+  GroupIcon,
+  TaskIcon,
+  TimeIcon,
+} from "../../icons";
+import { downloadInsightsPdfReport } from "../../utils/insightsPdfReport";
 import {
   MONTH_SHORT_LABELS,
   formatDateValue,
@@ -76,6 +85,7 @@ export default function DashboardInsights({
   const [initial] = useState(currentPeriod);
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState<string>(String(initial.month));
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const isHours = variant === "hours";
   const yearLabel = String(year);
   const isFullYear = month === ALL_MONTHS;
@@ -140,6 +150,32 @@ export default function DashboardInsights({
     ? yearLabel
     : formatMonthLabel(formatMonthValue(year, Number(month)));
 
+  const handleDownloadPdf = async () => {
+    if (!data) {
+      toast.error("Insights data is not available yet");
+      return;
+    }
+
+    let toastId: string | number | undefined;
+    try {
+      setIsDownloadingPdf(true);
+      toastId = toast.loading("Generating Insights PDF…");
+      await downloadInsightsPdfReport({
+        data,
+        periodLabel,
+        periodStart,
+        periodEnd,
+        variant,
+      });
+      toast.success("Insights PDF downloaded", { id: toastId });
+    } catch (err) {
+      console.error("Failed to generate insights PDF:", err);
+      toast.error("Failed to generate Insights PDF", { id: toastId });
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   return (
     <>
       <PageMeta
@@ -167,8 +203,8 @@ export default function DashboardInsights({
             {formatDisplayDate(periodEnd)}
           </p>
         </div>
-        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:w-auto lg:min-w-[24rem]">
-          <div>
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-end sm:justify-end">
+          <div className="w-full sm:w-36">
             <Label>Year</Label>
             <Select
               options={yearOptions}
@@ -186,7 +222,7 @@ export default function DashboardInsights({
               menuPortal
             />
           </div>
-          <div>
+          <div className="w-full sm:w-44">
             <Label>Month</Label>
             <Select
               options={monthOptions}
@@ -194,6 +230,20 @@ export default function DashboardInsights({
               onChange={setMonth}
               menuPortal
             />
+          </div>
+          <div className="w-full sm:w-auto">
+            <Label className="invisible select-none sm:block">Download</Label>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleDownloadPdf}
+              disabled={isLoading || !data || isDownloadingPdf}
+              startIcon={<DownloadIcon className="h-4 w-4" />}
+              className="h-11 w-full whitespace-nowrap px-4 py-0 sm:w-auto"
+              title="Download Insights PDF report"
+            >
+              {isDownloadingPdf ? "Preparing…" : "Download PDF"}
+            </Button>
           </div>
         </div>
       </div>
